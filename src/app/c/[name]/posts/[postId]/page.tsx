@@ -4,10 +4,43 @@ import { prisma } from "@/lib/prisma";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { CommentForm } from "@/components/comment-form";
 import { VoteButtons } from "@/components/vote-buttons";
+import { Comment } from "@/components/comment";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ name: string; postId: string }> };
+
+// Helper to build a nested comment tree
+function buildCommentTree(comments: any[]) {
+  const map = new Map<string, any>();
+  const roots: any[] = [];
+
+  // First pass: create a map and initialize replies array
+  comments.forEach((c) => {
+    map.set(c.id, { ...c, replies: [] });
+  });
+
+  // Second pass: link children to parents
+  comments.forEach((c) => {
+    const node = map.get(c.id);
+    if (c.parentId && map.has(c.parentId)) {
+      map.get(c.parentId).replies.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  // Sort roots and replies by score then date
+  const sortFn = (a: any, b: any) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  };
+
+  roots.sort(sortFn);
+  map.forEach((node) => node.replies.sort(sortFn));
+
+  return roots;
+}
 
 export default async function PostPage({ params }: Props) {
   const { name, postId } = await params;
@@ -17,24 +50,24 @@ export default async function PostPage({ params }: Props) {
     include: {
       author: { select: { username: true } },
       community: { select: { name: true, title: true } },
-      comments: {
-        where: { parentId: null, moderationStatus: "approved" },
-        orderBy: [{ score: "desc" }, { createdAt: "asc" }],
-        include: {
-          author: { select: { username: true } },
-          replies: {
-            where: { moderationStatus: "approved" },
-            orderBy: { createdAt: "asc" },
-            include: {
-              author: { select: { username: true } },
-            },
-          },
-        },
-      },
     },
   });
 
   if (!post || post.community.name !== name) notFound();
+
+  // Fetch ALL comments for this post
+  const allComments = await prisma.comment.findMany({
+    where: {
+      postId: post.id,
+      moderationStatus: "approved",
+    },
+    orderBy: { createdAt: "asc" },
+    include: {
+      author: { select: { username: true } },
+    },
+  });
+
+  const commentTree = buildCommentTree(allComments);
 
   return (
     <div className="space-y-6">
@@ -90,51 +123,13 @@ export default async function PostPage({ params }: Props) {
         <CommentForm postId={post.id} communityName={post.community.name} />
 
         <div className="space-y-4">
-          {post.comments.map((comment) => (
-            <div key={comment.id} className="rounded-lg border bg-white p-4 dark:bg-zinc-900">
-              <div className="flex gap-3">
-                <VoteButtons
-                  targetType="comment"
-                  targetId={comment.id}
-                  initialScore={comment.score}
-                  size="sm"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
-                    <Link
-                      href={`/u/${comment.author.username}`}
-                      className="font-medium hover:underline"
-                    >
-                      u/{comment.author.username}
-                    </Link>
-                    <span>•</span>
-                    <time>{timeAgo(comment.createdAt)}</time>
-                  </div>
-                  <div className="whitespace-pre-wrap text-sm">{comment.body}</div>
-
-                  {comment.replies.length > 0 && (
-                    <div className="mt-3 space-y-3 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700">
-                      {comment.replies.map((reply) => (
-                        <div key={reply.id}>
-                          <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
-                            <Link
-                              href={`/u/${reply.author.username}`}
-                              className="font-medium hover:underline"
-                            >
-                              u/{reply.author.username}
-                            </Link>
-                            <span>•</span>
-                            <time>{timeAgo(reply.createdAt)}</time>
-                            <span className="text-zinc-400">· {formatScore(reply.score)}</span>
-                          </div>
-                          <div className="whitespace-pre-wrap text-sm">{reply.body}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+          {commentTree.map((comment) => (
+            <Comment
+              key={comment.id}
+              comment={comment}
+              postId={post.id}
+              communityName={post.community.name}
+            />
           ))}
         </div>
       </section>

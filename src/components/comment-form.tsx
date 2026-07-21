@@ -9,9 +9,10 @@ type Props = {
   postId: string;
   communityName: string;
   parentId?: string;
+  onSuccess?: () => void;
 };
 
-export function CommentForm({ postId, communityName, parentId }: Props) {
+export function CommentForm({ postId, communityName, parentId, onSuccess }: Props) {
   const { data: session } = useSession();
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -58,6 +59,7 @@ export function CommentForm({ postId, communityName, parentId }: Props) {
 
       setBody("");
       router.refresh();
+      onSuccess?.();
     } catch {
       setError("Something went wrong");
     } finally {
@@ -77,7 +79,7 @@ export function CommentForm({ postId, communityName, parentId }: Props) {
         onChange={(e) => setBody(e.target.value)}
         rows={3}
         maxLength={10000}
-        placeholder="What are your thoughts?"
+        placeholder={parentId ? "Write a reply..." : "What are your thoughts?"}
         className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
       />
       <div className="flex justify-end">
@@ -86,7 +88,7 @@ export function CommentForm({ postId, communityName, parentId }: Props) {
           disabled={loading || !body.trim()}
           className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
         >
-          {loading ? "Posting…" : "Comment"}
+          {loading ? "Posting…" : parentId ? "Reply" : "Comment"}
         </button>
       </div>
     </form>
