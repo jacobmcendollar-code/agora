@@ -25,7 +25,7 @@ export default async function UserProfilePage({ params }: Props) {
 
   if (!user) notFound();
 
-  const [posts, comments, postScore, commentScore] = await Promise.all([
+  const [posts, comments] = await Promise.all([
     prisma.post.findMany({
       where: { authorId: user.id, moderationStatus: "approved" },
       orderBy: { createdAt: "desc" },
@@ -49,19 +49,7 @@ export default async function UserProfilePage({ params }: Props) {
         },
       },
     }),
-    prisma.post.aggregate({
-      where: { authorId: user.id },
-      _sum: { score: true },
-    }),
-    prisma.comment.aggregate({
-      where: { authorId: user.id },
-      _sum: { score: true },
-    }),
   ]);
-
-  const totalPostScore = postScore._sum.score || 0;
-  const totalCommentScore = commentScore._sum.score || 0;
-  const karma = totalPostScore + totalCommentScore;
 
   return (
     <div className="space-y-8">
@@ -74,20 +62,6 @@ export default async function UserProfilePage({ params }: Props) {
             day: "numeric",
           })}
         </p>
-        <div className="mt-4 flex gap-6 text-sm">
-          <div>
-            <span className="font-semibold">{formatScore(karma)}</span>{" "}
-            <span className="text-zinc-500">karma</span>
-          </div>
-          <div>
-            <span className="font-semibold">{posts.length}</span>{" "}
-            <span className="text-zinc-500">posts</span>
-          </div>
-          <div>
-            <span className="font-semibold">{comments.length}</span>{" "}
-            <span className="text-zinc-500">comments</span>
-          </div>
-        </div>
       </div>
 
       <section>
@@ -150,8 +124,6 @@ export default async function UserProfilePage({ params }: Props) {
                   <span>{comment.post.community.title}</span>
                   <span>•</span>
                   <span>{timeAgo(comment.createdAt)}</span>
-                  <span>•</span>
-                  <span>{formatScore(comment.score)} points</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
               </div>

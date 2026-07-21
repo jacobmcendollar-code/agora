@@ -16,9 +16,6 @@ export default async function CommunityPage({ params }: Props) {
 
   const community = await prisma.community.findUnique({
     where: { name },
-    include: {
-      creator: { select: { username: true } },
-    },
   });
 
   if (!community) notFound();
@@ -60,15 +57,6 @@ export default async function CommunityPage({ params }: Props) {
           <div>
             <h1 className="text-2xl font-bold">{community.title}</h1>
             <p className="mt-1 text-sm text-zinc-500">{community.description}</p>
-            <p className="mt-3 text-xs text-zinc-400">
-              Created by{" "}
-              <Link
-                href={`/u/${community.creator.username}`}
-                className="hover:underline"
-              >
-                {community.creator.username}
-              </Link>
-            </p>
           </div>
           <div className="flex shrink-0 gap-2">
             <JoinButton communityId={community.id} initialJoined={isJoined} />

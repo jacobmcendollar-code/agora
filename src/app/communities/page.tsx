@@ -9,7 +9,6 @@ export default async function CommunitiesPage() {
     take: 100,
     include: {
       _count: { select: { posts: true } },
-      creator: { select: { username: true } },
     },
   });
 
@@ -40,7 +39,7 @@ export default async function CommunitiesPage() {
               <div className="font-semibold">{c.title}</div>
               <p className="mt-2 line-clamp-2 text-sm text-zinc-500">{c.description}</p>
               <div className="mt-3 text-xs text-zinc-400">
-                {c._count.posts} posts · created by {c.creator.username}
+                {c._count.posts} posts
               </div>
             </Link>
           ))}
