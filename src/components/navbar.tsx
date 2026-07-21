@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
@@ -11,6 +11,19 @@ export function Navbar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      setUnread(0);
+      return;
+    }
+
+    fetch("/api/notifications")
+      .then((r) => r.json())
+      .then((data) => setUnread(data.unreadCount || 0))
+      .catch(() => {});
+  }, [status]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +37,6 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-zinc-900/80">
       <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-3 sm:px-4">
-        {/* Left side */}
         <div className="flex items-center gap-3 sm:gap-6">
           <Link href="/" className="text-lg font-bold tracking-tight sm:text-xl">
             Agora
@@ -50,7 +62,6 @@ export function Navbar() {
           />
         </form>
 
-        {/* Right side */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Mobile search toggle */}
           <button
@@ -64,6 +75,25 @@ export function Navbar() {
               <path d="m21 21-4.3-4.3" />
             </svg>
           </button>
+
+          {/* Notifications */}
+          {session && (
+            <Link
+              href="/notifications"
+              className="relative rounded-md p-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              aria-label="Notifications"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+              </svg>
+              {unread > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+          )}
 
           <ThemeToggle />
 

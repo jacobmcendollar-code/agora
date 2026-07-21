@@ -1,6 +1,3 @@
-// Agora - Free speech community platform
-// Minimal AI moderation, pseudonymous by design
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,50 +8,49 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  username      String    @unique
-  email         String    @unique
+  id            String         @id
+  username      String         @unique
+  email         String         @unique
   emailVerified DateTime?
   passwordHash  String?
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
   accounts      Account[]
   sessions      Session[]
-  communities   Community[] @relation("CommunityCreator")
   posts         Post[]
   comments      Comment[]
   postVotes     PostVote[]
   commentVotes  CommentVote[]
+  communities   Community[]
   subscriptions Subscription[]
+  notifications Notification[]
 
-  @@index([username])
   @@map("users")
+  @@index([username])
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -73,118 +69,124 @@ model VerificationToken {
 }
 
 model Community {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  title       String
-  description String   @db.Text
-  rules       String?  @db.Text
-  creatorId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  creator       User           @relation("CommunityCreator", fields: [creatorId], references: [id])
+  id            String         @id
+  name          String         @unique
+  title         String
+  description   String
+  rules         String?
+  creatorId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  creator       User           @relation(fields: [creatorId], references: [id])
   posts         Post[]
   subscriptions Subscription[]
 
-  @@index([name])
   @@map("communities")
+  @@index([name])
 }
 
 model Post {
-  id           String   @id @default(cuid())
-  title        String
-  body         String?  @db.Text
-  url          String?
-  thumbnail    String?
-  score        Int      @default(0)
-  commentCount Int      @default(0)
-  communityId  String
-  authorId     String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  moderationStatus String @default("approved")
+  id               String     @id
+  title            String
+  body             String?
+  url              String?
+  thumbnail        String?
+  score            Int        @default(0)
+  commentCount     Int        @default(0)
+  moderationStatus String     @default("approved")
   moderationReason String?
+  communityId      String
+  authorId         String
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime
+  community        Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author           User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments         Comment[]
+  votes            PostVote[]
 
-  community Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  votes     PostVote[]
-
+  @@map("posts")
+  @@index([authorId])
   @@index([communityId, createdAt])
   @@index([communityId, score])
-  @@index([authorId])
   @@index([createdAt])
-  @@map("posts")
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  body      String   @db.Text
-  score     Int      @default(0)
-  postId    String
-  authorId  String
-  parentId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  moderationStatus String @default("approved")
+  id               String         @id
+  body             String
+  score            Int            @default(0)
+  moderationStatus String         @default("approved")
   moderationReason String?
+  postId           String
+  authorId         String
+  parentId         String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime
+  post             Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author           User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent           Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies          Comment[]      @relation("CommentReplies")
+  votes            CommentVote[]
 
-  post     Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent   Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Comment[]     @relation("CommentReplies")
-  votes    CommentVote[]
-
-  @@index([postId, createdAt])
-  @@index([postId, score])
+  @@map("comments")
   @@index([authorId])
   @@index([parentId])
-  @@map("comments")
+  @@index([postId, createdAt])
+  @@index([postId, score])
 }
 
 model PostVote {
-  id        String   @id @default(cuid())
+  id        String   @id
   value     Int
   userId    String
   postId    String
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
-  @@index([postId])
   @@map("post_votes")
+  @@index([postId])
 }
 
 model CommentVote {
-  id        String   @id @default(cuid())
+  id        String   @id
   value     Int
   userId    String
   commentId String
   createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
-  @@index([commentId])
   @@map("comment_votes")
+  @@index([commentId])
 }
 
 model Subscription {
-  id          String   @id @default(cuid())
+  id          String    @id
   userId      String
   communityId String
-  createdAt   DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   @@unique([userId, communityId])
-  @@index([userId])
-  @@index([communityId])
   @@map("subscriptions")
+  @@index([communityId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  link      String
+  read      Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+  @@index([userId, read])
 }

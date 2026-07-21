@@ -7,8 +7,7 @@ import { moderateContent } from "@/lib/moderation";
 const schema = z.object({
   postId: z.string().min(1),
   body: z.string().min(1).max(10000),
-  parentId: z.string().nullable().optional(),
-  communityName: z.string().min(1),
+  parentId: z.string().optional().nullable(),
 });
 
 export async function POST(req: Request) {
@@ -28,20 +27,35 @@ export async function POST(req: Request) {
       );
     }
 
-    const { postId, body: commentBody, parentId, communityName } = parsed.data;
+    const { postId, body: commentBody, parentId } = parsed.data;
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      include: { community: true },
+      include: {
+        community: { select: { name: true, title: true, description: true, rules: true } },
+        author: { select: { id: true, username: true } },
+      },
     });
 
-    if (!post || post.community.name !== communityName) {
+    if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // AI moderation for comments
+    // Optional: check parent comment exists
+    let parentComment = null;
+    if (parentId) {
+      parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        include: { author: { select: { id: true, username: true } } },
+      });
+      if (!parentComment || parentComment.postId !== postId) {
+        return NextResponse.json({ error: "Parent comment not found" }, { status: 404 });
+      }
+    }
+
     const moderation = await moderateContent({
       type: "comment",
+      title: "",
       body: commentBody,
       communityName: post.community.name,
       communityDescription: post.community.description,
@@ -58,21 +72,48 @@ export async function POST(req: Request) {
       );
     }
 
-    const [comment] = await prisma.$transaction([
-      prisma.comment.create({
+    const comment = await prisma.comment.create({
+      data: {
+        body: commentBody,
+        postId,
+        authorId: session.user.id,
+        parentId: parentId || null,
+        moderationStatus: "approved",
+      },
+    });
+
+    // Update post comment count
+    await prisma.post.update({
+      where: { id: postId },
+      data: { commentCount: { increment: 1 } },
+    });
+
+    const link = `/c/${post.community.name}/posts/${post.id}#comments`;
+    const actorUsername = session.user.username || "Someone";
+
+    // Notify post author (if someone else commented on their post)
+    if (post.authorId !== session.user.id) {
+      await prisma.notification.create({
         data: {
-          body: commentBody,
-          postId,
-          authorId: session.user.id,
-          parentId: parentId || null,
-          moderationStatus: "approved",
+          type: "comment_on_post",
+          message: `${actorUsername} commented on your post “${post.title}”`,
+          link,
+          userId: post.authorId,
         },
-      }),
-      prisma.post.update({
-        where: { id: postId },
-        data: { commentCount: { increment: 1 } },
-      }),
-    ]);
+      });
+    }
+
+    // Notify parent comment author (if this is a reply and not self-reply)
+    if (parentComment && parentComment.authorId !== session.user.id) {
+      await prisma.notification.create({
+        data: {
+          type: "reply_to_comment",
+          message: `${actorUsername} replied to your comment`,
+          link,
+          userId: parentComment.authorId,
+        },
+      });
+    }
 
     return NextResponse.json({ id: comment.id });
   } catch (err) {
