@@ -7,12 +7,23 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const sort = searchParams.get("sort") || "trending";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const communityName = searchParams.get("community");
   const limit = 15;
 
   const session = await auth();
 
   let communityIds: string[] | null = null;
-  if (session?.user?.id) {
+
+  if (communityName) {
+    const community = await prisma.community.findUnique({
+      where: { name: communityName },
+      select: { id: true },
+    });
+    if (!community) {
+      return NextResponse.json({ posts: [], nextPage: null });
+    }
+    communityIds = [community.id];
+  } else if (session?.user?.id) {
     const subscriptions = await prisma.subscription.findMany({
       where: { userId: session.user.id },
       select: { communityId: true },
@@ -22,7 +33,6 @@ export async function GET(req: Request) {
     }
   }
 
-  // Fetch a larger window so sorting works reasonably
   const posts = await prisma.post.findMany({
     where: {
       moderationStatus: "approved",
@@ -47,7 +57,6 @@ export async function GET(req: Request) {
   } else if (sort === "top") {
     ranked.sort((a, b) => b.score - a.score);
   }
-  // recent is already ordered by createdAt
 
   const start = (page - 1) * limit;
   const pagePosts = ranked.slice(start, start + limit);

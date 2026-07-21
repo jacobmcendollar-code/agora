@@ -21,9 +21,16 @@ type Post = {
 type Props = {
   initialPosts: Post[];
   sort: string;
+  communityName?: string; // if provided, only load posts from this community
+  hideCommunity?: boolean; // on community pages we don't need to show the community name
 };
 
-export function PostFeed({ initialPosts, sort }: Props) {
+export function PostFeed({
+  initialPosts,
+  sort,
+  communityName,
+  hideCommunity = false,
+}: Props) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [page, setPage] = useState(2);
   const [loading, setLoading] = useState(false);
@@ -34,7 +41,7 @@ export function PostFeed({ initialPosts, sort }: Props) {
     setPosts(initialPosts);
     setPage(2);
     setHasMore(initialPosts.length >= 15);
-  }, [initialPosts, sort]);
+  }, [initialPosts, sort, communityName]);
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -61,7 +68,13 @@ export function PostFeed({ initialPosts, sort }: Props) {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/feed?sort=${sort}&page=${page}`);
+      const params = new URLSearchParams({
+        sort,
+        page: String(page),
+      });
+      if (communityName) params.set("community", communityName);
+
+      const res = await fetch(`/api/feed?${params.toString()}`);
       const data = await res.json();
 
       if (data.posts?.length) {
@@ -128,13 +141,17 @@ export function PostFeed({ initialPosts, sort }: Props) {
 
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                <Link
-                  href={`/c/${post.community.name}`}
-                  className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-                >
-                  {post.community.title}
-                </Link>
-                <span>•</span>
+                {!hideCommunity && (
+                  <>
+                    <Link
+                      href={`/c/${post.community.name}`}
+                      className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
+                    >
+                      {post.community.title}
+                    </Link>
+                    <span>•</span>
+                  </>
+                )}
                 <Link
                   href={`/u/${post.author.username}`}
                   className="hover:underline"
