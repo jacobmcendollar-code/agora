@@ -9,11 +9,21 @@ import { VoteButtons } from "@/components/vote-buttons";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ name: string }> };
+type SortOption = "trending" | "recent" | "top";
 
-export default async function CommunityPage({ params }: Props) {
+type Props = {
+  params: Promise<{ name: string }>;
+  searchParams: Promise<{ sort?: string }>;
+};
+
+export default async function CommunityPage({ params, searchParams }: Props) {
   const { name } = await params;
+  const { sort: sortParam } = await searchParams;
   const session = await auth();
+
+  const sort = (["trending", "recent", "top"].includes(sortParam || "")
+    ? sortParam
+    : "trending") as SortOption;
 
   const community = await prisma.community.findUnique({
     where: { name },
@@ -47,9 +57,22 @@ export default async function CommunityPage({ params }: Props) {
     },
   });
 
-  const ranked = posts
-    .map((p) => ({ ...p, hot: hotScore(p.score, p.createdAt) }))
-    .sort((a, b) => b.hot - a.hot);
+  let ranked = posts.map((p) => ({
+    ...p,
+    hot: hotScore(p.score, p.createdAt),
+  }));
+
+  if (sort === "trending") {
+    ranked.sort((a, b) => b.hot - a.hot);
+  } else if (sort === "top") {
+    ranked.sort((a, b) => b.score - a.score);
+  }
+
+  const sortOptions: { key: SortOption; label: string }[] = [
+    { key: "trending", label: "Trending" },
+    { key: "recent", label: "Recent" },
+    { key: "top", label: "Top" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -69,6 +92,27 @@ export default async function CommunityPage({ params }: Props) {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Sort tabs */}
+      <div className="flex gap-1 border-b">
+        {sortOptions.map((option) => (
+          <Link
+            key={option.key}
+            href={
+              option.key === "trending"
+                ? `/c/${community.name}`
+                : `/c/${community.name}?sort=${option.key}`
+            }
+            className={`px-4 py-2 text-sm font-medium transition ${
+              sort === option.key
+                ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+            }`}
+          >
+            {option.label}
+          </Link>
+        ))}
       </div>
 
       <div className="space-y-3">

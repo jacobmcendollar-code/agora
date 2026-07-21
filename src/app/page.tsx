@@ -7,8 +7,18 @@ import { VoteButtons } from "@/components/vote-buttons";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+type SortOption = "trending" | "recent" | "top";
+
+type Props = {
+  searchParams: Promise<{ sort?: string }>;
+};
+
+export default async function HomePage({ searchParams }: Props) {
   const session = await auth();
+  const params = await searchParams;
+  const sort = (["trending", "recent", "top"].includes(params.sort || "")
+    ? params.sort
+    : "trending") as SortOption;
 
   let communityIds: string[] | null = null;
 
@@ -37,19 +47,32 @@ export default async function HomePage() {
     },
   });
 
-  const ranked = posts
-    .map((p) => ({
-      ...p,
-      hot: hotScore(p.score, p.createdAt),
-    }))
-    .sort((a, b) => b.hot - a.hot)
-    .slice(0, 25);
+  let ranked = posts.map((p) => ({
+    ...p,
+    hot: hotScore(p.score, p.createdAt),
+  }));
+
+  if (sort === "trending") {
+    ranked.sort((a, b) => b.hot - a.hot);
+  } else if (sort === "top") {
+    ranked.sort((a, b) => b.score - a.score);
+  } else {
+    // recent — already ordered by createdAt desc
+  }
+
+  ranked = ranked.slice(0, 25);
 
   const showingSubscribed = !!communityIds;
 
+  const sortOptions: { key: SortOption; label: string }[] = [
+    { key: "trending", label: "Trending" },
+    { key: "recent", label: "Recent" },
+    { key: "top", label: "Top" },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Home</h1>
           {showingSubscribed && (
@@ -64,6 +87,23 @@ export default async function HomePage() {
         >
           Create Post
         </Link>
+      </div>
+
+      {/* Sort tabs */}
+      <div className="flex gap-1 border-b">
+        {sortOptions.map((option) => (
+          <Link
+            key={option.key}
+            href={option.key === "trending" ? "/" : `/?sort=${option.key}`}
+            className={`px-4 py-2 text-sm font-medium transition ${
+              sort === option.key
+                ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+            }`}
+          >
+            {option.label}
+          </Link>
+        ))}
       </div>
 
       {ranked.length === 0 ? (
@@ -104,7 +144,6 @@ export default async function HomePage() {
                   initialScore={post.score}
                 />
 
-                {/* Thumbnail - always show if it exists */}
                 {post.thumbnail && (
                   post.url ? (
                     <a
