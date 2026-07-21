@@ -1,15 +1,34 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
 import { formatScore, timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  // Fetch recent posts and sort by hot score in memory for MVP
-  // Later: move hot score into a generated column or materialized view
+  const session = await auth();
+
+  let communityIds: string[] | null = null;
+
+  // If the user is logged in, get the communities they have joined
+  if (session?.user?.id) {
+    const subscriptions = await prisma.subscription.findMany({
+      where: { userId: session.user.id },
+      select: { communityId: true },
+    });
+
+    if (subscriptions.length > 0) {
+      communityIds = subscriptions.map((s) => s.communityId);
+    }
+  }
+
+  // Build the query
   const posts = await prisma.post.findMany({
-    where: { moderationStatus: "approved" },
+    where: {
+      moderationStatus: "approved",
+      ...(communityIds ? { communityId: { in: communityIds } } : {}),
+    },
     take: 50,
     orderBy: { createdAt: "desc" },
     include: {
@@ -27,10 +46,19 @@ export default async function HomePage() {
     .sort((a, b) => b.hot - a.hot)
     .slice(0, 25);
 
+  const showingSubscribed = !!communityIds;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Home</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Home</h1>
+          {showingSubscribed && (
+            <p className="mt-1 text-sm text-zinc-500">
+              Showing posts from communities you’ve joined
+            </p>
+          )}
+        </div>
         <Link
           href="/submit"
           className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
@@ -41,13 +69,27 @@ export default async function HomePage() {
 
       {ranked.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center text-zinc-500">
-          <p className="text-lg">No posts yet.</p>
-          <p className="mt-2 text-sm">
-            <Link href="/communities/new" className="underline">
-              Create a community
-            </Link>{" "}
-            and start the conversation.
-          </p>
+          {showingSubscribed ? (
+            <>
+              <p className="text-lg">No posts in your joined communities yet.</p>
+              <p className="mt-2 text-sm">
+                <Link href="/communities" className="underline">
+                  Browse communities
+                </Link>{" "}
+                and join some, or create a post.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg">No posts yet.</p>
+              <p className="mt-2 text-sm">
+                <Link href="/communities/new" className="underline">
+                  Create a community
+                </Link>{" "}
+                and start the conversation.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -57,7 +99,6 @@ export default async function HomePage() {
               className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
             >
               <div className="flex gap-4">
-                {/* Score */}
                 <div className="flex w-12 flex-col items-center text-sm font-medium text-zinc-500">
                   <span className="text-base text-zinc-900 dark:text-zinc-100">
                     {formatScore(post.score)}
@@ -73,7 +114,12 @@ export default async function HomePage() {
                       c/{post.community.name}
                     </Link>
                     <span>•</span>
-                    <span>u/{post.author.username}</span>
+                    <Link
+                      href={`/u/${post.author.username}`}
+                      className="hover:underline"
+                    >
+                      u/{post.author.username}
+                    </Link>
                     <span>•</span>
                     <time dateTime={post.createdAt.toISOString()}>
                       {timeAgo(post.createdAt)}

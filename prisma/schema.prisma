@@ -16,11 +16,10 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   passwordHash  String?
-  image         String?   // optional avatar URL
+  image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Relations
   accounts      Account[]
   sessions      Session[]
   communities   Community[] @relation("CommunityCreator")
@@ -28,6 +27,7 @@ model User {
   comments      Comment[]
   postVotes     PostVote[]
   commentVotes  CommentVote[]
+  subscriptions Subscription[]
 
   @@index([username])
   @@map("users")
@@ -74,16 +74,17 @@ model VerificationToken {
 
 model Community {
   id          String   @id @default(cuid())
-  name        String   @unique // slug, e.g. "technology"
-  title       String            // display name
+  name        String   @unique
+  title       String
   description String   @db.Text
-  rules       String?  @db.Text // extra guidance for the AI moderator
+  rules       String?  @db.Text
   creatorId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  creator User   @relation("CommunityCreator", fields: [creatorId], references: [id])
-  posts   Post[]
+  creator       User           @relation("CommunityCreator", fields: [creatorId], references: [id])
+  posts         Post[]
+  subscriptions Subscription[]
 
   @@index([name])
   @@map("communities")
@@ -94,15 +95,14 @@ model Post {
   title        String
   body         String?  @db.Text
   url          String?
-  score        Int      @default(0) // denormalized ups - downs
+  score        Int      @default(0)
   commentCount Int      @default(0)
   communityId  String
   authorId     String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Soft moderation flag (for audit / future appeal)
-  moderationStatus String @default("approved") // approved | rejected | flagged
+  moderationStatus String @default("approved")
   moderationReason String?
 
   community Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -123,7 +123,7 @@ model Comment {
   score     Int      @default(0)
   postId    String
   authorId  String
-  parentId  String?  // for threading
+  parentId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -145,7 +145,7 @@ model Comment {
 
 model PostVote {
   id        String   @id @default(cuid())
-  value     Int      // +1 or -1
+  value     Int
   userId    String
   postId    String
   createdAt DateTime @default(now())
@@ -160,7 +160,7 @@ model PostVote {
 
 model CommentVote {
   id        String   @id @default(cuid())
-  value     Int      // +1 or -1
+  value     Int
   userId    String
   commentId String
   createdAt DateTime @default(now())
@@ -171,4 +171,19 @@ model CommentVote {
   @@unique([userId, commentId])
   @@index([commentId])
   @@map("comment_votes")
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String
+  communityId String
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([userId])
+  @@index([communityId])
+  @@map("subscriptions")
 }

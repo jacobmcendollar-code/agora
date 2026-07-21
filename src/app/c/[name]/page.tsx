@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
 import { formatScore, timeAgo } from "@/lib/utils";
+import { JoinButton } from "@/components/join-button";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,7 @@ type Props = { params: Promise<{ name: string }> };
 
 export default async function CommunityPage({ params }: Props) {
   const { name } = await params;
+  const session = await auth();
 
   const community = await prisma.community.findUnique({
     where: { name },
@@ -19,6 +22,20 @@ export default async function CommunityPage({ params }: Props) {
   });
 
   if (!community) notFound();
+
+  // Check if current user is subscribed
+  let isJoined = false;
+  if (session?.user?.id) {
+    const sub = await prisma.subscription.findUnique({
+      where: {
+        userId_communityId: {
+          userId: session.user.id,
+          communityId: community.id,
+        },
+      },
+    });
+    isJoined = !!sub;
+  }
 
   const posts = await prisma.post.findMany({
     where: {
@@ -55,12 +72,15 @@ export default async function CommunityPage({ params }: Props) {
               </Link>
             </p>
           </div>
-          <Link
-            href={`/submit?community=${community.name}`}
-            className="shrink-0 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            Create Post
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <JoinButton communityId={community.id} initialJoined={isJoined} />
+            <Link
+              href={`/submit?community=${community.name}`}
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Create Post
+            </Link>
+          </div>
         </div>
       </div>
 
