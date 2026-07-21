@@ -10,6 +10,7 @@ const schema = z.object({
   title: z.string().min(1).max(300),
   body: z.string().max(40000).optional().nullable(),
   url: z.string().url().optional().nullable().or(z.literal("")),
+  imageUrl: z.string().url().optional().nullable(),
 });
 
 export async function POST(req: Request) {
@@ -29,11 +30,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { communityName, title, body: postBody, url } = parsed.data;
+    const { communityName, title, body: postBody, url, imageUrl } = parsed.data;
 
-    if (!postBody && !url) {
+    if (!postBody && !url && !imageUrl) {
       return NextResponse.json(
-        { error: "Post must have either a body or a URL" },
+        { error: "Post must have a body, URL, or image" },
         { status: 400 }
       );
     }
@@ -66,9 +67,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Try to get a thumbnail if there's a URL
-    let thumbnail: string | null = null;
-    if (url) {
+    // Prefer uploaded image. Otherwise try to fetch a thumbnail from the URL.
+    let thumbnail: string | null = imageUrl || null;
+    if (!thumbnail && url) {
       thumbnail = await fetchThumbnail(url);
     }
 
