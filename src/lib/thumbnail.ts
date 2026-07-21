@@ -1,16 +1,27 @@
 /**
- * Tries to extract an Open Graph image (thumbnail) from a URL.
- * Returns the image URL or null if it can't find one.
+ * Tries to extract a thumbnail from a URL.
+ * Has special handling for YouTube.
  */
 export async function fetchThumbnail(url: string): Promise<string | null> {
   try {
+    // Special case: YouTube
+    const youtubeMatch = url.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    );
+    if (youtubeMatch && youtubeMatch[1]) {
+      return `https://img.youtube.com/vi/${youtubeMatch[1]}/hqdefault.jpg`;
+    }
+
+    // General case: try to get Open Graph image
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+    const timeout = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; AgoraBot/1.0)",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html",
       },
     });
 
@@ -20,30 +31,33 @@ export async function fetchThumbnail(url: string): Promise<string | null> {
 
     const html = await res.text();
 
-    // Look for og:image
-    const ogImageMatch = html.match(
-      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i
-    ) || html.match(
-      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i
-    );
+    // Try several common patterns for og:image
+    const patterns = [
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+      /<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["']/i,
+      /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i,
+    ];
 
-    if (ogImageMatch && ogImageMatch[1]) {
-      let imageUrl = ogImageMatch[1].trim();
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        let imageUrl = match[1].trim();
 
-      // Handle relative URLs
-      if (imageUrl.startsWith("//")) {
-        imageUrl = "https:" + imageUrl;
-      } else if (imageUrl.startsWith("/")) {
-        const base = new URL(url);
-        imageUrl = base.origin + imageUrl;
+        // Handle relative URLs
+        if (imageUrl.startsWith("//")) {
+          imageUrl = "https:" + imageUrl;
+        } else if (imageUrl.startsWith("/")) {
+          const base = new URL(url);
+          imageUrl = base.origin + imageUrl;
+        }
+
+        return imageUrl;
       }
-
-      return imageUrl;
     }
 
     return null;
   } catch {
-    // If anything fails (timeout, network, etc.), just skip the thumbnail
     return null;
   }
 }
