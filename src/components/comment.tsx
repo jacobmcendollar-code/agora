@@ -47,7 +47,9 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
               <time>{timeAgo(comment.createdAt)}</time>
             </div>
 
-            <div className="whitespace-pre-wrap text-sm">{comment.body}</div>
+            <div className="whitespace-pre-wrap break-words text-sm">
+              {comment.body}
+            </div>
 
             <button
               onClick={() => setShowReplyForm(!showReplyForm)}
