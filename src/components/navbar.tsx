@@ -26,14 +26,8 @@ export function Navbar() {
             Agora
           </Link>
           <nav className="hidden items-center gap-4 text-sm font-medium text-zinc-600 dark:text-zinc-400 sm:flex">
-            <Link href="/" className="hover:text-zinc-900 dark:hover:text-zinc-100">
-              Home
-            </Link>
             <Link href="/communities" className="hover:text-zinc-900 dark:hover:text-zinc-100">
               Communities
-            </Link>
-            <Link href="/submit" className="hover:text-zinc-900 dark:hover:text-zinc-100">
-              Create Post
             </Link>
             <Link href="/about" className="hover:text-zinc-900 dark:hover:text-zinc-100">
               About
