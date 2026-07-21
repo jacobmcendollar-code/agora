@@ -70,38 +70,29 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Home</h1>
-          {showingSubscribed && (
-            <p className="mt-1 text-sm text-zinc-500">
-              Showing posts from communities you’ve joined
-            </p>
-          )}
+      {/* Sort tabs + Create Post */}
+      <div className="flex items-center justify-between gap-4 border-b">
+        <div className="flex gap-1 overflow-x-auto">
+          {sortOptions.map((option) => (
+            <Link
+              key={option.key}
+              href={option.key === "trending" ? "/" : `/?sort=${option.key}`}
+              className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
+                sort === option.key
+                  ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+              }`}
+            >
+              {option.label}
+            </Link>
+          ))}
         </div>
         <Link
           href="/submit"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+          className="shrink-0 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
         >
           Create Post
         </Link>
-      </div>
-
-      {/* Sort tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b">
-        {sortOptions.map((option) => (
-          <Link
-            key={option.key}
-            href={option.key === "trending" ? "/" : `/?sort=${option.key}`}
-            className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
-              sort === option.key
-                ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
-            }`}
-          >
-            {option.label}
-          </Link>
-        ))}
       </div>
 
       {ranked.length === 0 ? (
@@ -142,7 +133,6 @@ export default async function HomePage({ searchParams }: Props) {
                   initialScore={post.score}
                 />
 
-                {/* Thumbnail - smaller on mobile, always visible */}
                 {post.thumbnail && (
                   post.url ? (
                     <a
