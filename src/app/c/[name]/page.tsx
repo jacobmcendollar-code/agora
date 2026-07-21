@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { JoinButton } from "@/components/join-button";
+import { VoteButtons } from "@/components/vote-buttons";
 
 export const dynamic = "force-dynamic";
 
@@ -82,11 +83,28 @@ export default async function CommunityPage({ params }: Props) {
               className="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-900"
             >
               <div className="flex gap-4">
-                <div className="flex w-12 flex-col items-center text-sm font-medium text-zinc-500">
-                  <span className="text-base text-zinc-900 dark:text-zinc-100">
-                    {formatScore(post.score)}
-                  </span>
-                </div>
+                {/* Vote buttons */}
+                <VoteButtons
+                  targetType="post"
+                  targetId={post.id}
+                  initialScore={post.score}
+                />
+
+                {/* Thumbnail */}
+                {post.thumbnail && (
+                  <Link
+                    href={`/c/${community.name}/posts/${post.id}`}
+                    className="hidden sm:block shrink-0"
+                  >
+                    <img
+                      src={post.thumbnail}
+                      alt=""
+                      className="h-20 w-28 rounded object-cover"
+                    />
+                  </Link>
+                )}
+
+                {/* Content */}
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
                     <Link
@@ -99,35 +117,20 @@ export default async function CommunityPage({ params }: Props) {
                     <time>{timeAgo(post.createdAt)}</time>
                   </div>
 
-                  <div className="flex gap-4">
-                    <div className="min-w-0 flex-1">
-                      <Link href={`/c/${community.name}/posts/${post.id}`}>
-                        <h2 className="text-lg font-semibold hover:underline">
-                          {post.title}
-                        </h2>
-                      </Link>
-                      {post.body && (
-                        <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                          {post.body}
-                        </p>
-                      )}
-                      <div className="mt-2 text-xs text-zinc-500">
-                        {post._count.comments} comments
-                      </div>
-                    </div>
+                  <Link href={`/c/${community.name}/posts/${post.id}`}>
+                    <h2 className="text-lg font-semibold hover:underline">
+                      {post.title}
+                    </h2>
+                  </Link>
 
-                    {post.thumbnail && (
-                      <Link
-                        href={`/c/${community.name}/posts/${post.id}`}
-                        className="hidden sm:block"
-                      >
-                        <img
-                          src={post.thumbnail}
-                          alt=""
-                          className="h-20 w-28 rounded object-cover"
-                        />
-                      </Link>
-                    )}
+                  {post.body && (
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      {post.body}
+                    </p>
+                  )}
+
+                  <div className="mt-2 text-xs text-zinc-500">
+                    {post._count.comments} comments
                   </div>
                 </div>
               </div>
