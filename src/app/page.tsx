@@ -56,8 +56,6 @@ export default async function HomePage({ searchParams }: Props) {
     ranked.sort((a, b) => b.hot - a.hot);
   } else if (sort === "top") {
     ranked.sort((a, b) => b.score - a.score);
-  } else {
-    // recent — already ordered by createdAt desc
   }
 
   ranked = ranked.slice(0, 25);
@@ -90,12 +88,12 @@ export default async function HomePage({ searchParams }: Props) {
       </div>
 
       {/* Sort tabs */}
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 overflow-x-auto border-b">
         {sortOptions.map((option) => (
           <Link
             key={option.key}
             href={option.key === "trending" ? "/" : `/?sort=${option.key}`}
-            className={`px-4 py-2 text-sm font-medium transition ${
+            className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
               sort === option.key
                 ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
                 : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
@@ -135,38 +133,39 @@ export default async function HomePage({ searchParams }: Props) {
           {ranked.map((post) => (
             <article
               key={post.id}
-              className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
+              className="rounded-lg border bg-white p-3 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-4"
             >
-              <div className="flex gap-4">
+              <div className="flex gap-3 sm:gap-4">
                 <VoteButtons
                   targetType="post"
                   targetId={post.id}
                   initialScore={post.score}
                 />
 
+                {/* Thumbnail - smaller on mobile, always visible */}
                 {post.thumbnail && (
                   post.url ? (
                     <a
                       href={post.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden sm:block shrink-0"
+                      className="shrink-0"
                     >
                       <img
                         src={post.thumbnail}
                         alt=""
-                        className="h-20 w-28 rounded object-cover"
+                        className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
                       />
                     </a>
                   ) : (
                     <Link
                       href={`/c/${post.community.name}/posts/${post.id}`}
-                      className="hidden sm:block shrink-0"
+                      className="shrink-0"
                     >
                       <img
                         src={post.thumbnail}
                         alt=""
-                        className="h-20 w-28 rounded object-cover"
+                        className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
                       />
                     </Link>
                   )
@@ -187,14 +186,14 @@ export default async function HomePage({ searchParams }: Props) {
                     >
                       {post.author.username}
                     </Link>
-                    <span>•</span>
-                    <time dateTime={post.createdAt.toISOString()}>
+                    <span className="hidden sm:inline">•</span>
+                    <time className="hidden sm:inline" dateTime={post.createdAt.toISOString()}>
                       {timeAgo(post.createdAt)}
                     </time>
                   </div>
 
                   <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                    <h2 className="text-lg font-semibold leading-snug hover:underline">
+                    <h2 className="text-base font-semibold leading-snug hover:underline sm:text-lg">
                       {post.title}
                     </h2>
                   </Link>

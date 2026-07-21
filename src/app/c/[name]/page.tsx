@@ -76,10 +76,10 @@ export default async function CommunityPage({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
-        <div className="flex items-start justify-between gap-4">
+      <div className="rounded-lg border bg-white p-4 dark:bg-zinc-900 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{community.title}</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">{community.title}</h1>
             <p className="mt-1 text-sm text-zinc-500">{community.description}</p>
           </div>
           <div className="flex shrink-0 gap-2">
@@ -95,7 +95,7 @@ export default async function CommunityPage({ params, searchParams }: Props) {
       </div>
 
       {/* Sort tabs */}
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 overflow-x-auto border-b">
         {sortOptions.map((option) => (
           <Link
             key={option.key}
@@ -104,7 +104,7 @@ export default async function CommunityPage({ params, searchParams }: Props) {
                 ? `/c/${community.name}`
                 : `/c/${community.name}?sort=${option.key}`
             }
-            className={`px-4 py-2 text-sm font-medium transition ${
+            className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
               sort === option.key
                 ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
                 : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
@@ -124,9 +124,9 @@ export default async function CommunityPage({ params, searchParams }: Props) {
           ranked.map((post) => (
             <article
               key={post.id}
-              className="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-900"
+              className="rounded-lg border bg-white p-3 shadow-sm dark:bg-zinc-900 sm:p-4"
             >
-              <div className="flex gap-4">
+              <div className="flex gap-3 sm:gap-4">
                 <VoteButtons
                   targetType="post"
                   targetId={post.id}
@@ -139,42 +139,42 @@ export default async function CommunityPage({ params, searchParams }: Props) {
                       href={post.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden sm:block shrink-0"
+                      className="shrink-0"
                     >
                       <img
                         src={post.thumbnail}
                         alt=""
-                        className="h-20 w-28 rounded object-cover"
+                        className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
                       />
                     </a>
                   ) : (
                     <Link
                       href={`/c/${community.name}/posts/${post.id}`}
-                      className="hidden sm:block shrink-0"
+                      className="shrink-0"
                     >
                       <img
                         src={post.thumbnail}
                         alt=""
-                        className="h-20 w-28 rounded object-cover"
+                        className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
                       />
                     </Link>
                   )
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
+                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
                     <Link
                       href={`/u/${post.author.username}`}
                       className="hover:underline"
                     >
                       {post.author.username}
                     </Link>
-                    <span>•</span>
-                    <time>{timeAgo(post.createdAt)}</time>
+                    <span className="hidden sm:inline">•</span>
+                    <time className="hidden sm:inline">{timeAgo(post.createdAt)}</time>
                   </div>
 
                   <Link href={`/c/${community.name}/posts/${post.id}`}>
-                    <h2 className="text-lg font-semibold hover:underline">
+                    <h2 className="text-base font-semibold leading-snug hover:underline sm:text-lg">
                       {post.title}
                     </h2>
                   </Link>

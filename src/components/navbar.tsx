@@ -20,9 +20,9 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-zinc-900/80">
-      <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold tracking-tight">
+      <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-3 sm:px-4">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link href="/" className="text-lg font-bold tracking-tight sm:text-xl">
             Agora
           </Link>
           <nav className="hidden items-center gap-4 text-sm font-medium text-zinc-600 dark:text-zinc-400 sm:flex">
@@ -35,22 +35,22 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="hidden flex-1 max-w-xs md:block">
+        {/* Search - visible on all screen sizes */}
+        <form onSubmit={handleSearch} className="flex-1 max-w-[140px] sm:max-w-xs">
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search..."
-            className="w-full rounded-md border bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700"
+            className="w-full rounded-md border bg-transparent px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700"
           />
         </form>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <ThemeToggle />
 
           {status === "loading" ? (
-            <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+            <div className="h-8 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           ) : session ? (
             <>
               <Link
@@ -61,7 +61,7 @@ export function Navbar() {
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-md px-2.5 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Log out
               </button>
@@ -70,13 +70,13 @@ export function Navbar() {
             <>
               <Link
                 href="/login"
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-md px-2.5 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Log in
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                className="rounded-md bg-zinc-900 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 Sign up
               </Link>
