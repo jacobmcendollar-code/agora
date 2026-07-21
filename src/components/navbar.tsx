@@ -31,9 +31,12 @@ export function Navbar() {
             <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           ) : session ? (
             <>
-              <span className="hidden text-sm text-zinc-600 dark:text-zinc-400 sm:inline">
+              <Link
+                href={`/u/${session.user.username}`}
+                className="hidden text-sm text-zinc-600 hover:underline dark:text-zinc-400 sm:inline"
+              >
                 u/{session.user.username}
-              </span>
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"

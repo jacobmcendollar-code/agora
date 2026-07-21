@@ -50,7 +50,12 @@ export default async function PostPage({ params }: Props) {
 
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              <span>u/{post.author.username}</span>
+              <Link
+                href={`/u/${post.author.username}`}
+                className="hover:underline"
+              >
+                u/{post.author.username}
+              </Link>
               <span>•</span>
               <time>{timeAgo(post.createdAt)}</time>
             </div>
@@ -96,19 +101,28 @@ export default async function PostPage({ params }: Props) {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
-                    <span className="font-medium">u/{comment.author.username}</span>
+                    <Link
+                      href={`/u/${comment.author.username}`}
+                      className="font-medium hover:underline"
+                    >
+                      u/{comment.author.username}
+                    </Link>
                     <span>•</span>
                     <time>{timeAgo(comment.createdAt)}</time>
                   </div>
                   <div className="whitespace-pre-wrap text-sm">{comment.body}</div>
 
-                  {/* Nested replies (one level for MVP) */}
                   {comment.replies.length > 0 && (
                     <div className="mt-3 space-y-3 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700">
                       {comment.replies.map((reply) => (
                         <div key={reply.id}>
                           <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
-                            <span className="font-medium">u/{reply.author.username}</span>
+                            <Link
+                              href={`/u/${reply.author.username}`}
+                              className="font-medium hover:underline"
+                            >
+                              u/{reply.author.username}
+                            </Link>
                             <span>•</span>
                             <time>{timeAgo(reply.createdAt)}</time>
                             <span className="text-zinc-400">· {formatScore(reply.score)}</span>

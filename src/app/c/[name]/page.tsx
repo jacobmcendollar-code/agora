@@ -46,7 +46,13 @@ export default async function CommunityPage({ params }: Props) {
             <p className="mt-1 text-zinc-600 dark:text-zinc-400">{community.title}</p>
             <p className="mt-3 text-sm text-zinc-500">{community.description}</p>
             <p className="mt-2 text-xs text-zinc-400">
-              Created by u/{community.creator.username}
+              Created by{" "}
+              <Link
+                href={`/u/${community.creator.username}`}
+                className="hover:underline"
+              >
+                u/{community.creator.username}
+              </Link>
             </p>
           </div>
           <Link
@@ -77,7 +83,12 @@ export default async function CommunityPage({ params }: Props) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
-                    <span>u/{post.author.username}</span>
+                    <Link
+                      href={`/u/${post.author.username}`}
+                      className="hover:underline"
+                    >
+                      u/{post.author.username}
+                    </Link>
                     <span>•</span>
                     <time>{timeAgo(post.createdAt)}</time>
                   </div>
