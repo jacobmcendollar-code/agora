@@ -5,22 +5,109 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
+type Community = {
+  name: string;
+  title: string;
+};
+
 function SubmitForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = searchParams.get("community") || "";
 
-  const [communities, setCommunities] = useState<{ name: string; title: string }[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [filtered, setFiltered] = useState<Community[]>([]);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(preselected);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/communities")
       .then((r) => r.json())
-      .then(setCommunities)
+      .then((data) => {
+        setCommunities(data);
+        setFiltered(data);
+
+        // If we have a preselected community, show its title
+        if (preselected) {
+          const match = data.find((c: Community) => c.name === preselected);
+          if (match) setQuery(match.title);
+        }
+      })
       .catch(() => {});
-  }, []);
+  }, [preselected]);
+
+  function handleSearch(value: string) {
+    setQuery(value);
+    setSelected("");
+    setShowDropdown(true);
+
+    if (!value.trim()) {
+      setFiltered(communities);
+      return;
+    }
+
+    const lower = value.toLowerCase();
+    setFiltered(
+      communities.filter(
+        (c) =>
+          c.title.toLowerCase().includes(lower) ||
+          c.name.toLowerCase().includes(lower)
+      )
+    );
+  }
+
+  function selectCommunity(community: Community) {
+    setSelected(community.name);
+    setQuery(community.title);
+    setShowDropdown(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    if (!selected) {
+      setError("Please select a community");
+      return;
+    }
+
+    setLoading(true);
+
+    const form = new FormData(e.currentTarget);
+    const title = (form.get("title") as string).trim();
+    const body = (form.get("body") as string).trim();
+    const url = (form.get("url") as string).trim() || null;
+
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          communityName: selected,
+          title,
+          body,
+          url,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create post");
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/c/${selected}/posts/${data.id}`);
+    } catch {
+      setError("Something went wrong");
+      setLoading(false);
+    }
+  }
 
   if (status === "loading") {
     return <div className="py-12 text-center text-zinc-500">Loading…</div>;
@@ -35,39 +122,6 @@ function SubmitForm() {
         </Link>
       </div>
     );
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const form = new FormData(e.currentTarget);
-    const communityName = form.get("community") as string;
-    const title = (form.get("title") as string).trim();
-    const body = (form.get("body") as string).trim();
-    const url = (form.get("url") as string).trim() || null;
-
-    try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ communityName, title, body, url }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Failed to create post");
-        setLoading(false);
-        return;
-      }
-
-      router.push(`/c/${communityName}/posts/${data.id}`);
-    } catch {
-      setError("Something went wrong");
-      setLoading(false);
-    }
   }
 
   return (
@@ -86,24 +140,42 @@ function SubmitForm() {
           </div>
         )}
 
-        <div>
-          <label htmlFor="community" className="mb-1 block text-sm font-medium">
+        {/* Searchable Community Field */}
+        <div className="relative">
+          <label htmlFor="community-search" className="mb-1 block text-sm font-medium">
             Community
           </label>
-          <select
-            id="community"
-            name="community"
-            required
-            defaultValue={preselected}
+          <input
+            id="community-search"
+            type="text"
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
+            onFocus={() => setShowDropdown(true)}
+            placeholder="Search communities..."
+            autoComplete="off"
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-          >
-            <option value="">Select a community</option>
-            {communities.map((c) => (
-              <option key={c.name} value={c.name}>
-                c/{c.name} — {c.title}
-              </option>
-            ))}
-          </select>
+          />
+
+          {showDropdown && filtered.length > 0 && (
+            <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg dark:bg-zinc-900">
+              {filtered.map((c) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => selectCommunity(c)}
+                  className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  {c.title}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {showDropdown && filtered.length === 0 && query && (
+            <div className="absolute z-10 mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm text-zinc-500 shadow-lg dark:bg-zinc-900">
+              No communities found
+            </div>
+          )}
         </div>
 
         <div>
