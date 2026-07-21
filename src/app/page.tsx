@@ -59,9 +59,6 @@ export default async function HomePage({ searchParams }: Props) {
   }
 
   const initialPosts = ranked.slice(0, 15);
-  const initialCursor =
-    initialPosts.length === 15 ? initialPosts[initialPosts.length - 1].id : null;
-
   const showingSubscribed = !!communityIds;
 
   const sortOptions: { key: SortOption; label: string }[] = [
@@ -122,11 +119,7 @@ export default async function HomePage({ searchParams }: Props) {
           )}
         </div>
       ) : (
-        <PostFeed
-          initialPosts={initialPosts}
-          initialCursor={initialCursor}
-          sort={sort}
-        />
+        <PostFeed initialPosts={initialPosts} sort={sort} />
       )}
     </div>
   );

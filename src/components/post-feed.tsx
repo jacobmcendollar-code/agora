@@ -20,23 +20,21 @@ type Post = {
 
 type Props = {
   initialPosts: Post[];
-  initialCursor: string | null;
   sort: string;
 };
 
-export function PostFeed({ initialPosts, initialCursor, sort }: Props) {
+export function PostFeed({ initialPosts, sort }: Props) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [cursor, setCursor] = useState<string | null>(initialCursor);
+  const [page, setPage] = useState(2); // next page to load
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(!!initialCursor);
+  const [hasMore, setHasMore] = useState(initialPosts.length >= 15);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Reset when sort changes
     setPosts(initialPosts);
-    setCursor(initialCursor);
-    setHasMore(!!initialCursor);
-  }, [initialPosts, initialCursor, sort]);
+    setPage(2);
+    setHasMore(initialPosts.length >= 15);
+  }, [initialPosts, sort]);
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -47,7 +45,7 @@ export function PostFeed({ initialPosts, initialCursor, sort }: Props) {
           loadMore();
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "300px" }
     );
 
     const el = sentinelRef.current;
@@ -56,20 +54,25 @@ export function PostFeed({ initialPosts, initialCursor, sort }: Props) {
     return () => {
       if (el) observer.unobserve(el);
     };
-  }, [hasMore, loading, cursor]);
+  }, [hasMore, loading, page]);
 
   async function loadMore() {
-    if (!cursor || loading) return;
+    if (loading || !hasMore) return;
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/feed?sort=${sort}&cursor=${cursor}`);
+      const res = await fetch(`/api/feed?sort=${sort}&page=${page}`);
       const data = await res.json();
 
       if (data.posts?.length) {
-        setPosts((prev) => [...prev, ...data.posts]);
-        setCursor(data.nextCursor);
-        setHasMore(!!data.nextCursor);
+        // Deduplicate just in case
+        setPosts((prev) => {
+          const existing = new Set(prev.map((p) => p.id));
+          const fresh = data.posts.filter((p: Post) => !existing.has(p.id));
+          return [...prev, ...fresh];
+        });
+        setPage((p) => p + 1);
+        setHasMore(!!data.nextPage);
       } else {
         setHasMore(false);
       }
@@ -80,9 +83,7 @@ export function PostFeed({ initialPosts, initialCursor, sort }: Props) {
     }
   }
 
-  if (posts.length === 0) {
-    return null;
-  }
+  if (posts.length === 0) return null;
 
   return (
     <div className="space-y-3">
@@ -167,7 +168,6 @@ export function PostFeed({ initialPosts, initialCursor, sort }: Props) {
         </article>
       ))}
 
-      {/* Sentinel for infinite scroll */}
       <div ref={sentinelRef} className="py-4 text-center text-sm text-zinc-500">
         {loading && "Loading more…"}
         {!hasMore && posts.length > 0 && "You’ve reached the end"}

@@ -6,7 +6,7 @@ import { hotScore } from "@/lib/ranking";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const sort = searchParams.get("sort") || "trending";
-  const cursor = searchParams.get("cursor"); // post id
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = 15;
 
   const session = await auth();
@@ -22,13 +22,13 @@ export async function GET(req: Request) {
     }
   }
 
+  // Fetch a larger window so sorting works reasonably
   const posts = await prisma.post.findMany({
     where: {
       moderationStatus: "approved",
       ...(communityIds ? { communityId: { in: communityIds } } : {}),
-      ...(cursor ? { id: { not: cursor } } : {}),
     },
-    take: limit + 5, // fetch a few extra so we can sort properly
+    take: 200,
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { username: true } },
@@ -47,20 +47,14 @@ export async function GET(req: Request) {
   } else if (sort === "top") {
     ranked.sort((a, b) => b.score - a.score);
   }
+  // recent is already ordered by createdAt
 
-  // If we have a cursor, start after that post in the sorted list
-  if (cursor) {
-    const idx = ranked.findIndex((p) => p.id === cursor);
-    if (idx !== -1) {
-      ranked = ranked.slice(idx + 1);
-    }
-  }
-
-  const page = ranked.slice(0, limit);
-  const nextCursor = page.length === limit ? page[page.length - 1].id : null;
+  const start = (page - 1) * limit;
+  const pagePosts = ranked.slice(start, start + limit);
+  const hasMore = start + limit < ranked.length;
 
   return NextResponse.json({
-    posts: page,
-    nextCursor,
+    posts: pagePosts,
+    nextPage: hasMore ? page + 1 : null,
   });
 }
