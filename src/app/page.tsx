@@ -98,17 +98,18 @@ export default async function HomePage() {
               className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
             >
               <div className="flex gap-4">
-                {/* Vote buttons */}
                 <VoteButtons
                   targetType="post"
                   targetId={post.id}
                   initialScore={post.score}
                 />
 
-                {/* Thumbnail on the left */}
-                {post.thumbnail && (
-                  <Link
-                    href={`/c/${post.community.name}/posts/${post.id}`}
+                {/* Thumbnail → external link */}
+                {post.thumbnail && post.url && (
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="hidden sm:block shrink-0"
                   >
                     <img
@@ -116,10 +117,9 @@ export default async function HomePage() {
                       alt=""
                       className="h-20 w-28 rounded object-cover"
                     />
-                  </Link>
+                  </a>
                 )}
 
-                {/* Content */}
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
                     <Link
@@ -141,6 +141,7 @@ export default async function HomePage() {
                     </time>
                   </div>
 
+                  {/* Title → post page */}
                   <Link href={`/c/${post.community.name}/posts/${post.id}`}>
                     <h2 className="text-lg font-semibold leading-snug hover:underline">
                       {post.title}
