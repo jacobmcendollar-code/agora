@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 const schema = z.object({
   targetType: z.enum(["post", "comment"]),
   targetId: z.string().min(1),
-  value: z.union([z.literal(1), z.literal(-1)]),
+  value: z.union([z.literal(1), z.literal(-1), z.literal(0)]),
 });
 
 export async function POST(req: Request) {
@@ -20,87 +20,116 @@ export async function POST(req: Request) {
     const parsed = schema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+      return NextResponse.json(
+        { error: parsed.error.errors[0]?.message || "Invalid input" },
+        { status: 400 }
+      );
     }
 
     const { targetType, targetId, value } = parsed.data;
     const userId = session.user.id;
 
     if (targetType === "post") {
+      const post = await prisma.post.findUnique({ where: { id: targetId } });
+      if (!post) {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      }
+
       const existing = await prisma.postVote.findUnique({
-        where: { userId_postId: { userId, postId: targetId } },
+        where: {
+          userId_postId: { userId, postId: targetId },
+        },
       });
 
       let scoreDelta = 0;
-      let userVote: number | null = value;
 
-      if (!existing) {
+      if (value === 0) {
+        // Remove vote
+        if (existing) {
+          scoreDelta = -existing.value;
+          await prisma.postVote.delete({
+            where: { id: existing.id },
+          });
+        }
+      } else if (existing) {
+        // Change vote
+        scoreDelta = value - existing.value;
+        await prisma.postVote.update({
+          where: { id: existing.id },
+          data: { value },
+        });
+      } else {
         // New vote
+        scoreDelta = value;
         await prisma.postVote.create({
           data: { userId, postId: targetId, value },
         });
-        scoreDelta = value;
-      } else if (existing.value === value) {
-        // Toggle off
-        await prisma.postVote.delete({
-          where: { userId_postId: { userId, postId: targetId } },
-        });
-        scoreDelta = -value;
-        userVote = null;
-      } else {
-        // Switch direction
-        await prisma.postVote.update({
-          where: { userId_postId: { userId, postId: targetId } },
-          data: { value },
-        });
-        scoreDelta = value * 2; // e.g. from -1 to +1 = +2
       }
 
-      const updated = await prisma.post.update({
+      if (scoreDelta !== 0) {
+        await prisma.post.update({
+          where: { id: targetId },
+          data: { score: { increment: scoreDelta } },
+        });
+      }
+
+      const updated = await prisma.post.findUnique({
         where: { id: targetId },
-        data: { score: { increment: scoreDelta } },
         select: { score: true },
       });
 
-      return NextResponse.json({ score: updated.score, userVote });
-    } else {
-      // Comment vote
-      const existing = await prisma.commentVote.findUnique({
-        where: { userId_commentId: { userId, commentId: targetId } },
-      });
-
-      let scoreDelta = 0;
-      let userVote: number | null = value;
-
-      if (!existing) {
-        await prisma.commentVote.create({
-          data: { userId, commentId: targetId, value },
-        });
-        scoreDelta = value;
-      } else if (existing.value === value) {
-        await prisma.commentVote.delete({
-          where: { userId_commentId: { userId, commentId: targetId } },
-        });
-        scoreDelta = -value;
-        userVote = null;
-      } else {
-        await prisma.commentVote.update({
-          where: { userId_commentId: { userId, commentId: targetId } },
-          data: { value },
-        });
-        scoreDelta = value * 2;
-      }
-
-      const updated = await prisma.comment.update({
-        where: { id: targetId },
-        data: { score: { increment: scoreDelta } },
-        select: { score: true },
-      });
-
-      return NextResponse.json({ score: updated.score, userVote });
+      return NextResponse.json({ score: updated?.score ?? post.score });
     }
+
+    // Comment vote
+    const comment = await prisma.comment.findUnique({ where: { id: targetId } });
+    if (!comment) {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    const existing = await prisma.commentVote.findUnique({
+      where: {
+        userId_commentId: { userId, commentId: targetId },
+      },
+    });
+
+    let scoreDelta = 0;
+
+    if (value === 0) {
+      if (existing) {
+        scoreDelta = -existing.value;
+        await prisma.commentVote.delete({
+          where: { id: existing.id },
+        });
+      }
+    } else if (existing) {
+      scoreDelta = value - existing.value;
+      await prisma.commentVote.update({
+        where: { id: existing.id },
+        data: { value },
+      });
+    } else {
+      scoreDelta = value;
+      await prisma.commentVote.create({
+        data: { userId, commentId: targetId, value },
+      });
+    }
+
+    if (scoreDelta !== 0) {
+      await prisma.comment.update({
+        where: { id: targetId },
+        data: { score: { increment: scoreDelta } },
+      });
+    }
+
+    const updated = await prisma.comment.findUnique({
+      where: { id: targetId },
+      select: { score: true },
+    });
+
+    return NextResponse.json({ score: updated?.score ?? comment.score });
   } catch (err) {
-    console.error("[vote]", err);
+    console.error("[votes POST]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
