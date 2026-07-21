@@ -44,22 +44,17 @@ export async function POST(req: Request) {
       let scoreDelta = 0;
 
       if (value === 0) {
-        // Remove vote
         if (existing) {
           scoreDelta = -existing.value;
-          await prisma.postVote.delete({
-            where: { id: existing.id },
-          });
+          await prisma.postVote.delete({ where: { id: existing.id } });
         }
       } else if (existing) {
-        // Change vote
         scoreDelta = value - existing.value;
         await prisma.postVote.update({
           where: { id: existing.id },
           data: { value },
         });
       } else {
-        // New vote
         scoreDelta = value;
         await prisma.postVote.create({
           data: { userId, postId: targetId, value },
@@ -81,7 +76,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ score: updated?.score ?? post.score });
     }
 
-    // Comment vote
+    // Comment
     const comment = await prisma.comment.findUnique({ where: { id: targetId } });
     if (!comment) {
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
@@ -98,9 +93,7 @@ export async function POST(req: Request) {
     if (value === 0) {
       if (existing) {
         scoreDelta = -existing.value;
-        await prisma.commentVote.delete({
-          where: { id: existing.id },
-        });
+        await prisma.commentVote.delete({ where: { id: existing.id } });
       }
     } else if (existing) {
       scoreDelta = value - existing.value;
@@ -129,7 +122,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ score: updated?.score ?? comment.score });
   } catch (err) {
-    console.error("[votes POST]", err);
+    console.error("[vote POST]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
