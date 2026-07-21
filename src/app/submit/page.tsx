@@ -1,239 +1,170 @@
-"use client";
-
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { hotScore } from "@/lib/ranking";
+import { formatScore, timeAgo } from "@/lib/utils";
+import { VoteButtons } from "@/components/vote-buttons";
 
-type Community = {
-  name: string;
-  title: string;
-};
+export const dynamic = "force-dynamic";
 
-function SubmitForm() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const preselected = searchParams.get("community") || "";
+export default async function HomePage() {
+  const session = await auth();
 
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const [filtered, setFiltered] = useState<Community[]>([]);
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(preselected);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  let communityIds: string[] | null = null;
 
-  useEffect(() => {
-    fetch("/api/communities")
-      .then((r) => r.json())
-      .then((data) => {
-        setCommunities(data);
-        setFiltered(data);
+  if (session?.user?.id) {
+    const subscriptions = await prisma.subscription.findMany({
+      where: { userId: session.user.id },
+      select: { communityId: true },
+    });
 
-        // If we have a preselected community, show its title
-        if (preselected) {
-          const match = data.find((c: Community) => c.name === preselected);
-          if (match) setQuery(match.title);
-        }
-      })
-      .catch(() => {});
-  }, [preselected]);
-
-  function handleSearch(value: string) {
-    setQuery(value);
-    setSelected("");
-    setShowDropdown(true);
-
-    if (!value.trim()) {
-      setFiltered(communities);
-      return;
-    }
-
-    const lower = value.toLowerCase();
-    setFiltered(
-      communities.filter(
-        (c) =>
-          c.title.toLowerCase().includes(lower) ||
-          c.name.toLowerCase().includes(lower)
-      )
-    );
-  }
-
-  function selectCommunity(community: Community) {
-    setSelected(community.name);
-    setQuery(community.title);
-    setShowDropdown(false);
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-
-    if (!selected) {
-      setError("Please select a community");
-      return;
-    }
-
-    setLoading(true);
-
-    const form = new FormData(e.currentTarget);
-    const title = (form.get("title") as string).trim();
-    const body = (form.get("body") as string).trim();
-    const url = (form.get("url") as string).trim() || null;
-
-    try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          communityName: selected,
-          title,
-          body,
-          url,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Failed to create post");
-        setLoading(false);
-        return;
-      }
-
-      router.push(`/c/${selected}/posts/${data.id}`);
-    } catch {
-      setError("Something went wrong");
-      setLoading(false);
+    if (subscriptions.length > 0) {
+      communityIds = subscriptions.map((s) => s.communityId);
     }
   }
 
-  if (status === "loading") {
-    return <div className="py-12 text-center text-zinc-500">Loading…</div>;
-  }
+  const posts = await prisma.post.findMany({
+    where: {
+      moderationStatus: "approved",
+      ...(communityIds ? { communityId: { in: communityIds } } : {}),
+    },
+    take: 50,
+    orderBy: { createdAt: "desc" },
+    include: {
+      author: { select: { username: true } },
+      community: { select: { name: true, title: true } },
+      _count: { select: { comments: true } },
+    },
+  });
 
-  if (!session) {
-    return (
-      <div className="py-12 text-center">
-        <p className="mb-4">You need an account to post.</p>
-        <Link href="/login" className="underline">
-          Log in
+  const ranked = posts
+    .map((p) => ({
+      ...p,
+      hot: hotScore(p.score, p.createdAt),
+    }))
+    .sort((a, b) => b.hot - a.hot)
+    .slice(0, 25);
+
+  const showingSubscribed = !!communityIds;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Home</h1>
+          {showingSubscribed && (
+            <p className="mt-1 text-sm text-zinc-500">
+              Showing posts from communities you’ve joined
+            </p>
+          )}
+        </div>
+        <Link
+          href="/submit"
+          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+        >
+          Create Post
         </Link>
       </div>
-    );
-  }
 
-  return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Create a post</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Content is checked by a minimal AI moderator (spam + off-topic only).
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900">
-        {error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-            {error}
-          </div>
-        )}
-
-        {/* Searchable Community Field */}
-        <div className="relative">
-          <label htmlFor="community-search" className="mb-1 block text-sm font-medium">
-            Community
-          </label>
-          <input
-            id="community-search"
-            type="text"
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setShowDropdown(true)}
-            placeholder="Search communities..."
-            autoComplete="off"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-          />
-
-          {showDropdown && filtered.length > 0 && (
-            <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg dark:bg-zinc-900">
-              {filtered.map((c) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => selectCommunity(c)}
-                  className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
-                  {c.title}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {showDropdown && filtered.length === 0 && query && (
-            <div className="absolute z-10 mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm text-zinc-500 shadow-lg dark:bg-zinc-900">
-              No communities found
-            </div>
+      {ranked.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-12 text-center text-zinc-500">
+          {showingSubscribed ? (
+            <>
+              <p className="text-lg">No posts in your joined communities yet.</p>
+              <p className="mt-2 text-sm">
+                <Link href="/communities" className="underline">
+                  Browse communities
+                </Link>{" "}
+                and join some, or create a post.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg">No posts yet.</p>
+              <p className="mt-2 text-sm">
+                <Link href="/communities/new" className="underline">
+                  Create a community
+                </Link>{" "}
+                and start the conversation.
+              </p>
+            </>
           )}
         </div>
+      ) : (
+        <div className="space-y-3">
+          {ranked.map((post) => (
+            <article
+              key={post.id}
+              className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
+            >
+              <div className="flex gap-4">
+                {/* Vote buttons */}
+                <VoteButtons
+                  targetType="post"
+                  targetId={post.id}
+                  initialScore={post.score}
+                />
 
-        <div>
-          <label htmlFor="title" className="mb-1 block text-sm font-medium">
-            Title
-          </label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            required
-            maxLength={300}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-          />
+                {/* Thumbnail → goes to external URL */}
+                {post.thumbnail && post.url && (
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden sm:block shrink-0"
+                  >
+                    <img
+                      src={post.thumbnail}
+                      alt=""
+                      className="h-20 w-28 rounded object-cover"
+                    />
+                  </a>
+                )}
+
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                    <Link
+                      href={`/c/${post.community.name}`}
+                      className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
+                    >
+                      {post.community.title}
+                    </Link>
+                    <span>•</span>
+                    <Link
+                      href={`/u/${post.author.username}`}
+                      className="hover:underline"
+                    >
+                      {post.author.username}
+                    </Link>
+                    <span>•</span>
+                    <time dateTime={post.createdAt.toISOString()}>
+                      {timeAgo(post.createdAt)}
+                    </time>
+                  </div>
+
+                  {/* Title → goes to post page */}
+                  <Link href={`/c/${post.community.name}/posts/${post.id}`}>
+                    <h2 className="text-lg font-semibold leading-snug hover:underline">
+                      {post.title}
+                    </h2>
+                  </Link>
+
+                  {post.body && (
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      {post.body}
+                    </p>
+                  )}
+
+                  <div className="mt-2 text-xs text-zinc-500">
+                    {post._count.comments} comments
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
-
-        <div>
-          <label htmlFor="url" className="mb-1 block text-sm font-medium">
-            URL (optional)
-          </label>
-          <input
-            id="url"
-            name="url"
-            type="url"
-            placeholder="https://"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="body" className="mb-1 block text-sm font-medium">
-            Body (optional if URL provided)
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            rows={6}
-            maxLength={40000}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-zinc-900 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          {loading ? "Checking & posting…" : "Post"}
-        </button>
-      </form>
+      )}
     </div>
-  );
-}
-
-export default function SubmitPage() {
-  return (
-    <Suspense fallback={<div className="py-12 text-center">Loading…</div>}>
-      <SubmitForm />
-    </Suspense>
   );
 }

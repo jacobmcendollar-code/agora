@@ -90,10 +90,12 @@ export default async function CommunityPage({ params }: Props) {
                   initialScore={post.score}
                 />
 
-                {/* Thumbnail */}
-                {post.thumbnail && (
-                  <Link
-                    href={`/c/${community.name}/posts/${post.id}`}
+                {/* Thumbnail → goes to external URL */}
+                {post.thumbnail && post.url && (
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="hidden sm:block shrink-0"
                   >
                     <img
@@ -101,7 +103,7 @@ export default async function CommunityPage({ params }: Props) {
                       alt=""
                       className="h-20 w-28 rounded object-cover"
                     />
-                  </Link>
+                  </a>
                 )}
 
                 {/* Content */}
@@ -117,6 +119,7 @@ export default async function CommunityPage({ params }: Props) {
                     <time>{timeAgo(post.createdAt)}</time>
                   </div>
 
+                  {/* Title → goes to post page */}
                   <Link href={`/c/${community.name}/posts/${post.id}`}>
                     <h2 className="text-lg font-semibold hover:underline">
                       {post.title}
