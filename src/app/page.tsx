@@ -11,7 +11,6 @@ export default async function HomePage() {
 
   let communityIds: string[] | null = null;
 
-  // If the user is logged in, get the communities they have joined
   if (session?.user?.id) {
     const subscriptions = await prisma.subscription.findMany({
       where: { userId: session.user.id },
@@ -23,7 +22,6 @@ export default async function HomePage() {
     }
   }
 
-  // Build the query
   const posts = await prisma.post.findMany({
     where: {
       moderationStatus: "approved",
@@ -111,14 +109,14 @@ export default async function HomePage() {
                       href={`/c/${post.community.name}`}
                       className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
                     >
-                      c/{post.community.name}
+                      {post.community.title}
                     </Link>
                     <span>•</span>
                     <Link
                       href={`/u/${post.author.username}`}
                       className="hover:underline"
                     >
-                      u/{post.author.username}
+                      {post.author.username}
                     </Link>
                     <span>•</span>
                     <time dateTime={post.createdAt.toISOString()}>

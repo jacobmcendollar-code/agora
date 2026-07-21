@@ -31,7 +31,7 @@ export default async function UserProfilePage({ params }: Props) {
       orderBy: { createdAt: "desc" },
       take: 20,
       include: {
-        community: { select: { name: true } },
+        community: { select: { name: true, title: true } },
         _count: { select: { comments: true } },
       },
     }),
@@ -44,7 +44,7 @@ export default async function UserProfilePage({ params }: Props) {
           select: {
             id: true,
             title: true,
-            community: { select: { name: true } },
+            community: { select: { name: true, title: true } },
           },
         },
       },
@@ -66,7 +66,7 @@ export default async function UserProfilePage({ params }: Props) {
   return (
     <div className="space-y-8">
       <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
-        <h1 className="text-2xl font-bold">u/{user.username}</h1>
+        <h1 className="text-2xl font-bold">{user.username}</h1>
         <p className="mt-1 text-sm text-zinc-500">
           Joined {user.createdAt.toLocaleDateString("en-US", {
             year: "numeric",
@@ -106,7 +106,7 @@ export default async function UserProfilePage({ params }: Props) {
                     href={`/c/${post.community.name}`}
                     className="font-medium hover:underline"
                   >
-                    c/{post.community.name}
+                    {post.community.title}
                   </Link>
                   <span>•</span>
                   <span>{timeAgo(post.createdAt)}</span>
@@ -147,7 +147,7 @@ export default async function UserProfilePage({ params }: Props) {
                     {comment.post.title}
                   </Link>
                   <span>•</span>
-                  <span>c/{comment.post.community.name}</span>
+                  <span>{comment.post.community.title}</span>
                   <span>•</span>
                   <span>{timeAgo(comment.createdAt)}</span>
                   <span>•</span>

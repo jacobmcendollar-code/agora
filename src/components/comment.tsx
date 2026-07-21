@@ -41,7 +41,7 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
                 href={`/u/${comment.author.username}`}
                 className="font-medium hover:underline"
               >
-                u/{comment.author.username}
+                {comment.author.username}
               </Link>
               <span>•</span>
               <time>{timeAgo(comment.createdAt)}</time>
@@ -70,7 +70,6 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
         </div>
       </div>
 
-      {/* Nested replies */}
       {comment.replies.length > 0 && (
         <div className="mt-3 space-y-3">
           {comment.replies.map((reply) => (

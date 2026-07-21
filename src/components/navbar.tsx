@@ -33,9 +33,9 @@ export function Navbar() {
             <>
               <Link
                 href={`/u/${session.user.username}`}
-                className="hidden text-sm text-zinc-600 hover:underline dark:text-zinc-400 sm:inline"
+                className="hidden text-sm font-medium text-zinc-700 hover:underline dark:text-zinc-300 sm:inline"
               >
-                u/{session.user.username}
+                {session.user.username}
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}

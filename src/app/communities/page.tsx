@@ -37,11 +37,10 @@ export default async function CommunitiesPage() {
               href={`/c/${c.name}`}
               className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
             >
-              <div className="font-semibold">c/{c.name}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">{c.title}</div>
+              <div className="font-semibold">{c.title}</div>
               <p className="mt-2 line-clamp-2 text-sm text-zinc-500">{c.description}</p>
               <div className="mt-3 text-xs text-zinc-400">
-                {c._count.posts} posts · created by u/{c.creator.username}
+                {c._count.posts} posts · created by {c.creator.username}
               </div>
             </Link>
           ))}
