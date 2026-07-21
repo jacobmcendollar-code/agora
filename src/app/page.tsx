@@ -2,8 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
-import { formatScore, timeAgo } from "@/lib/utils";
-import { VoteButtons } from "@/components/vote-buttons";
+import { PostFeed } from "@/components/post-feed";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +37,7 @@ export default async function HomePage({ searchParams }: Props) {
       moderationStatus: "approved",
       ...(communityIds ? { communityId: { in: communityIds } } : {}),
     },
-    take: 50,
+    take: 20,
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { username: true } },
@@ -50,6 +49,7 @@ export default async function HomePage({ searchParams }: Props) {
   let ranked = posts.map((p) => ({
     ...p,
     hot: hotScore(p.score, p.createdAt),
+    createdAt: p.createdAt.toISOString(),
   }));
 
   if (sort === "trending") {
@@ -58,7 +58,9 @@ export default async function HomePage({ searchParams }: Props) {
     ranked.sort((a, b) => b.score - a.score);
   }
 
-  ranked = ranked.slice(0, 25);
+  const initialPosts = ranked.slice(0, 15);
+  const initialCursor =
+    initialPosts.length === 15 ? initialPosts[initialPosts.length - 1].id : null;
 
   const showingSubscribed = !!communityIds;
 
@@ -95,7 +97,7 @@ export default async function HomePage({ searchParams }: Props) {
         </Link>
       </div>
 
-      {ranked.length === 0 ? (
+      {initialPosts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center text-zinc-500">
           {showingSubscribed ? (
             <>
@@ -120,88 +122,11 @@ export default async function HomePage({ searchParams }: Props) {
           )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {ranked.map((post) => (
-            <article
-              key={post.id}
-              className="rounded-lg border bg-white p-3 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-4"
-            >
-              <div className="flex gap-3 sm:gap-4">
-                <VoteButtons
-                  targetType="post"
-                  targetId={post.id}
-                  initialScore={post.score}
-                />
-
-                {post.thumbnail && (
-                  post.url ? (
-                    <a
-                      href={post.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0"
-                    >
-                      <img
-                        src={post.thumbnail}
-                        alt=""
-                        className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
-                      />
-                    </a>
-                  ) : (
-                    <Link
-                      href={`/c/${post.community.name}/posts/${post.id}`}
-                      className="shrink-0"
-                    >
-                      <img
-                        src={post.thumbnail}
-                        alt=""
-                        className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
-                      />
-                    </Link>
-                  )
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                    <Link
-                      href={`/c/${post.community.name}`}
-                      className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-                    >
-                      {post.community.title}
-                    </Link>
-                    <span>•</span>
-                    <Link
-                      href={`/u/${post.author.username}`}
-                      className="hover:underline"
-                    >
-                      {post.author.username}
-                    </Link>
-                    <span className="hidden sm:inline">•</span>
-                    <time className="hidden sm:inline" dateTime={post.createdAt.toISOString()}>
-                      {timeAgo(post.createdAt)}
-                    </time>
-                  </div>
-
-                  <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                    <h2 className="text-base font-semibold leading-snug hover:underline sm:text-lg">
-                      {post.title}
-                    </h2>
-                  </Link>
-
-                  {post.body && (
-                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      {post.body}
-                    </p>
-                  )}
-
-                  <div className="mt-2 text-xs text-zinc-500">
-                    {post._count.comments} comments
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        <PostFeed
+          initialPosts={initialPosts}
+          initialCursor={initialCursor}
+          sort={sort}
+        />
       )}
     </div>
   );
