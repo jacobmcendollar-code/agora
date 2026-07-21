@@ -1,108 +1,164 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { hotScore } from "@/lib/ranking";
 import { formatScore, timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const posts = await prisma.post.findMany({
-    where: { moderationStatus: "approved" },
-    take: 50,
-    orderBy: { createdAt: "desc" },
-    include: {
-      author: { select: { username: true } },
-      community: { select: { name: true, title: true } },
-      _count: { select: { comments: true } },
+type Props = {
+  params: Promise<{ username: string }>;
+};
+
+export default async function UserProfilePage({ params }: Props) {
+  const { username } = await params;
+  const normalized = username.toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: { username: normalized },
+    select: {
+      id: true,
+      username: true,
+      createdAt: true,
+      image: true,
     },
   });
 
-  const ranked = posts
-    .map((p) => ({
-      ...p,
-      hot: hotScore(p.score, p.createdAt),
-    }))
-    .sort((a, b) => b.hot - a.hot)
-    .slice(0, 25);
+  if (!user) notFound();
+
+  const [posts, comments, postScore, commentScore] = await Promise.all([
+    prisma.post.findMany({
+      where: { authorId: user.id, moderationStatus: "approved" },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        community: { select: { name: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
+    prisma.comment.findMany({
+      where: { authorId: user.id, moderationStatus: "approved" },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        post: {
+          select: {
+            id: true,
+            title: true,
+            community: { select: { name: true } },
+          },
+        },
+      },
+    }),
+    prisma.post.aggregate({
+      where: { authorId: user.id },
+      _sum: { score: true },
+    }),
+    prisma.comment.aggregate({
+      where: { authorId: user.id },
+      _sum: { score: true },
+    }),
+  ]);
+
+  const totalPostScore = postScore._sum.score || 0;
+  const totalCommentScore = commentScore._sum.score || 0;
+  const karma = totalPostScore + totalCommentScore;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Home</h1>
-        <Link
-          href="/submit"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          Create Post
-        </Link>
+    <div className="space-y-8">
+      <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
+        <h1 className="text-2xl font-bold">u/{user.username}</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Joined {user.createdAt.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+        <div className="mt-4 flex gap-6 text-sm">
+          <div>
+            <span className="font-semibold">{formatScore(karma)}</span>{" "}
+            <span className="text-zinc-500">karma</span>
+          </div>
+          <div>
+            <span className="font-semibold">{posts.length}</span>{" "}
+            <span className="text-zinc-500">posts</span>
+          </div>
+          <div>
+            <span className="font-semibold">{comments.length}</span>{" "}
+            <span className="text-zinc-500">comments</span>
+          </div>
+        </div>
       </div>
 
-      {ranked.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center text-zinc-500">
-          <p className="text-lg">No posts yet.</p>
-          <p className="mt-2 text-sm">
-            <Link href="/communities/new" className="underline">
-              Create a community
-            </Link>{" "}
-            and start the conversation.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {ranked.map((post) => (
-            <article
-              key={post.id}
-              className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
-            >
-              <div className="flex gap-4">
-                <div className="flex w-12 flex-col items-center text-sm font-medium text-zinc-500">
-                  <span className="text-base text-zinc-900 dark:text-zinc-100">
-                    {formatScore(post.score)}
-                  </span>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                    <Link
-                      href={`/c/${post.community.name}`}
-                      className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-                    >
-                      c/{post.community.name}
-                    </Link>
-                    <span>•</span>
-                    <Link
-                      href={`/u/${post.author.username}`}
-                      className="hover:underline"
-                    >
-                      u/{post.author.username}
-                    </Link>
-                    <span>•</span>
-                    <time dateTime={post.createdAt.toISOString()}>
-                      {timeAgo(post.createdAt)}
-                    </time>
-                  </div>
-
-                  <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                    <h2 className="text-lg font-semibold leading-snug hover:underline">
-                      {post.title}
-                    </h2>
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Recent Posts</h2>
+        {posts.length === 0 ? (
+          <p className="text-sm text-zinc-500">No posts yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {posts.map((post) => (
+              <article
+                key={post.id}
+                className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+              >
+                <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                  <Link
+                    href={`/c/${post.community.name}`}
+                    className="font-medium hover:underline"
+                  >
+                    c/{post.community.name}
                   </Link>
-
-                  {post.body && (
-                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      {post.body}
-                    </p>
-                  )}
-
-                  <div className="mt-2 text-xs text-zinc-500">
-                    {post._count.comments} comments
-                  </div>
+                  <span>•</span>
+                  <span>{timeAgo(post.createdAt)}</span>
+                  <span>•</span>
+                  <span>{formatScore(post.score)} points</span>
                 </div>
+                <Link
+                  href={`/c/${post.community.name}/posts/${post.id}`}
+                  className="font-medium hover:underline"
+                >
+                  {post.title}
+                </Link>
+                <div className="mt-1 text-xs text-zinc-500">
+                  {post._count.comments} comments
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Recent Comments</h2>
+        {comments.length === 0 ? (
+          <p className="text-sm text-zinc-500">No comments yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {comments.map((comment) => (
+              <div
+                key={comment.id}
+                className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+              >
+                <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                  <Link
+                    href={`/c/${comment.post.community.name}/posts/${comment.post.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {comment.post.title}
+                  </Link>
+                  <span>•</span>
+                  <span>c/{comment.post.community.name}</span>
+                  <span>•</span>
+                  <span>{timeAgo(comment.createdAt)}</span>
+                  <span>•</span>
+                  <span>{formatScore(comment.score)} points</span>
+                </div>
+                <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
               </div>
-            </article>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
