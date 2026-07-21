@@ -25,7 +25,7 @@ export default async function UserProfilePage({ params }: Props) {
 
   if (!user) notFound();
 
-  const [posts, comments] = await Promise.all([
+  const [posts, comments, subscriptions] = await Promise.all([
     prisma.post.findMany({
       where: { authorId: user.id, moderationStatus: "approved" },
       orderBy: { createdAt: "desc" },
@@ -49,6 +49,20 @@ export default async function UserProfilePage({ params }: Props) {
         },
       },
     }),
+    prisma.subscription.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        community: {
+          select: {
+            name: true,
+            title: true,
+            description: true,
+            _count: { select: { posts: true } },
+          },
+        },
+      },
+    }),
   ]);
 
   return (
@@ -56,7 +70,8 @@ export default async function UserProfilePage({ params }: Props) {
       <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
         <h1 className="text-2xl font-bold">{user.username}</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Joined {user.createdAt.toLocaleDateString("en-US", {
+          Joined{" "}
+          {user.createdAt.toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
             day: "numeric",
@@ -64,6 +79,35 @@ export default async function UserProfilePage({ params }: Props) {
         </p>
       </div>
 
+      {/* Joined communities */}
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">
+          Joined communities ({subscriptions.length})
+        </h2>
+        {subscriptions.length === 0 ? (
+          <p className="text-sm text-zinc-500">Not joined any communities yet.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {subscriptions.map((sub) => (
+              <Link
+                key={sub.id}
+                href={`/c/${sub.community.name}`}
+                className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
+              >
+                <div className="font-semibold">{sub.community.title}</div>
+                <p className="mt-1 line-clamp-2 text-sm text-zinc-500">
+                  {sub.community.description}
+                </p>
+                <div className="mt-2 text-xs text-zinc-400">
+                  {sub.community._count.posts} posts
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Recent posts */}
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent Posts</h2>
         {posts.length === 0 ? (
@@ -102,6 +146,7 @@ export default async function UserProfilePage({ params }: Props) {
         )}
       </section>
 
+      {/* Recent comments */}
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent Comments</h2>
         {comments.length === 0 ? (
@@ -125,7 +170,9 @@ export default async function UserProfilePage({ params }: Props) {
                   <span>•</span>
                   <span>{timeAgo(comment.createdAt)}</span>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {comment.body}
+                </p>
               </div>
             ))}
           </div>
