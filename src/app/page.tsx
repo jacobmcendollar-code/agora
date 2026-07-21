@@ -104,20 +104,33 @@ export default async function HomePage() {
                   initialScore={post.score}
                 />
 
-                {/* Thumbnail → external link */}
-                {post.thumbnail && post.url && (
-                  <a
-                    href={post.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hidden sm:block shrink-0"
-                  >
-                    <img
-                      src={post.thumbnail}
-                      alt=""
-                      className="h-20 w-28 rounded object-cover"
-                    />
-                  </a>
+                {/* Thumbnail - always show if it exists */}
+                {post.thumbnail && (
+                  post.url ? (
+                    <a
+                      href={post.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hidden sm:block shrink-0"
+                    >
+                      <img
+                        src={post.thumbnail}
+                        alt=""
+                        className="h-20 w-28 rounded object-cover"
+                      />
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/c/${post.community.name}/posts/${post.id}`}
+                      className="hidden sm:block shrink-0"
+                    >
+                      <img
+                        src={post.thumbnail}
+                        alt=""
+                        className="h-20 w-28 rounded object-cover"
+                      />
+                    </Link>
+                  )
                 )}
 
                 <div className="min-w-0 flex-1">
@@ -141,7 +154,6 @@ export default async function HomePage() {
                     </time>
                   </div>
 
-                  {/* Title → post page */}
                   <Link href={`/c/${post.community.name}/posts/${post.id}`}>
                     <h2 className="text-lg font-semibold leading-snug hover:underline">
                       {post.title}

@@ -90,21 +90,31 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
-            {/* Large clickable thumbnail */}
-            {post.thumbnail && post.url && (
-              <a
-                href={post.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 block"
-              >
-                <img
-                  src={post.thumbnail}
-                  alt=""
-                  className="max-h-80 w-full rounded-lg object-cover"
-                />
-              </a>
-            )}
+{/* Large thumbnail */}
+{post.thumbnail && (
+  post.url ? (
+    <a
+      href={post.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-4 block"
+    >
+      <img
+        src={post.thumbnail}
+        alt=""
+        className="max-h-80 w-full rounded-lg object-cover"
+      />
+    </a>
+  ) : (
+    <div className="mt-4">
+      <img
+        src={post.thumbnail}
+        alt=""
+        className="max-h-80 w-full rounded-lg object-cover"
+      />
+    </div>
+  )
+)}
 
             {/* Fallback text link if there's a URL but no thumbnail */}
             {post.url && !post.thumbnail && (

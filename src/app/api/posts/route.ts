@@ -32,6 +32,7 @@ export async function POST(req: Request) {
 
     const { communityName, title, body: postBody, url, imageUrl } = parsed.data;
 
+    // Must have at least one of: body text, URL, or uploaded image
     if (!postBody && !url && !imageUrl) {
       return NextResponse.json(
         { error: "Post must have a body, URL, or image" },
@@ -47,11 +48,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Community not found" }, { status: 404 });
     }
 
-    // AI moderation
+    // For moderation, use title + body (or a placeholder if it's image-only)
+    const contentForModeration = [title, postBody, url].filter(Boolean).join("\n") || "[Image post]";
+
     const moderation = await moderateContent({
       type: "post",
       title,
-      body: postBody || url || "",
+      body: contentForModeration,
       communityName: community.name,
       communityDescription: community.description,
       communityRules: community.rules,

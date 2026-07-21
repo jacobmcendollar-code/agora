@@ -83,30 +83,40 @@ export default async function CommunityPage({ params }: Props) {
               className="rounded-lg border bg-white p-4 shadow-sm dark:bg-zinc-900"
             >
               <div className="flex gap-4">
-                {/* Vote buttons */}
                 <VoteButtons
                   targetType="post"
                   targetId={post.id}
                   initialScore={post.score}
                 />
 
-                {/* Thumbnail → goes to external URL */}
-                {post.thumbnail && post.url && (
-                  <a
-                    href={post.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hidden sm:block shrink-0"
-                  >
-                    <img
-                      src={post.thumbnail}
-                      alt=""
-                      className="h-20 w-28 rounded object-cover"
-                    />
-                  </a>
+                {post.thumbnail && (
+                  post.url ? (
+                    <a
+                      href={post.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hidden sm:block shrink-0"
+                    >
+                      <img
+                        src={post.thumbnail}
+                        alt=""
+                        className="h-20 w-28 rounded object-cover"
+                      />
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/c/${community.name}/posts/${post.id}`}
+                      className="hidden sm:block shrink-0"
+                    >
+                      <img
+                        src={post.thumbnail}
+                        alt=""
+                        className="h-20 w-28 rounded object-cover"
+                      />
+                    </Link>
+                  )
                 )}
 
-                {/* Content */}
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
                     <Link
@@ -119,7 +129,6 @@ export default async function CommunityPage({ params }: Props) {
                     <time>{timeAgo(post.createdAt)}</time>
                   </div>
 
-                  {/* Title → goes to post page */}
                   <Link href={`/c/${community.name}/posts/${post.id}`}>
                     <h2 className="text-lg font-semibold hover:underline">
                       {post.title}
