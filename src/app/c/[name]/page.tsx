@@ -94,7 +94,6 @@ export default async function CommunityPage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      {/* Sort tabs */}
       <div className="flex gap-1 overflow-x-auto border-b">
         {sortOptions.map((option) => (
           <Link
@@ -185,8 +184,13 @@ export default async function CommunityPage({ params, searchParams }: Props) {
                     </p>
                   )}
 
-                  <div className="mt-2 text-xs text-zinc-500">
-                    {post._count.comments} comments
+                  <div className="mt-2">
+                    <Link
+                      href={`/c/${community.name}/posts/${post.id}#comments`}
+                      className="text-xs text-zinc-500 hover:underline"
+                    >
+                      {post._count.comments} comments
+                    </Link>
                   </div>
                 </div>
               </div>

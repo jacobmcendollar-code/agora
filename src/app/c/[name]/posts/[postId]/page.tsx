@@ -127,7 +127,7 @@ export default async function PostPage({ params }: Props) {
         </div>
       </article>
 
-      <section className="space-y-4">
+      <section id="comments" className="space-y-4">
         <h2 className="text-lg font-semibold">
           {post.commentCount} comment{post.commentCount !== 1 ? "s" : ""}
         </h2>

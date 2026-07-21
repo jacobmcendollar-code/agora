@@ -25,7 +25,7 @@ type Props = {
 
 export function PostFeed({ initialPosts, sort }: Props) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [page, setPage] = useState(2); // next page to load
+  const [page, setPage] = useState(2);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialPosts.length >= 15);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -65,7 +65,6 @@ export function PostFeed({ initialPosts, sort }: Props) {
       const data = await res.json();
 
       if (data.posts?.length) {
-        // Deduplicate just in case
         setPosts((prev) => {
           const existing = new Set(prev.map((p) => p.id));
           const fresh = data.posts.filter((p: Post) => !existing.has(p.id));
@@ -160,8 +159,13 @@ export function PostFeed({ initialPosts, sort }: Props) {
                 </p>
               )}
 
-              <div className="mt-2 text-xs text-zinc-500">
-                {post._count.comments} comments
+              <div className="mt-2">
+                <Link
+                  href={`/c/${post.community.name}/posts/${post.id}#comments`}
+                  className="text-xs text-zinc-500 hover:underline"
+                >
+                  {post._count.comments} comments
+                </Link>
               </div>
             </div>
           </div>
