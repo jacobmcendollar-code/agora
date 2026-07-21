@@ -2,14 +2,25 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-zinc-900/80">
-      <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold tracking-tight">
             Agora
@@ -29,6 +40,17 @@ export function Navbar() {
             </Link>
           </nav>
         </div>
+
+        {/* Search */}
+        <form onSubmit={handleSearch} className="hidden flex-1 max-w-xs md:block">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            className="w-full rounded-md border bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700"
+          />
+        </form>
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
