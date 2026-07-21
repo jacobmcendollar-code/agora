@@ -8,14 +8,14 @@ datasource db {
 }
 
 model User {
-  id            String         @id
+  id            String         @id @default(cuid())
   username      String         @unique
   email         String         @unique
   emailVerified DateTime?
   passwordHash  String?
   image         String?
   createdAt     DateTime       @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime       @updatedAt
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
@@ -31,7 +31,7 @@ model User {
 }
 
 model Account {
-  id                String  @id
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -50,7 +50,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -69,14 +69,14 @@ model VerificationToken {
 }
 
 model Community {
-  id            String         @id
+  id            String         @id @default(cuid())
   name          String         @unique
   title         String
   description   String
   rules         String?
   creatorId     String
   createdAt     DateTime       @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime       @updatedAt
   creator       User           @relation(fields: [creatorId], references: [id])
   posts         Post[]
   subscriptions Subscription[]
@@ -86,7 +86,7 @@ model Community {
 }
 
 model Post {
-  id               String     @id
+  id               String     @id @default(cuid())
   title            String
   body             String?
   url              String?
@@ -98,7 +98,7 @@ model Post {
   communityId      String
   authorId         String
   createdAt        DateTime   @default(now())
-  updatedAt        DateTime
+  updatedAt        DateTime   @updatedAt
   community        Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
   author           User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments         Comment[]
@@ -112,7 +112,7 @@ model Post {
 }
 
 model Comment {
-  id               String         @id
+  id               String         @id @default(cuid())
   body             String
   score            Int            @default(0)
   moderationStatus String         @default("approved")
@@ -121,7 +121,7 @@ model Comment {
   authorId         String
   parentId         String?
   createdAt        DateTime       @default(now())
-  updatedAt        DateTime
+  updatedAt        DateTime       @updatedAt
   post             Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   author           User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   parent           Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
@@ -136,7 +136,7 @@ model Comment {
 }
 
 model PostVote {
-  id        String   @id
+  id        String   @id @default(cuid())
   value     Int
   userId    String
   postId    String
@@ -150,7 +150,7 @@ model PostVote {
 }
 
 model CommentVote {
-  id        String   @id
+  id        String   @id @default(cuid())
   value     Int
   userId    String
   commentId String
@@ -164,7 +164,7 @@ model CommentVote {
 }
 
 model Subscription {
-  id          String    @id
+  id          String    @id @default(cuid())
   userId      String
   communityId String
   createdAt   DateTime  @default(now())
