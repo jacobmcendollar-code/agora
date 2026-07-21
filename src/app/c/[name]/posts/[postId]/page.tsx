@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { CommentForm } from "@/components/comment-form";
@@ -36,6 +37,56 @@ function buildCommentTree(comments: any[]) {
   map.forEach((node) => node.replies.sort(sortFn));
 
   return roots;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { name, postId } = await params;
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: {
+      community: { select: { name: true, title: true } },
+      author: { select: { username: true } },
+    },
+  });
+
+  if (!post || post.community.name !== name) {
+    return { title: "Post not found · Agora" };
+  }
+
+  const title = `${post.title} · ${post.community.title}`;
+  const description =
+    post.body?.slice(0, 160) ||
+    `A post in ${post.community.title} on Agora`;
+  const url = `https://agor4.com/c/${post.community.name}/posts/${post.id}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title: post.title,
+      description,
+      url,
+      siteName: "Agora",
+      type: "article",
+      images: post.thumbnail
+        ? [
+            {
+              url: post.thumbnail,
+              width: 1200,
+              height: 630,
+              alt: post.title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: post.thumbnail ? "summary_large_image" : "summary",
+      title: post.title,
+      description,
+      images: post.thumbnail ? [post.thumbnail] : undefined,
+    },
+  };
 }
 
 export default async function PostPage({ params }: Props) {
@@ -90,7 +141,6 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
-            {/* Large thumbnail - click to view full size */}
             {post.thumbnail && (
               <a
                 href={post.url || post.thumbnail}
@@ -106,7 +156,6 @@ export default async function PostPage({ params }: Props) {
               </a>
             )}
 
-            {/* Fallback text link if there's a URL but no thumbnail */}
             {post.url && !post.thumbnail && (
               <a
                 href={post.url}
@@ -119,7 +168,7 @@ export default async function PostPage({ params }: Props) {
             )}
 
             {post.body && (
-              <div className="mt-4 whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
+              <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
                 {post.body}
               </div>
             )}
