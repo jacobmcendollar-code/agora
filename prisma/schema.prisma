@@ -95,6 +95,7 @@ model Post {
   title        String
   body         String?  @db.Text
   url          String?
+  thumbnail    String?
   score        Int      @default(0)
   commentCount Int      @default(0)
   communityId  String

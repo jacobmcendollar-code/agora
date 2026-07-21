@@ -124,20 +124,37 @@ export default async function HomePage() {
                     </time>
                   </div>
 
-                  <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                    <h2 className="text-lg font-semibold leading-snug hover:underline">
-                      {post.title}
-                    </h2>
-                  </Link>
+                  <div className="flex gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/c/${post.community.name}/posts/${post.id}`}>
+                        <h2 className="text-lg font-semibold leading-snug hover:underline">
+                          {post.title}
+                        </h2>
+                      </Link>
 
-                  {post.body && (
-                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      {post.body}
-                    </p>
-                  )}
+                      {post.body && (
+                        <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                          {post.body}
+                        </p>
+                      )}
 
-                  <div className="mt-2 text-xs text-zinc-500">
-                    {post._count.comments} comments
+                      <div className="mt-2 text-xs text-zinc-500">
+                        {post._count.comments} comments
+                      </div>
+                    </div>
+
+                    {post.thumbnail && (
+                      <Link
+                        href={`/c/${post.community.name}/posts/${post.id}`}
+                        className="hidden sm:block"
+                      >
+                        <img
+                          src={post.thumbnail}
+                          alt=""
+                          className="h-20 w-28 rounded object-cover"
+                        />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

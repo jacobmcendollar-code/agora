@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { moderateContent } from "@/lib/moderation";
+import { fetchThumbnail } from "@/lib/thumbnail";
 
 const schema = z.object({
   communityName: z.string().min(1),
@@ -65,11 +66,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Try to get a thumbnail if there's a URL
+    let thumbnail: string | null = null;
+    if (url) {
+      thumbnail = await fetchThumbnail(url);
+    }
+
     const post = await prisma.post.create({
       data: {
         title,
         body: postBody || null,
         url: url || null,
+        thumbnail,
         communityId: community.id,
         authorId: session.user.id,
         moderationStatus: "approved",
