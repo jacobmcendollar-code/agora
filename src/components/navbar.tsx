@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -19,11 +20,17 @@ export function Navbar() {
       return;
     }
 
+    // If we're on the notifications page, treat as read
+    if (pathname === "/notifications") {
+      setUnread(0);
+      return;
+    }
+
     fetch("/api/notifications")
       .then((r) => r.json())
       .then((data) => setUnread(data.unreadCount || 0))
       .catch(() => {});
-  }, [status]);
+  }, [status, pathname]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +58,6 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Desktop search */}
         <form onSubmit={handleSearch} className="hidden flex-1 max-w-xs sm:block">
           <input
             type="search"
@@ -63,7 +69,6 @@ export function Navbar() {
         </form>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Mobile search toggle */}
           <button
             type="button"
             onClick={() => setSearchOpen(!searchOpen)}
@@ -76,7 +81,6 @@ export function Navbar() {
             </svg>
           </button>
 
-          {/* Notifications */}
           {session && (
             <Link
               href="/notifications"
@@ -133,7 +137,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile expanded search */}
       {searchOpen && (
         <div className="border-t px-3 py-2 sm:hidden">
           <form onSubmit={handleSearch}>
