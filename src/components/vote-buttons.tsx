@@ -86,8 +86,8 @@ export function VoteButtons({
         disabled={loading}
         className={`rounded p-0.5 transition ${
           userVote === 1
-            ? "text-orange-500"
-            : "text-zinc-400 hover:text-orange-500"
+            ? "text-emerald-500"
+            : "text-zinc-400 hover:text-emerald-500"
         }`}
         aria-label="Upvote"
       >
@@ -104,9 +104,9 @@ export function VoteButtons({
       <span
         className={`font-medium tabular-nums ${textSize} ${
           userVote === 1
-            ? "text-orange-500"
+            ? "text-emerald-500"
             : userVote === -1
-            ? "text-blue-500"
+            ? "text-rose-500"
             : "text-zinc-600 dark:text-zinc-400"
         }`}
       >
@@ -119,8 +119,8 @@ export function VoteButtons({
         disabled={loading}
         className={`rounded p-0.5 transition ${
           userVote === -1
-            ? "text-blue-500"
-            : "text-zinc-400 hover:text-blue-500"
+            ? "text-rose-500"
+            : "text-zinc-400 hover:text-rose-500"
         }`}
         aria-label="Downvote"
       >
