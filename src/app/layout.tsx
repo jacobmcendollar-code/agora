@@ -10,6 +10,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Agora — Free Speech Communities",
   description: "Create communities. Speak freely. Minimal AI moderation.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
