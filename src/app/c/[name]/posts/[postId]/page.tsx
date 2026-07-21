@@ -10,17 +10,14 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ name: string; postId: string }> };
 
-// Helper to build a nested comment tree
 function buildCommentTree(comments: any[]) {
   const map = new Map<string, any>();
   const roots: any[] = [];
 
-  // First pass: create a map and initialize replies array
   comments.forEach((c) => {
     map.set(c.id, { ...c, replies: [] });
   });
 
-  // Second pass: link children to parents
   comments.forEach((c) => {
     const node = map.get(c.id);
     if (c.parentId && map.has(c.parentId)) {
@@ -30,7 +27,6 @@ function buildCommentTree(comments: any[]) {
     }
   });
 
-  // Sort roots and replies by score then date
   const sortFn = (a: any, b: any) => {
     if (b.score !== a.score) return b.score - a.score;
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -55,7 +51,6 @@ export default async function PostPage({ params }: Props) {
 
   if (!post || post.community.name !== name) notFound();
 
-  // Fetch ALL comments for this post
   const allComments = await prisma.comment.findMany({
     where: {
       postId: post.id,
@@ -73,7 +68,7 @@ export default async function PostPage({ params }: Props) {
     <div className="space-y-6">
       <div className="text-sm text-zinc-500">
         <Link href={`/c/${post.community.name}`} className="hover:underline">
-          c/{post.community.name}
+          {post.community.title}
         </Link>
       </div>
 
@@ -87,7 +82,7 @@ export default async function PostPage({ params }: Props) {
                 href={`/u/${post.author.username}`}
                 className="hover:underline"
               >
-                u/{post.author.username}
+                {post.author.username}
               </Link>
               <span>•</span>
               <time>{timeAgo(post.createdAt)}</time>
@@ -95,12 +90,29 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
-            {post.url && (
+            {/* Large clickable thumbnail */}
+            {post.thumbnail && post.url && (
               <a
                 href={post.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 block text-sm text-blue-600 hover:underline dark:text-blue-400"
+                className="mt-4 block"
+              >
+                <img
+                  src={post.thumbnail}
+                  alt=""
+                  className="max-h-80 w-full rounded-lg object-cover"
+                />
+              </a>
+            )}
+
+            {/* Fallback text link if there's a URL but no thumbnail */}
+            {post.url && !post.thumbnail && (
+              <a
+                href={post.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block text-sm text-blue-600 hover:underline dark:text-blue-400"
               >
                 {post.url}
               </a>
