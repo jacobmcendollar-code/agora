@@ -1,0 +1,174 @@
+// Agora - Free speech community platform
+// Minimal AI moderation, pseudonymous by design
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?   // optional avatar URL
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  communities   Community[] @relation("CommunityCreator")
+  posts         Post[]
+  comments      Comment[]
+  postVotes     PostVote[]
+  commentVotes  CommentVote[]
+
+  @@index([username])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  name        String   @unique // slug, e.g. "technology"
+  title       String            // display name
+  description String   @db.Text
+  rules       String?  @db.Text // extra guidance for the AI moderator
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator User   @relation("CommunityCreator", fields: [creatorId], references: [id])
+  posts   Post[]
+
+  @@index([name])
+  @@map("communities")
+}
+
+model Post {
+  id           String   @id @default(cuid())
+  title        String
+  body         String?  @db.Text
+  url          String?
+  score        Int      @default(0) // denormalized ups - downs
+  commentCount Int      @default(0)
+  communityId  String
+  authorId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Soft moderation flag (for audit / future appeal)
+  moderationStatus String @default("approved") // approved | rejected | flagged
+  moderationReason String?
+
+  community Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  votes     PostVote[]
+
+  @@index([communityId, createdAt])
+  @@index([communityId, score])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String   @db.Text
+  score     Int      @default(0)
+  postId    String
+  authorId  String
+  parentId  String?  // for threading
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  moderationStatus String @default("approved")
+  moderationReason String?
+
+  post     Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent   Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[]     @relation("CommentReplies")
+  votes    CommentVote[]
+
+  @@index([postId, createdAt])
+  @@index([postId, score])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model PostVote {
+  id        String   @id @default(cuid())
+  value     Int      // +1 or -1
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@map("post_votes")
+}
+
+model CommentVote {
+  id        String   @id @default(cuid())
+  value     Int      // +1 or -1
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("comment_votes")
+}
