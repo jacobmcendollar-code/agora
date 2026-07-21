@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -26,7 +27,9 @@ export function Navbar() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+
           {status === "loading" ? (
             <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           ) : session ? (
