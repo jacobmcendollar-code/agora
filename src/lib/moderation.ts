@@ -6,7 +6,7 @@ export type ModerationResult = {
 };
 
 /**
- * Minimal free-speech oriented moderation.
+ * Minimal free-speech oriented moderation using Grok (xAI).
  * Rejects only clear spam, pure off-topic, and illegal content.
  */
 export async function moderateContent(params: {
@@ -19,7 +19,6 @@ export async function moderateContent(params: {
 }): Promise<ModerationResult> {
   const { type, title, body, communityName, communityDescription, communityRules } = params;
 
-  // Cheap local checks first
   if (!body || body.trim().length < 1) {
     return { allowed: false, reason: "Empty content" };
   }
@@ -27,14 +26,14 @@ export async function moderateContent(params: {
     return { allowed: false, reason: "Content too long" };
   }
 
-  // If no API key, allow everything (good for local development)
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("[moderation] No OPENAI_API_KEY — allowing content in dev mode");
+  if (!process.env.XAI_API_KEY) {
+    console.warn("[moderation] No XAI_API_KEY — allowing content in dev mode");
     return { allowed: true };
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+  const client = new OpenAI({
+    apiKey: process.env.XAI_API_KEY,
+    baseURL: "https://api.x.ai/v1",
   });
 
   const systemPrompt = `You are a light-touch content moderator for a free-speech discussion platform called Agora.
@@ -70,19 +69,26 @@ or
       : `New comment:\n${body}`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const response = await client.chat.completions.create({
+      model: "grok-2-latest",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
       temperature: 0,
       max_tokens: 150,
-      response_format: { type: "json_object" },
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-    const parsed = JSON.parse(raw) as ModerationResult;
+
+    let parsed: ModerationResult;
+    try {
+      const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
+      parsed = JSON.parse(cleaned) as ModerationResult;
+    } catch {
+      console.warn("[moderation] Could not parse Grok response, allowing:", raw);
+      return { allowed: true };
+    }
 
     if (typeof parsed.allowed !== "boolean") {
       return { allowed: true };
@@ -90,8 +96,7 @@ or
 
     return parsed;
   } catch (err) {
-    console.error("[moderation] AI call failed:", err);
-    // Fail open
+    console.error("[moderation] Grok API call failed:", err);
     return { allowed: true };
   }
 }
