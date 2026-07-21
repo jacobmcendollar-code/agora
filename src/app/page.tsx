@@ -69,7 +69,6 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Sort tabs + Create Post */}
       <div className="flex items-center justify-between gap-4 border-b">
         <div className="flex gap-1 overflow-x-auto">
           {sortOptions.map((option) => (
@@ -95,26 +94,48 @@ export default async function HomePage({ searchParams }: Props) {
       </div>
 
       {initialPosts.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center text-zinc-500">
+        <div className="rounded-lg border border-dashed p-10 text-center">
           {showingSubscribed ? (
             <>
-              <p className="text-lg">No posts in your joined communities yet.</p>
-              <p className="mt-2 text-sm">
-                <Link href="/communities" className="underline">
-                  Browse communities
-                </Link>{" "}
-                and join some, or create a post.
+              <p className="text-lg font-medium">Nothing here yet</p>
+              <p className="mt-2 text-sm text-zinc-500">
+                The communities you’ve joined don’t have any posts.
               </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/communities"
+                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+                >
+                  Browse communities
+                </Link>
+                <Link
+                  href="/submit"
+                  className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                >
+                  Create a post
+                </Link>
+              </div>
             </>
           ) : (
             <>
-              <p className="text-lg">No posts yet.</p>
-              <p className="mt-2 text-sm">
-                <Link href="/communities/new" className="underline">
-                  Create a community
-                </Link>{" "}
-                and start the conversation.
+              <p className="text-lg font-medium">No posts yet</p>
+              <p className="mt-2 text-sm text-zinc-500">
+                Join some communities or start the first conversation.
               </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/communities"
+                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+                >
+                  Browse communities
+                </Link>
+                <Link
+                  href="/communities/new"
+                  className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                >
+                  Create a community
+                </Link>
+              </div>
             </>
           )}
         </div>

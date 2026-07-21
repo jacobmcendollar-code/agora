@@ -118,8 +118,19 @@ export default async function CommunityPage({ params, searchParams }: Props) {
       </div>
 
       {initialPosts.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center text-zinc-500">
-          No posts yet in this community.
+        <div className="rounded-lg border border-dashed p-10 text-center">
+          <p className="text-lg font-medium">No posts yet</p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Be the first to start a conversation in {community.title}.
+          </p>
+          <div className="mt-5">
+            <Link
+              href={`/submit?community=${community.name}`}
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Create a post
+            </Link>
+          </div>
         </div>
       ) : (
         <PostFeed
