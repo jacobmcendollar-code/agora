@@ -80,7 +80,7 @@ export default async function HomePage({ searchParams }: Props) {
               href={option.key === "trending" ? "/" : `/?sort=${option.key}`}
               className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
                 sort === option.key
-                  ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                  ? "border-b-2 border-emerald-500 text-zinc-900 dark:text-zinc-100"
                   : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
               }`}
             >
@@ -90,7 +90,7 @@ export default async function HomePage({ searchParams }: Props) {
         </div>
         <Link
           href="/submit"
-          className="shrink-0 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+          className="shrink-0 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
         >
           Create Post
         </Link>
@@ -107,7 +107,7 @@ export default async function HomePage({ searchParams }: Props) {
               <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/communities"
-                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
                   Browse communities
                 </Link>
@@ -128,7 +128,7 @@ export default async function HomePage({ searchParams }: Props) {
               <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/communities"
-                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
                   Browse communities
                 </Link>
