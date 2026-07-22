@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { JoinButton } from "@/components/join-button";
 
 type Community = {
   id: string;
@@ -20,9 +21,12 @@ type Props = {
   isLoggedIn: boolean;
 };
 
+const JOINED_PREVIEW = 3;
+
 export function CommunitiesList({ communities, isLoggedIn }: Props) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("active");
+  const [joinedExpanded, setJoinedExpanded] = useState(false);
 
   const filtered = useMemo(() => {
     let list = [...communities];
@@ -53,32 +57,10 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
 
   const joined = filtered.filter((c) => c.joined);
   const rest = isLoggedIn ? filtered.filter((c) => !c.joined) : filtered;
-
-  function Row({ community }: { community: Community }) {
-    return (
-      <Link
-        href={`/c/${community.name}`}
-        className="flex items-start justify-between gap-4 border-b px-1 py-3 transition last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
-      >
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">{community.title}</span>
-            {community.joined && (
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-                Joined
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 line-clamp-1 text-sm text-zinc-500">
-            {community.description}
-          </p>
-        </div>
-        <div className="shrink-0 text-xs text-zinc-400">
-          {community.postCount} post{community.postCount !== 1 ? "s" : ""}
-        </div>
-      </Link>
-    );
-  }
+  const visibleJoined = joinedExpanded
+    ? joined
+    : joined.slice(0, JOINED_PREVIEW);
+  const hiddenJoinedCount = Math.max(0, joined.length - JOINED_PREVIEW);
 
   return (
     <div className="space-y-6">
@@ -123,28 +105,88 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
           {isLoggedIn && joined.length > 0 && (
             <section>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                Joined
+                Joined ({joined.length})
               </h2>
               <div className="rounded-lg border bg-white dark:bg-zinc-900">
-                <div className="divide-y dark:divide-zinc-800 px-3">
-                  {joined.map((c) => (
-                    <Row key={c.id} community={c} />
+                <div className="divide-y dark:divide-zinc-800">
+                  {visibleJoined.map((community) => (
+                    <div
+                      key={community.id}
+                      className="flex items-center justify-between gap-3 px-3 py-3"
+                    >
+                      <Link
+                        href={`/c/${community.name}`}
+                        className="min-w-0 flex-1 hover:underline"
+                      >
+                        <div className="font-medium">{community.title}</div>
+                        <p className="mt-0.5 line-clamp-1 text-sm text-zinc-500">
+                          {community.description}
+                        </p>
+                      </Link>
+                      <div className="shrink-0 text-xs text-zinc-400">
+                        {community.postCount} post
+                        {community.postCount !== 1 ? "s" : ""}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
+              {!joinedExpanded && hiddenJoinedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setJoinedExpanded(true)}
+                  className="mt-2 text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                >
+                  Show {hiddenJoinedCount} more
+                </button>
+              )}
+              {joinedExpanded && joined.length > JOINED_PREVIEW && (
+                <button
+                  type="button"
+                  onClick={() => setJoinedExpanded(false)}
+                  className="mt-2 text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                >
+                  Show less
+                </button>
+              )}
             </section>
           )}
 
           <section>
             {isLoggedIn && joined.length > 0 && (
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                All communities
+                Discover
               </h2>
             )}
             <div className="rounded-lg border bg-white dark:bg-zinc-900">
-              <div className="divide-y dark:divide-zinc-800 px-3">
-                {rest.map((c) => (
-                  <Row key={c.id} community={c} />
+              <div className="divide-y dark:divide-zinc-800">
+                {rest.map((community) => (
+                  <div
+                    key={community.id}
+                    className="flex items-center justify-between gap-3 px-3 py-3"
+                  >
+                    <Link
+                      href={`/c/${community.name}`}
+                      className="min-w-0 flex-1 hover:underline"
+                    >
+                      <div className="font-medium">{community.title}</div>
+                      <p className="mt-0.5 line-clamp-1 text-sm text-zinc-500">
+                        {community.description}
+                      </p>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="hidden text-xs text-zinc-400 sm:inline">
+                        {community.postCount} post
+                        {community.postCount !== 1 ? "s" : ""}
+                      </span>
+                      {isLoggedIn && (
+                        <JoinButton
+                          communityId={community.id}
+                          initialJoined={false}
+                        />
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
