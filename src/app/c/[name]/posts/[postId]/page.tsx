@@ -14,6 +14,27 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ name: string; postId: string }> };
 
+function getYouTubeId(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) {
+      return u.pathname.slice(1).split("/")[0] || null;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return v;
+      // /embed/ID or /shorts/ID
+      const parts = u.pathname.split("/");
+      const idx = parts.findIndex((p) => p === "embed" || p === "shorts");
+      if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 function buildCommentTree(comments: any[]) {
   const map = new Map<string, any>();
   const roots: any[] = [];
@@ -113,6 +134,7 @@ export default async function PostPage({ params }: Props) {
 
   const commentTree = buildCommentTree(allComments);
   const showAdmin = isAdmin(session?.user?.username);
+  const youtubeId = getYouTubeId(post.url);
 
   return (
     <div className="space-y-6">
@@ -141,7 +163,18 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
-            {post.thumbnail && (
+            {/* YouTube embed */}
+            {youtubeId ? (
+              <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg">
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}`}
+                  title={post.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="h-full w-full"
+                />
+              </div>
+            ) : post.thumbnail ? (
               <a
                 href={post.url || post.thumbnail}
                 target="_blank"
@@ -154,9 +187,9 @@ export default async function PostPage({ params }: Props) {
                   className="max-h-80 w-full rounded-lg object-cover hover:opacity-95 transition"
                 />
               </a>
-            )}
+            ) : null}
 
-            {post.url && !post.thumbnail && (
+            {post.url && !youtubeId && !post.thumbnail && (
               <a
                 href={post.url}
                 target="_blank"
