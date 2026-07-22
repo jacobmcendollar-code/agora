@@ -24,7 +24,6 @@ function getYouTubeId(url: string | null | undefined): string | null {
     if (u.hostname.includes("youtube.com")) {
       const v = u.searchParams.get("v");
       if (v) return v;
-      // /embed/ID or /shorts/ID
       const parts = u.pathname.split("/");
       const idx = parts.findIndex((p) => p === "embed" || p === "shorts");
       if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
@@ -163,7 +162,6 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
-            {/* YouTube embed */}
             {youtubeId ? (
               <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg">
                 <iframe
@@ -223,6 +221,7 @@ export default async function PostPage({ params }: Props) {
               comment={comment}
               postId={post.id}
               communityName={post.community.name}
+              isAdminUser={showAdmin}
             />
           ))}
         </div>

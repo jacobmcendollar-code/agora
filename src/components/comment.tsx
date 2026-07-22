@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatScore, timeAgo } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { CommentForm } from "@/components/comment-form";
+import { RemoveCommentButton } from "@/components/remove-comment-button";
 import { linkify } from "@/lib/linkify";
 
 type CommentData = {
@@ -21,10 +23,28 @@ type Props = {
   postId: string;
   communityName: string;
   depth?: number;
+  isAdminUser?: boolean;
 };
 
-export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
+export function Comment({
+  comment,
+  postId,
+  communityName,
+  depth = 0,
+  isAdminUser = false,
+}: Props) {
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const { data: session } = useSession();
+
+  // Fallback if parent didn't pass isAdminUser
+  const adminUsernames = (process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const showRemove =
+    isAdminUser ||
+    (session?.user?.username &&
+      adminUsernames.includes(session.user.username.toLowerCase()));
 
   return (
     <div className={depth > 0 ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700" : ""}>
@@ -37,7 +57,7 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
             size="sm"
           />
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-x-2 text-xs text-zinc-500">
+            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
               <Link
                 href={`/u/${comment.author.username}`}
                 className="font-medium hover:underline"
@@ -46,6 +66,12 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
               </Link>
               <span>•</span>
               <time>{timeAgo(comment.createdAt)}</time>
+              {showRemove && (
+                <>
+                  <span>•</span>
+                  <RemoveCommentButton commentId={comment.id} />
+                </>
+              )}
             </div>
 
             <div className="whitespace-pre-wrap break-words text-sm">
@@ -82,6 +108,7 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
               postId={postId}
               communityName={communityName}
               depth={depth + 1}
+              isAdminUser={isAdminUser}
             />
           ))}
         </div>
