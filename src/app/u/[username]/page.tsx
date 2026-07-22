@@ -76,24 +76,24 @@ export default async function UserProfilePage({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
-        <h1 className="text-2xl font-bold">{user.username}</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Joined{" "}
-          {user.createdAt.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
+      <div className="flex items-start justify-between gap-4 rounded-lg border bg-white p-6 dark:bg-zinc-900">
+        <div>
+          <h1 className="text-2xl font-bold">{user.username}</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            Joined{" "}
+            {user.createdAt.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        </div>
+        {isOwnProfile && (
+          <div className="shrink-0 pt-1">
+            <NsfwToggle />
+          </div>
+        )}
       </div>
-
-      {isOwnProfile && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Settings</h2>
-          <NsfwToggle />
-        </section>
-      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">
