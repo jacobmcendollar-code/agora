@@ -19,6 +19,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { banned: true },
+  });
+  if (dbUser?.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted from posting." },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
@@ -32,7 +43,6 @@ export async function POST(req: Request) {
 
     const { communityName, title, body: postBody, url, imageUrl } = parsed.data;
 
-    // Must have at least one of: body text, URL, or uploaded image
     if (!postBody && !url && !imageUrl) {
       return NextResponse.json(
         { error: "Post must have a body, URL, or image" },
@@ -48,8 +58,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Community not found" }, { status: 404 });
     }
 
-    // For moderation, use title + body (or a placeholder if it's image-only)
-    const contentForModeration = [title, postBody, url].filter(Boolean).join("\n") || "[Image post]";
+    const contentForModeration =
+      [title, postBody, url].filter(Boolean).join("\n") || "[Image post]";
 
     const moderation = await moderateContent({
       type: "post",
@@ -70,7 +80,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Prefer uploaded image. Otherwise try to fetch a thumbnail from the URL.
     let thumbnail: string | null = imageUrl || null;
     if (!thumbnail && url) {
       thumbnail = await fetchThumbnail(url);
@@ -80,17 +89,4 @@ export async function POST(req: Request) {
       data: {
         title,
         body: postBody || null,
-        url: url || null,
-        thumbnail,
-        communityId: community.id,
-        authorId: session.user.id,
-        moderationStatus: "approved",
-      },
-    });
-
-    return NextResponse.json({ id: post.id, communityName: community.name });
-  } catch (err) {
-    console.error("[posts POST]", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
+        url: url ||

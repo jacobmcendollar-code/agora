@@ -16,6 +16,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { banned: true },
+  });
+  if (dbUser?.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted from commenting." },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
@@ -32,7 +43,9 @@ export async function POST(req: Request) {
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: {
-        community: { select: { name: true, title: true, description: true, rules: true } },
+        community: {
+          select: { name: true, title: true, description: true, rules: true },
+        },
         author: { select: { id: true, username: true } },
       },
     });
@@ -41,7 +54,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Optional: check parent comment exists
     let parentComment = null;
     if (parentId) {
       parentComment = await prisma.comment.findUnique({
@@ -49,7 +61,10 @@ export async function POST(req: Request) {
         include: { author: { select: { id: true, username: true } } },
       });
       if (!parentComment || parentComment.postId !== postId) {
-        return NextResponse.json({ error: "Parent comment not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Parent comment not found" },
+          { status: 404 }
+        );
       }
     }
 
@@ -82,7 +97,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update post comment count
     await prisma.post.update({
       where: { id: postId },
       data: { commentCount: { increment: 1 } },
@@ -91,7 +105,6 @@ export async function POST(req: Request) {
     const link = `/c/${post.community.name}/posts/${post.id}#comments`;
     const actorUsername = session.user.username || "Someone";
 
-    // Notify post author (if someone else commented on their post)
     if (post.authorId !== session.user.id) {
       await prisma.notification.create({
         data: {
@@ -103,7 +116,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // Notify parent comment author (if this is a reply and not self-reply)
     if (parentComment && parentComment.authorId !== session.user.id) {
       await prisma.notification.create({
         data: {
