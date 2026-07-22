@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
 import { PostFeed } from "@/components/post-feed";
+import { WelcomeBanner } from "@/components/welcome-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,8 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
+      <WelcomeBanner />
+
       <div className="flex items-center justify-between gap-4 border-b">
         <div className="flex gap-1 overflow-x-auto">
           {sortOptions.map((option) => (
