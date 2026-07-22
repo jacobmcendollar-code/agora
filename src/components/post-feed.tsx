@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { formatScore, timeAgo } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 
 type Post = {
@@ -21,8 +21,8 @@ type Post = {
 type Props = {
   initialPosts: Post[];
   sort: string;
-  communityName?: string; // if provided, only load posts from this community
-  hideCommunity?: boolean; // on community pages we don't need to show the community name
+  communityName?: string;
+  hideCommunity?: boolean;
 };
 
 export function PostFeed({
@@ -98,11 +98,11 @@ export function PostFeed({
   if (posts.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {posts.map((post) => (
         <article
           key={post.id}
-          className="rounded-lg border bg-white p-3 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-4"
+          className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-5"
         >
           <div className="flex gap-3 sm:gap-4">
             <VoteButtons
@@ -122,7 +122,7 @@ export function PostFeed({
                   <img
                     src={post.thumbnail}
                     alt=""
-                    className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
+                    className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
                   />
                 </a>
               ) : (
@@ -133,14 +133,14 @@ export function PostFeed({
                   <img
                     src={post.thumbnail}
                     alt=""
-                    className="h-16 w-16 rounded object-cover sm:h-20 sm:w-28"
+                    className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
                   />
                 </Link>
               )
             )}
 
             <div className="min-w-0 flex-1">
-              <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+              <div className="mb-1.5 flex flex-wrap items-center gap-x-2 text-sm text-zinc-500">
                 {!hideCommunity && (
                   <>
                     <Link
@@ -165,21 +165,21 @@ export function PostFeed({
               </div>
 
               <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                <h2 className="text-base font-semibold leading-snug hover:underline sm:text-lg">
+                <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
                   {post.title}
                 </h2>
               </Link>
 
               {post.body && (
-                <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
                   {post.body}
                 </p>
               )}
 
-              <div className="mt-2">
+              <div className="mt-3">
                 <Link
                   href={`/c/${post.community.name}/posts/${post.id}#comments`}
-                  className="text-xs text-zinc-500 hover:underline"
+                  className="text-sm text-zinc-500 hover:underline"
                 >
                   {post._count.comments} comments
                 </Link>
