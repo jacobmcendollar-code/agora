@@ -17,7 +17,6 @@ function fileToBase64(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // strip the data:image/...;base64, prefix
       const base64 = result.split(",")[1] || "";
       resolve(base64);
     };
@@ -44,6 +43,7 @@ function SubmitForm() {
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [nsfw, setNsfw] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewThumb, setPreviewThumb] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -204,6 +204,7 @@ function SubmitForm() {
           body: body.trim() || null,
           url: postType === "link" ? url.trim() || null : null,
           imageUrl: postType === "image" ? imageUrl : null,
+          nsfw,
         }),
       });
 
@@ -443,6 +444,17 @@ function SubmitForm() {
             className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
           />
         </div>
+
+        {/* NSFW */}
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={nsfw}
+            onChange={(e) => setNsfw(e.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300"
+          />
+          <span>NSFW</span>
+        </label>
 
         <button
           type="submit"

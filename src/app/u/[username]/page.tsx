@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { JoinedCommunities } from "@/components/joined-communities";
+import { NsfwToggle } from "@/components/nsfw-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,7 @@ type Props = {
 export default async function UserProfilePage({ params }: Props) {
   const { username } = await params;
   const normalized = username.toLowerCase();
+  const session = await auth();
 
   const user = await prisma.user.findUnique({
     where: { username: normalized },
@@ -25,6 +28,8 @@ export default async function UserProfilePage({ params }: Props) {
   });
 
   if (!user) notFound();
+
+  const isOwnProfile = session?.user?.username?.toLowerCase() === user.username;
 
   const [posts, comments, subscriptions] = await Promise.all([
     prisma.post.findMany({
@@ -83,7 +88,13 @@ export default async function UserProfilePage({ params }: Props) {
         </p>
       </div>
 
-      {/* Joined communities — compact chips */}
+      {isOwnProfile && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Settings</h2>
+          <NsfwToggle />
+        </section>
+      )}
+
       <section>
         <h2 className="mb-3 text-lg font-semibold">
           Joined communities ({communities.length})
@@ -91,7 +102,6 @@ export default async function UserProfilePage({ params }: Props) {
         <JoinedCommunities communities={communities} />
       </section>
 
-      {/* Recent posts */}
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent Posts</h2>
         {posts.length === 0 ? (
@@ -130,7 +140,6 @@ export default async function UserProfilePage({ params }: Props) {
         )}
       </section>
 
-      {/* Recent comments */}
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent Comments</h2>
         {comments.length === 0 ? (

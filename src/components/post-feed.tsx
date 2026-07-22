@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
+import { useNsfw } from "@/components/nsfw-provider";
 
 type Post = {
   id: string;
@@ -12,6 +13,7 @@ type Post = {
   url: string | null;
   thumbnail: string | null;
   score: number;
+  nsfw?: boolean;
   createdAt: string;
   author: { username: string };
   community: { name: string; title: string };
@@ -31,6 +33,7 @@ export function PostFeed({
   communityName,
   hideCommunity = false,
 }: Props) {
+  const { showNsfw, ready } = useNsfw();
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [page, setPage] = useState(2);
   const [loading, setLoading] = useState(false);
@@ -95,11 +98,15 @@ export function PostFeed({
     }
   }
 
-  if (posts.length === 0) return null;
+  const visiblePosts = ready
+    ? posts.filter((p) => showNsfw || !p.nsfw)
+    : posts.filter((p) => !p.nsfw);
+
+  if (visiblePosts.length === 0) return null;
 
   return (
     <div className="space-y-4">
-      {posts.map((post) => (
+      {visiblePosts.map((post) => (
         <article
           key={post.id}
           className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-5"
@@ -162,6 +169,12 @@ export function PostFeed({
                 <time className="hidden sm:inline" dateTime={post.createdAt}>
                   {timeAgo(new Date(post.createdAt))}
                 </time>
+                {post.nsfw && (
+                  <>
+                    <span>•</span>
+                    <span className="font-medium text-rose-500">NSFW</span>
+                  </>
+                )}
               </div>
 
               <Link href={`/c/${post.community.name}/posts/${post.id}`}>
@@ -191,7 +204,7 @@ export function PostFeed({
 
       <div ref={sentinelRef} className="py-4 text-center text-sm text-zinc-500">
         {loading && "Loading more…"}
-        {!hasMore && posts.length > 0 && "You’ve reached the end"}
+        {!hasMore && visiblePosts.length > 0 && "You’ve reached the end"}
       </div>
     </div>
   );

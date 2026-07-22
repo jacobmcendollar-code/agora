@@ -75,6 +75,7 @@ model Community {
   title         String
   description   String
   rules         String?
+  nsfw          Boolean        @default(false)
   creatorId     String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -94,6 +95,7 @@ model Post {
   thumbnail        String?
   score            Int        @default(0)
   commentCount     Int        @default(0)
+  nsfw             Boolean    @default(false)
   moderationStatus String     @default("approved")
   moderationReason String?
   communityId      String

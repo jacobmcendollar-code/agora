@@ -11,6 +11,7 @@ const schema = z.object({
   body: z.string().max(40000).optional().nullable(),
   url: z.string().url().optional().nullable().or(z.literal("")),
   imageUrl: z.string().url().optional().nullable(),
+  nsfw: z.boolean().optional().default(false),
 });
 
 export async function POST(req: Request) {
@@ -41,7 +42,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { communityName, title, body: postBody, url, imageUrl } = parsed.data;
+    const { communityName, title, body: postBody, url, imageUrl, nsfw } =
+      parsed.data;
 
     if (!postBody && !url && !imageUrl) {
       return NextResponse.json(
@@ -91,6 +93,7 @@ export async function POST(req: Request) {
         body: postBody || null,
         url: url || null,
         thumbnail,
+        nsfw: nsfw || community.nsfw || false,
         communityId: community.id,
         authorId: session.user.id,
         moderationStatus: "approved",
