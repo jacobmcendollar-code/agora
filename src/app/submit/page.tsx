@@ -11,6 +11,8 @@ type Community = {
   title: string;
 };
 
+type PostType = "text" | "link" | "image";
+
 function SubmitForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -21,10 +23,17 @@ function SubmitForm() {
   const [filtered, setFiltered] = useState<Community[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(preselected);
+  const [selectedTitle, setSelectedTitle] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [postType, setPostType] = useState<PostType>("text");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [url, setUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [previewThumb, setPreviewThumb] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/communities")
@@ -35,15 +44,49 @@ function SubmitForm() {
 
         if (preselected) {
           const match = data.find((c: Community) => c.name === preselected);
-          if (match) setQuery(match.title);
+          if (match) {
+            setSelected(match.name);
+            setSelectedTitle(match.title);
+            setQuery("");
+          }
         }
       })
       .catch(() => {});
   }, [preselected]);
 
+  // Fetch thumbnail preview when URL changes
+  useEffect(() => {
+    if (postType !== "link" || !url.trim()) {
+      setPreviewThumb(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setPreviewLoading(true);
+      try {
+        const res = await fetch(
+          `/api/thumbnail?url=${encodeURIComponent(url.trim())}`
+        );
+        const data = await res.json();
+        if (!cancelled) {
+          setPreviewThumb(data.thumbnail || null);
+        }
+      } catch {
+        if (!cancelled) setPreviewThumb(null);
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [url, postType]);
+
   function handleSearch(value: string) {
     setQuery(value);
-    setSelected("");
     setShowDropdown(true);
 
     if (!value.trim()) {
@@ -63,11 +106,18 @@ function SubmitForm() {
 
   function selectCommunity(community: Community) {
     setSelected(community.name);
-    setQuery(community.title);
+    setSelectedTitle(community.title);
+    setQuery("");
     setShowDropdown(false);
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function clearCommunity() {
+    setSelected("");
+    setSelectedTitle("");
+    setQuery("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -75,13 +125,12 @@ function SubmitForm() {
       setError("Please select a community");
       return;
     }
+    if (!title.trim()) {
+      setError("Please enter a title");
+      return;
+    }
 
     setLoading(true);
-
-    const form = new FormData(e.currentTarget);
-    const title = (form.get("title") as string).trim();
-    const body = (form.get("body") as string).trim();
-    const url = (form.get("url") as string).trim() || null;
 
     try {
       const res = await fetch("/api/posts", {
@@ -89,10 +138,10 @@ function SubmitForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           communityName: selected,
-          title,
-          body,
-          url,
-          imageUrl,
+          title: title.trim(),
+          body: postType === "text" ? body.trim() || null : body.trim() || null,
+          url: postType === "link" ? url.trim() || null : null,
+          imageUrl: postType === "image" ? imageUrl : null,
         }),
       });
 
@@ -131,6 +180,12 @@ function SubmitForm() {
     );
   }
 
+  const types: { key: PostType; label: string }[] = [
+    { key: "text", label: "Text" },
+    { key: "link", label: "Link" },
+    { key: "image", label: "Image" },
+  ];
+
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
@@ -152,130 +207,186 @@ function SubmitForm() {
 
         {/* Community */}
         <div className="relative">
-          <label
-            htmlFor="community-search"
-            className="mb-1.5 block text-sm font-medium"
-          >
-            Community
-          </label>
-          <input
-            id="community-search"
-            type="text"
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setShowDropdown(true)}
-            placeholder="Search communities..."
-            autoComplete="off"
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-          />
+          <label className="mb-1.5 block text-sm font-medium">Community</label>
 
-          {showDropdown && filtered.length > 0 && (
-            <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              {filtered.map((c) => (
+          {selected ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border bg-zinc-50 px-3 py-1.5 text-sm dark:bg-zinc-800">
+                {selectedTitle}
                 <button
-                  key={c.name}
                   type="button"
-                  onClick={() => selectCommunity(c)}
-                  className="block w-full px-3 py-2.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                  onClick={clearCommunity}
+                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  aria-label="Clear community"
                 >
-                  {c.title}
+                  ×
                 </button>
-              ))}
+              </span>
             </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => setShowDropdown(true)}
+                placeholder="Search communities..."
+                autoComplete="off"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+              />
+              {showDropdown && filtered.length > 0 && (
+                <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                  {filtered.map((c) => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => selectCommunity(c)}
+                      className="block w-full px-3 py-2.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                    >
+                      {c.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
+        </div>
 
-          {showDropdown && filtered.length === 0 && query && (
-            <div className="absolute z-10 mt-1 w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-zinc-500 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              No communities found
-            </div>
-          )}
+        {/* Post type */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">Type</label>
+          <div className="flex gap-1 rounded-lg border p-1 dark:border-zinc-700">
+            {types.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setPostType(t.key)}
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  postType === t.key
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Title */}
         <div>
-          <label htmlFor="title" className="mb-1.5 block text-sm font-medium">
-            Title
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label htmlFor="title" className="text-sm font-medium">
+              Title
+            </label>
+            <span className="text-xs text-zinc-400">{title.length}/300</span>
+          </div>
           <input
             id="title"
-            name="title"
             type="text"
             required
             maxLength={300}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="A clear, descriptive title"
             className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
           />
         </div>
 
-        {/* Image */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium">
-            Image <span className="font-normal text-zinc-400">(optional)</span>
-          </label>
-          {imageUrl ? (
-            <div className="space-y-2">
+        {/* Link fields */}
+        {postType === "link" && (
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
+                Link
+              </label>
+              <input
+                id="url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+              />
+            </div>
+            {previewLoading && (
+              <p className="text-xs text-zinc-500">Loading preview…</p>
+            )}
+            {previewThumb && (
               <img
-                src={imageUrl}
-                alt="Upload preview"
-                className="max-h-52 w-full rounded-lg object-cover"
+                src={previewThumb}
+                alt="Link preview"
+                className="max-h-48 w-full rounded-lg object-cover"
               />
-              <button
-                type="button"
-                onClick={() => setImageUrl(null)}
-                className="text-sm text-red-600 hover:underline dark:text-red-400"
-              >
-                Remove image
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
-              <UploadButton
-                endpoint="postImage"
-                onClientUploadComplete={(res) => {
-                  if (res && res[0]) {
-                    setImageUrl(res[0].ufsUrl || res[0].url);
-                  }
-                }}
-                onUploadError={(error: Error) => {
-                  setError(`Upload failed: ${error.message}`);
-                }}
-              />
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* URL */}
-        <div>
-          <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
-            Link <span className="font-normal text-zinc-400">(optional)</span>
-          </label>
-          <input
-            id="url"
-            name="url"
-            type="url"
-            placeholder="https://"
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-          />
-        </div>
+        {/* Image fields */}
+        {postType === "image" && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Image</label>
+            {imageUrl ? (
+              <div className="space-y-2">
+                <img
+                  src={imageUrl}
+                  alt="Upload preview"
+                  className="max-h-52 w-full rounded-lg object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImageUrl(null)}
+                  className="text-sm text-red-600 hover:underline dark:text-red-400"
+                >
+                  Remove image
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
+                <UploadButton
+                  endpoint="postImage"
+                  onClientUploadComplete={(res) => {
+                    if (res && res[0]) {
+                      setImageUrl(res[0].ufsUrl || res[0].url);
+                    }
+                  }}
+                  onUploadError={(error: Error) => {
+                    setError(`Upload failed: ${error.message}`);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Body */}
-        <div>
-          <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
-            Text <span className="font-normal text-zinc-400">(optional)</span>
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            rows={5}
-            maxLength={40000}
-            placeholder="Add more context if you want..."
-            className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-          />
-        </div>
+        {/* Body / text */}
+        {(postType === "text" || postType === "link" || postType === "image") && (
+          <div>
+            <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
+              Text{" "}
+              {postType !== "text" && (
+                <span className="font-normal text-zinc-400">(optional)</span>
+              )}
+            </label>
+            <textarea
+              id="body"
+              rows={postType === "text" ? 6 : 3}
+              maxLength={40000}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={
+                postType === "text"
+                  ? "Write your post..."
+                  : "Add more context if you want..."
+              }
+              className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+            />
+          </div>
+        )}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !selected || !title.trim()}
           className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           {loading ? "Posting…" : "Post"}
