@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { CommentForm } from "@/components/comment-form";
+import { linkify } from "@/lib/linkify";
 
 type CommentData = {
   id: string;
@@ -48,7 +49,7 @@ export function Comment({ comment, postId, communityName, depth = 0 }: Props) {
             </div>
 
             <div className="whitespace-pre-wrap break-words text-sm">
-              {comment.body}
+              {linkify(comment.body)}
             </div>
 
             <button
