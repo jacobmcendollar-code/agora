@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatScore, timeAgo } from "@/lib/utils";
+import { JoinedCommunities } from "@/components/joined-communities";
 
 export const dynamic = "force-dynamic";
 
@@ -57,13 +58,16 @@ export default async function UserProfilePage({ params }: Props) {
           select: {
             name: true,
             title: true,
-            description: true,
-            _count: { select: { posts: true } },
           },
         },
       },
     }),
   ]);
+
+  const communities = subscriptions.map((s) => ({
+    name: s.community.name,
+    title: s.community.title,
+  }));
 
   return (
     <div className="space-y-8">
@@ -79,32 +83,12 @@ export default async function UserProfilePage({ params }: Props) {
         </p>
       </div>
 
-      {/* Joined communities */}
+      {/* Joined communities — compact chips */}
       <section>
         <h2 className="mb-3 text-lg font-semibold">
-          Joined communities ({subscriptions.length})
+          Joined communities ({communities.length})
         </h2>
-        {subscriptions.length === 0 ? (
-          <p className="text-sm text-zinc-500">Not joined any communities yet.</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {subscriptions.map((sub) => (
-              <Link
-                key={sub.id}
-                href={`/c/${sub.community.name}`}
-                className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
-              >
-                <div className="font-semibold">{sub.community.title}</div>
-                <p className="mt-1 line-clamp-2 text-sm text-zinc-500">
-                  {sub.community.description}
-                </p>
-                <div className="mt-2 text-xs text-zinc-400">
-                  {sub.community._count.posts} posts
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <JoinedCommunities communities={communities} />
       </section>
 
       {/* Recent posts */}
