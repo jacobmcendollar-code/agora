@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { UploadButton } from "@/lib/uploadthing";
+import { uploadFiles } from "@/lib/uploadthing";
 
 type Community = {
   name: string;
@@ -18,6 +18,7 @@ function SubmitForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = searchParams.get("community") || "";
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [communities, setCommunities] = useState<Community[]>([]);
   const [filtered, setFiltered] = useState<Community[]>([]);
@@ -30,6 +31,7 @@ function SubmitForm() {
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [previewThumb, setPreviewThumb] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +116,30 @@ function SubmitForm() {
     setSelected("");
     setSelectedTitle("");
     setQuery("");
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    setUploading(true);
+
+    try {
+      const result = await uploadFiles("postImage", { files: [file] });
+      if (result && result[0]) {
+        setImageUrl(result[0].ufsUrl || result[0].url);
+      } else {
+        setError("Upload failed");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -321,7 +347,7 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Image */}
+        {/* Image — custom file input for better Safari support */}
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
@@ -341,30 +367,18 @@ function SubmitForm() {
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 px-4 py-8 dark:border-zinc-700">
-                <UploadButton
-                  endpoint="postImage"
-                  onClientUploadComplete={(res) => {
-                    if (res && res[0]) {
-                      setImageUrl(res[0].ufsUrl || res[0].url);
-                    }
-                  }}
-                  onUploadError={(error: Error) => {
-                    setError(`Upload failed: ${error.message}`);
-                  }}
-                  appearance={{
-                    button:
-                      "ut-ready:bg-zinc-900 ut-ready:text-white ut-uploading:cursor-not-allowed rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900",
-                    allowedContent: "text-xs text-zinc-500",
-                  }}
-                  content={{
-                    button({ ready }) {
-                      if (ready) return "Choose image";
-                      return "Uploading…";
-                    },
-                    allowedContent: "Image up to 4MB",
-                  }}
+              <div className="rounded-lg border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  className="block w-full text-sm text-zinc-600 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white dark:text-zinc-400 dark:file:bg-zinc-100 dark:file:text-zinc-900"
                 />
+                <p className="mt-2 text-xs text-zinc-500">
+                  {uploading ? "Uploading…" : "Image up to 4MB"}
+                </p>
               </div>
             )}
           </div>
@@ -395,7 +409,7 @@ function SubmitForm() {
 
         <button
           type="submit"
-          disabled={loading || !selected || !title.trim()}
+          disabled={loading || uploading || !selected || !title.trim()}
           className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           {loading ? "Posting…" : "Post"}
