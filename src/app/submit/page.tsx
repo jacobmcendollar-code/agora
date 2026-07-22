@@ -54,7 +54,6 @@ function SubmitForm() {
       .catch(() => {});
   }, [preselected]);
 
-  // Fetch thumbnail preview when URL changes
   useEffect(() => {
     if (postType !== "link" || !url.trim()) {
       setPreviewThumb(null);
@@ -139,7 +138,7 @@ function SubmitForm() {
         body: JSON.stringify({
           communityName: selected,
           title: title.trim(),
-          body: postType === "text" ? body.trim() || null : body.trim() || null,
+          body: body.trim() || null,
           url: postType === "link" ? url.trim() || null : null,
           imageUrl: postType === "image" ? imageUrl : null,
         }),
@@ -293,7 +292,7 @@ function SubmitForm() {
           />
         </div>
 
-        {/* Link fields */}
+        {/* Link */}
         {postType === "link" && (
           <div className="space-y-3">
             <div>
@@ -322,7 +321,7 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Image fields */}
+        {/* Image — cleaned up */}
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
@@ -342,7 +341,7 @@ function SubmitForm() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 px-4 py-8 dark:border-zinc-700">
                 <UploadButton
                   endpoint="postImage"
                   onClientUploadComplete={(res) => {
@@ -353,36 +352,46 @@ function SubmitForm() {
                   onUploadError={(error: Error) => {
                     setError(`Upload failed: ${error.message}`);
                   }}
+                  appearance={{
+                    button:
+                      "ut-ready:bg-zinc-900 ut-ready:text-white ut-uploading:cursor-not-allowed rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900",
+                    allowedContent: "text-xs text-zinc-500",
+                  }}
+                  content={{
+                    button({ ready }) {
+                      if (ready) return "Choose image";
+                      return "Uploading…";
+                    },
+                    allowedContent: "Image up to 4MB",
+                  }}
                 />
               </div>
             )}
           </div>
         )}
 
-        {/* Body / text */}
-        {(postType === "text" || postType === "link" || postType === "image") && (
-          <div>
-            <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
-              Text{" "}
-              {postType !== "text" && (
-                <span className="font-normal text-zinc-400">(optional)</span>
-              )}
-            </label>
-            <textarea
-              id="body"
-              rows={postType === "text" ? 6 : 3}
-              maxLength={40000}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder={
-                postType === "text"
-                  ? "Write your post..."
-                  : "Add more context if you want..."
-              }
-              className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          </div>
-        )}
+        {/* Body */}
+        <div>
+          <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
+            Text{" "}
+            {postType !== "text" && (
+              <span className="font-normal text-zinc-400">(optional)</span>
+            )}
+          </label>
+          <textarea
+            id="body"
+            rows={postType === "text" ? 6 : 3}
+            maxLength={40000}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={
+              postType === "text"
+                ? "Write your post..."
+                : "Add more context if you want..."
+            }
+            className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+          />
+        </div>
 
         <button
           type="submit"
