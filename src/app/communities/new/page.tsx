@@ -10,6 +10,7 @@ export default function NewCommunityPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [nsfw, setNsfw] = useState(false);
 
   if (status === "loading") {
     return <div className="py-12 text-center text-zinc-500">Loading…</div>;
@@ -41,7 +42,7 @@ export default function NewCommunityPage() {
       const res = await fetch("/api/communities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, title, description, rules }),
+        body: JSON.stringify({ name, title, description, rules, nsfw }),
       });
 
       const data = await res.json();
@@ -64,12 +65,15 @@ export default function NewCommunityPage() {
       <div>
         <h1 className="text-2xl font-bold">Create a community</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Communities are topic-based. The AI moderator will use the description
+          Communities are topic-based. The AI moderator uses the description
           (and optional rules) to keep posts roughly on-topic and free of spam.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900"
+      >
         {error && (
           <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
             {error}
@@ -80,23 +84,20 @@ export default function NewCommunityPage() {
           <label htmlFor="name" className="mb-1 block text-sm font-medium">
             Community name (slug)
           </label>
-          <div className="flex items-center">
-            <span className="rounded-l-md border border-r-0 bg-zinc-100 px-3 py-2 text-sm text-zinc-500 dark:bg-zinc-800">
-              c/
-            </span>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              minLength={3}
-              maxLength={32}
-              pattern="[a-z0-9_]+"
-              placeholder="technology"
-              className="w-full rounded-r-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-            />
-          </div>
-          <p className="mt-1 text-xs text-zinc-500">Lowercase letters, numbers, underscores only</p>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            minLength={3}
+            maxLength={32}
+            pattern="[a-z0-9_]+"
+            placeholder="technology"
+            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            Lowercase letters, numbers, underscores only
+          </p>
         </div>
 
         <div>
@@ -127,9 +128,6 @@ export default function NewCommunityPage() {
             placeholder="A place to discuss technology, gadgets, software, and the future."
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
-          <p className="mt-1 text-xs text-zinc-500">
-            This is the main signal the AI uses for on-topic checks.
-          </p>
         </div>
 
         <div>
@@ -145,6 +143,16 @@ export default function NewCommunityPage() {
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
         </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={nsfw}
+            onChange={(e) => setNsfw(e.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300"
+          />
+          <span>NSFW community</span>
+        </label>
 
         <button
           type="submit"
