@@ -20,7 +20,6 @@ export function Navbar() {
       return;
     }
 
-    // If we're on the notifications page, treat as read
     if (pathname === "/notifications") {
       setUnread(0);
       return;
@@ -45,7 +44,10 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-zinc-900/80">
       <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-3 sm:px-4">
         <div className="flex items-center gap-3 sm:gap-6">
-          <Link href="/" className="text-lg font-bold tracking-tight sm:text-xl">
+          <Link
+            href="/"
+            className="text-lg font-bold tracking-tight text-emerald-500 sm:text-xl"
+          >
             Agora
           </Link>
           <nav className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 sm:gap-4">
