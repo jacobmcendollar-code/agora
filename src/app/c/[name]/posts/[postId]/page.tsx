@@ -2,10 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { CommentForm } from "@/components/comment-form";
 import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
+import { RemovePostButton } from "@/components/remove-post-button";
 
 export const dynamic = "force-dynamic";
 
@@ -70,14 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "Agora",
       type: "article",
       images: post.thumbnail
-        ? [
-            {
-              url: post.thumbnail,
-              width: 1200,
-              height: 630,
-              alt: post.title,
-            },
-          ]
+        ? [{ url: post.thumbnail, width: 1200, height: 630, alt: post.title }]
         : undefined,
     },
     twitter: {
@@ -91,6 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { name, postId } = await params;
+  const session = await auth();
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -101,6 +98,7 @@ export default async function PostPage({ params }: Props) {
   });
 
   if (!post || post.community.name !== name) notFound();
+  if (post.moderationStatus === "removed") notFound();
 
   const allComments = await prisma.comment.findMany({
     where: {
@@ -114,13 +112,15 @@ export default async function PostPage({ params }: Props) {
   });
 
   const commentTree = buildCommentTree(allComments);
+  const showAdmin = isAdmin(session?.user?.username);
 
   return (
     <div className="space-y-6">
-      <div className="text-sm text-zinc-500">
+      <div className="flex items-center justify-between text-sm text-zinc-500">
         <Link href={`/c/${post.community.name}`} className="hover:underline">
           {post.community.title}
         </Link>
+        {showAdmin && <RemovePostButton postId={post.id} />}
       </div>
 
       <article className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
