@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { moderateContent } from "@/lib/moderation";
+import { notifyMentions } from "@/lib/mentions";
 
 const schema = z.object({
   postId: z.string().min(1),
@@ -126,6 +127,14 @@ export async function POST(req: Request) {
         },
       });
     }
+
+    // @mentions
+    await notifyMentions({
+      text: commentBody,
+      actorUsername,
+      actorId: session.user.id,
+      link,
+    });
 
     return NextResponse.json({ id: comment.id });
   } catch (err) {
