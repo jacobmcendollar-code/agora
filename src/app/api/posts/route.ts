@@ -89,4 +89,17 @@ export async function POST(req: Request) {
       data: {
         title,
         body: postBody || null,
-        url: url ||
+        url: url || null,
+        thumbnail,
+        communityId: community.id,
+        authorId: session.user.id,
+        moderationStatus: "approved",
+      },
+    });
+
+    return NextResponse.json({ id: post.id, communityName: community.name });
+  } catch (err) {
+    console.error("[posts POST]", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
