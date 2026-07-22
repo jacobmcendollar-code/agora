@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { uploadFiles } from "@/lib/uploadthing";
 
 type Community = {
   name: string;
@@ -126,14 +125,23 @@ function SubmitForm() {
     setUploading(true);
 
     try {
-      const result = await uploadFiles("postImage", { files: [file] });
-      if (result && result[0]) {
-        setImageUrl(result[0].ufsUrl || result[0].url);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Upload failed");
       } else {
-        setError("Upload failed");
+        setImageUrl(data.url);
       }
-    } catch (err: any) {
-      setError(err?.message || "Upload failed");
+    } catch {
+      setError("Upload failed");
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -347,7 +355,7 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Image — custom file input for better Safari support */}
+        {/* Image */}
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
