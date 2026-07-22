@@ -12,6 +12,20 @@ type Community = {
 
 type PostType = "text" | "link" | "image";
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // strip the data:image/...;base64, prefix
+      const base64 = result.split(",")[1] || "";
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function SubmitForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -125,12 +139,27 @@ function SubmitForm() {
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      if (!file.type.startsWith("image/")) {
+        setError("File must be an image");
+        setUploading(false);
+        return;
+      }
+      if (file.size > 4 * 1024 * 1024) {
+        setError("Image must be under 4MB");
+        setUploading(false);
+        return;
+      }
+
+      const fileData = await fileToBase64(file);
 
       const res = await fetch("/api/upload", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileData,
+        }),
       });
 
       const data = await res.json();

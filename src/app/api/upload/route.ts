@@ -11,22 +11,29 @@ export async function POST(req: Request) {
   }
 
   try {
-    const formData = await req.formData();
-    const file = formData.get("file");
+    const body = await req.json();
+    const { fileName, fileType, fileData } = body as {
+      fileName?: string;
+      fileType?: string;
+      fileData?: string; // base64
+    };
 
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!fileName || !fileType || !fileData) {
+      return NextResponse.json({ error: "Missing file data" }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!fileType.startsWith("image/")) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
-    if (file.size > 4 * 1024 * 1024) {
+    // Convert base64 to File
+    const buffer = Buffer.from(fileData, "base64");
+    if (buffer.length > 4 * 1024 * 1024) {
       return NextResponse.json({ error: "Image must be under 4MB" }, { status: 400 });
     }
 
-    // UTApi expects an array and returns an array
+    const file = new File([buffer], fileName, { type: fileType });
+
     const results = await utapi.uploadFiles([file]);
     const result = results[0];
 
