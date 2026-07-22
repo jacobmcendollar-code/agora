@@ -18,28 +18,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Basic checks
     if (!file.type.startsWith("image/")) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
+
     if (file.size > 4 * 1024 * 1024) {
       return NextResponse.json({ error: "Image must be under 4MB" }, { status: 400 });
     }
 
-    const response = await utapi.uploadFiles(file);
+    // UTApi expects an array and returns an array
+    const results = await utapi.uploadFiles([file]);
+    const result = results[0];
 
-    if (response.error || !response.data) {
-      console.error("[upload]", response.error);
+    if (!result || result.error || !result.data) {
+      console.error("[upload] UTApi error:", result?.error);
       return NextResponse.json(
-        { error: response.error?.message || "Upload failed" },
+        {
+          error:
+            result?.error?.message ||
+            "Upload failed. Check UPLOADTHING_TOKEN on Vercel.",
+        },
         { status: 500 }
       );
     }
 
-    const url = response.data.ufsUrl || response.data.url;
+    const url = result.data.ufsUrl || result.data.url;
+    if (!url) {
+      return NextResponse.json({ error: "No URL returned from upload" }, { status: 500 });
+    }
+
     return NextResponse.json({ url });
-  } catch (err) {
-    console.error("[upload]", err);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[upload] exception:", err);
+    return NextResponse.json(
+      { error: err?.message || "Upload failed" },
+      { status: 500 }
+    );
   }
 }
