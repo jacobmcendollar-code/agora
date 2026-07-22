@@ -25,7 +25,7 @@ function SubmitForm() {
   const [selected, setSelected] = useState(preselected);
   const [selectedTitle, setSelectedTitle] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [postType, setPostType] = useState<PostType>("text");
+  const [postType, setPostType] = useState<PostType>("link");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
@@ -180,9 +180,9 @@ function SubmitForm() {
   }
 
   const types: { key: PostType; label: string }[] = [
-    { key: "text", label: "Text" },
     { key: "link", label: "Link" },
     { key: "image", label: "Image" },
+    { key: "text", label: "Text" },
   ];
 
   return (
@@ -321,7 +321,7 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Image — cleaned up */}
+        {/* Image */}
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
