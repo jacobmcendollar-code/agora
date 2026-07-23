@@ -61,6 +61,38 @@ function isTikTokLink(url: string | null | undefined): boolean {
   return url.includes("tiktok.com");
 }
 
+function IconCommunity({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+
+function IconUser({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+
+function IconClock({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function IconComments({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  );
+}
+
 export function PostFeed({
   initialPosts,
   sort,
@@ -201,53 +233,57 @@ export function PostFeed({
                 </div>
               ) : null}
 
-              <div className="min-w-0 flex-1">
-                <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                  <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
-                    {post.title}
-                  </h2>
-                </Link>
+              <div className="flex min-h-[5rem] min-w-0 flex-1 flex-col sm:min-h-[6rem]">
+                <div className="flex-1">
+                  <Link href={`/c/${post.community.name}/posts/${post.id}`}>
+                    <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
+                      {post.title}
+                    </h2>
+                  </Link>
 
-                {post.body && (
-                  <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
-                    {post.body}
-                  </p>
-                )}
-
-                <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-zinc-500">
-                  {!hideCommunity && (
-                    <>
-                      <Link
-                        href={`/c/${post.community.name}`}
-                        className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-                      >
-                        {post.community.title}
-                      </Link>
-                      <span>•</span>
-                    </>
+                  {post.body && (
+                    <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
+                      {post.body}
+                    </p>
                   )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 sm:text-sm">
+                  {!hideCommunity && (
+                    <Link
+                      href={`/c/${post.community.name}`}
+                      className="inline-flex items-center gap-1 font-medium text-zinc-700 hover:underline dark:text-zinc-300"
+                    >
+                      <IconCommunity />
+                      <span>{post.community.title}</span>
+                    </Link>
+                  )}
+
                   <Link
                     href={`/u/${post.author.username}`}
-                    className="hover:underline"
+                    className="inline-flex items-center gap-1 hover:underline"
                   >
-                    {post.author.username}
+                    <IconUser />
+                    <span>{post.author.username}</span>
                   </Link>
-                  <span>•</span>
-                  <time dateTime={post.createdAt}>
-                    {timeAgo(new Date(post.createdAt))}
-                  </time>
+
+                  <span className="inline-flex items-center gap-1">
+                    <IconClock />
+                    <time dateTime={post.createdAt}>
+                      {timeAgo(new Date(post.createdAt))}
+                    </time>
+                  </span>
+
                   {post.nsfw && (
-                    <>
-                      <span>•</span>
-                      <span className="font-medium text-rose-500">NSFW</span>
-                    </>
+                    <span className="font-medium text-rose-500">NSFW</span>
                   )}
-                  <span>•</span>
+
                   <Link
                     href={`/c/${post.community.name}/posts/${post.id}#comments`}
-                    className="hover:underline"
+                    className="inline-flex items-center gap-1 hover:underline"
                   >
-                    {post._count.comments} comments
+                    <IconComments />
+                    <span>{post._count.comments}</span>
                   </Link>
                 </div>
               </div>
