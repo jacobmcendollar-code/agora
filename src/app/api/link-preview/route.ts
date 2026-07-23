@@ -8,6 +8,23 @@ export async function GET(req: Request) {
     return NextResponse.json({ title: "", thumbnail: null, description: "" });
   }
 
+  // X oEmbed
+  if (url.includes("x.com") || url.includes("twitter.com")) {
+    try {
+      const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`;
+      const res = await fetch(oembedUrl);
+      const data = await res.json();
+
+      return NextResponse.json({
+        title: data.html ? "X post" : "",
+        thumbnail: null,
+        description: "",
+        html: data.html || "",
+      });
+    } catch {}
+  }
+
+  // General fallback
   try {
     const response = await fetch(url, {
       headers: {
