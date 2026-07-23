@@ -7,13 +7,15 @@ import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { CommentForm } from "@/components/comment-form";
 import { RemoveCommentButton } from "@/components/remove-comment-button";
+import { EditCommentButton } from "@/components/edit-comment-button";
 import { linkify } from "@/lib/linkify";
 
 type CommentData = {
   id: string;
   body: string;
   score: number;
-  createdAt: Date;
+  createdAt: Date | string;
+  authorId: string;
   author: { username: string };
   replies: CommentData[];
 };
@@ -36,18 +38,26 @@ export function Comment({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const { data: session } = useSession();
 
-  // Fallback if parent didn't pass isAdminUser
   const adminUsernames = (process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+
   const showRemove =
     isAdminUser ||
     (session?.user?.username &&
       adminUsernames.includes(session.user.username.toLowerCase()));
 
+  const isAuthor = session?.user?.id === comment.authorId;
+
   return (
-    <div className={depth > 0 ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700" : ""}>
+    <div
+      className={
+        depth > 0
+          ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700"
+          : ""
+      }
+    >
       <div className="rounded-lg border bg-white p-4 dark:bg-zinc-900">
         <div className="flex gap-3">
           <VoteButtons
@@ -56,6 +66,7 @@ export function Comment({
             initialScore={comment.score}
             size="sm"
           />
+
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
               <Link
@@ -66,6 +77,22 @@ export function Comment({
               </Link>
               <span>•</span>
               <time>{timeAgo(comment.createdAt)}</time>
+
+              {isAuthor && (
+                <>
+                  <span>•</span>
+                  <EditCommentButton
+                    commentId={comment.id}
+                    initialBody={comment.body}
+                    createdAt={
+                      typeof comment.createdAt === "string"
+                        ? comment.createdAt
+                        : comment.createdAt.toISOString()
+                    }
+                  />
+                </>
+              )}
+
               {showRemove && (
                 <>
                   <span>•</span>
