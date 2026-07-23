@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
-import { formatScore, timeAgo } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
 import { CommentForm } from "@/components/comment-form";
 import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
@@ -32,6 +32,16 @@ function getYouTubeId(url: string | null | undefined): string | null {
     return null;
   }
   return null;
+}
+
+function isXLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("x.com") || url.includes("twitter.com");
+}
+
+function getXPostId(url: string): string | null {
+  const match = url.match(/\/status\/(\d+)/);
+  return match ? match[1] : null;
 }
 
 function buildCommentTree(comments: any[]) {
@@ -134,6 +144,8 @@ export default async function PostPage({ params }: Props) {
   const commentTree = buildCommentTree(allComments);
   const showAdmin = isAdmin(session?.user?.username);
   const youtubeId = getYouTubeId(post.url);
+  const isX = isXLink(post.url);
+  const xPostId = isX ? getXPostId(post.url!) : null;
 
   return (
     <div className="space-y-6">
@@ -162,6 +174,7 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
+            {/* YouTube embed */}
             {youtubeId ? (
               <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg">
                 <iframe
@@ -187,7 +200,17 @@ export default async function PostPage({ params }: Props) {
               </a>
             ) : null}
 
-            {post.url && !youtubeId && !post.thumbnail && (
+            {/* X embed */}
+            {isX && xPostId && (
+              <div className="mt-4">
+                <blockquote className="twitter-tweet" data-theme="dark">
+                  <a href={post.url!}>Loading X post...</a>
+                </blockquote>
+                <script async src="https://platform.twitter.com/widgets.js"></script>
+              </div>
+            )}
+
+            {post.url && !youtubeId && !isX && !post.thumbnail && (
               <a
                 href={post.url}
                 target="_blank"
