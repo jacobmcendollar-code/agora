@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { x_thread_fetch } from "@/tools"; // We'll use the tool if it's X
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -10,33 +9,6 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Special handling for X (Twitter) links
-    if (url.includes("x.com") || url.includes("twitter.com")) {
-      const postIdMatch = url.match(/\/status\/(\d+)/);
-      const postId = postIdMatch ? postIdMatch[1] : null;
-
-      if (postId) {
-        try {
-          const postData = await x_thread_fetch({ post_id: postId });
-          if (postData) {
-            const text = postData.text || "";
-            const media = postData.media || [];
-            const thumbnail = media.length > 0 ? media[0].url : null;
-
-            return NextResponse.json({
-              title: text.slice(0, 200),
-              thumbnail,
-              description: "X post",
-              isX: true,
-            });
-          }
-        } catch {
-          // fall through to general fetch
-        }
-      }
-    }
-
-    // General Open Graph fallback
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; AgoraBot/1.0)",
