@@ -49,6 +49,10 @@ export function Comment({
       adminUsernames.includes(session.user.username.toLowerCase()));
 
   const isAuthor = session?.user?.id === comment.authorId;
+  const createdAtDate =
+    typeof comment.createdAt === "string"
+      ? new Date(comment.createdAt)
+      : comment.createdAt;
 
   return (
     <div
@@ -76,7 +80,7 @@ export function Comment({
                 {comment.author.username}
               </Link>
               <span>•</span>
-              <time>{timeAgo(comment.createdAt)}</time>
+              <time>{timeAgo(createdAtDate)}</time>
 
               {isAuthor && (
                 <>
@@ -84,11 +88,7 @@ export function Comment({
                   <EditCommentButton
                     commentId={comment.id}
                     initialBody={comment.body}
-                    createdAt={
-                      typeof comment.createdAt === "string"
-                        ? comment.createdAt
-                        : comment.createdAt.toISOString()
-                    }
+                    createdAt={createdAtDate.toISOString()}
                   />
                 </>
               )}
