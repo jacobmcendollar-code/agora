@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
     select: { banned: true },
   });
+
   if (dbUser?.banned) {
     return NextResponse.json(
       { error: "Your account is restricted from posting." },
@@ -45,13 +46,7 @@ export async function POST(req: Request) {
     const { communityName, title, body: postBody, url, imageUrl, nsfw } =
       parsed.data;
 
-    if (!postBody && !url && !imageUrl) {
-      return NextResponse.json(
-        { error: "Post must have a body, URL, or image" },
-        { status: 400 }
-      );
-    }
-
+    // Title alone is enough. Body, URL, and image are all optional.
     const community = await prisma.community.findUnique({
       where: { name: communityName },
     });
@@ -87,7 +82,6 @@ export async function POST(req: Request) {
       thumbnail = await fetchThumbnail(url);
     }
 
-    // Create the post with starting score of 1
     const post = await prisma.post.create({
       data: {
         title,
@@ -102,7 +96,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Auto-upvote from the author
     await prisma.postVote.create({
       data: {
         value: 1,

@@ -32,6 +32,7 @@ function SubmitForm() {
   const searchParams = useSearchParams();
   const preselected = searchParams.get("community") || "";
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const communityBoxRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -70,6 +71,24 @@ function SubmitForm() {
       })
       .catch(() => {});
   }, [preselected]);
+
+  // Close community dropdown when clicking outside
+  useEffect(() => {
+    function handlePointerDown(e: MouseEvent | TouchEvent) {
+      if (!communityBoxRef.current) return;
+      if (!communityBoxRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, []);
 
   useEffect(() => {
     if (postType !== "link" || !url.trim()) {
@@ -280,7 +299,7 @@ function SubmitForm() {
           </div>
         )}
 
-        <div className="relative">
+        <div className="relative" ref={communityBoxRef}>
           <label className="mb-1.5 block text-sm font-medium">Community</label>
           {selected ? (
             <div className="flex items-center gap-2">
@@ -302,7 +321,10 @@ function SubmitForm() {
                 type="text"
                 value={query}
                 onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => setShowDropdown(true)}
+                onFocus={() => {
+                  setShowDropdown(true);
+                  setFiltered(communities);
+                }}
                 placeholder="Search communities..."
                 autoComplete="off"
                 className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
@@ -432,9 +454,7 @@ function SubmitForm() {
         <div>
           <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
             Text{" "}
-            {postType !== "text" && (
-              <span className="font-normal text-zinc-400">(optional)</span>
-            )}
+            <span className="font-normal text-zinc-400">(optional)</span>
           </label>
           <textarea
             id="body"
@@ -444,7 +464,7 @@ function SubmitForm() {
             onChange={(e) => setBody(e.target.value)}
             placeholder={
               postType === "text"
-                ? "Write your post..."
+                ? "Add more detail if you want..."
                 : "Add more context if you want..."
             }
             className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
