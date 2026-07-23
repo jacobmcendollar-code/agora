@@ -7,6 +7,8 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { useNsfw } from "@/components/nsfw-provider";
 import { ImageLightbox } from "@/components/image-lightbox";
 import { YouTubeLightbox } from "@/components/youtube-lightbox";
+import { XLightbox } from "@/components/x-lightbox";
+import { TikTokLightbox } from "@/components/tiktok-lightbox";
 
 type Post = {
   id: string;
@@ -47,6 +49,16 @@ function getYouTubeId(url: string | null | undefined): string | null {
     return null;
   }
   return null;
+}
+
+function isXLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("x.com") || url.includes("twitter.com");
+}
+
+function isTikTokLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("tiktok.com");
 }
 
 export function PostFeed({
@@ -130,6 +142,8 @@ export function PostFeed({
     <div className="space-y-4">
       {visiblePosts.map((post) => {
         const youtubeId = getYouTubeId(post.url);
+        const isX = isXLink(post.url);
+        const isTikTok = isTikTokLink(post.url);
 
         return (
           <article
@@ -146,6 +160,20 @@ export function PostFeed({
               {post.thumbnail && youtubeId ? (
                 <YouTubeLightbox
                   videoId={youtubeId}
+                  thumbnail={post.thumbnail}
+                  title={post.title}
+                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                />
+              ) : post.thumbnail && isX && post.url ? (
+                <XLightbox
+                  url={post.url}
+                  thumbnail={post.thumbnail}
+                  title={post.title}
+                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                />
+              ) : post.thumbnail && isTikTok && post.url ? (
+                <TikTokLightbox
+                  url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
                   className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
