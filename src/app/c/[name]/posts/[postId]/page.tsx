@@ -236,10 +236,6 @@ export default async function PostPage({ params }: Props) {
                 {post.community.title}
               </Link>
 
-              <a href="#comments" className="hover:underline">
-                {post.commentCount} comment{post.commentCount !== 1 ? "s" : ""}
-              </a>
-
               <SaveButton postId={post.id} />
 
               <ShareButton url={sharePath} title={post.title} />
