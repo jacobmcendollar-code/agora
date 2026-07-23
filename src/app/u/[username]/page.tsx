@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { JoinedCommunities } from "@/components/joined-communities";
 import { NsfwToggle } from "@/components/nsfw-toggle";
@@ -29,7 +30,9 @@ export default async function UserProfilePage({ params }: Props) {
 
   if (!user) notFound();
 
-  const isOwnProfile = session?.user?.username?.toLowerCase() === user.username;
+  const isOwnProfile =
+    session?.user?.username?.toLowerCase() === user.username;
+  const showAdminTools = isOwnProfile && isAdmin(session?.user?.username);
 
   const [posts, comments, subscriptions] = await Promise.all([
     prisma.post.findMany({
@@ -88,9 +91,18 @@ export default async function UserProfilePage({ params }: Props) {
             })}
           </p>
         </div>
+
         {isOwnProfile && (
-          <div className="shrink-0 pt-1">
+          <div className="flex shrink-0 flex-col items-end gap-3 pt-1">
             <NsfwToggle />
+            {showAdminTools && (
+              <Link
+                href="/admin/users"
+                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                Admin tools
+              </Link>
+            )}
           </div>
         )}
       </div>
@@ -163,7 +175,7 @@ export default async function UserProfilePage({ params }: Props) {
                   <span>•</span>
                   <span>{timeAgo(comment.createdAt)}</span>
                 </div>
-                <p className="text-sm whitespace-pre-wrap break-words">
+                <p className="whitespace-pre-wrap break-words text-sm">
                   {comment.body}
                 </p>
               </div>
