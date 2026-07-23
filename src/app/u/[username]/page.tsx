@@ -137,118 +137,112 @@ export default async function UserProfilePage({ params }: Props) {
       </section>
 
       {isOwnProfile && (
-        <CollapsibleSection title="Saved" count={savedPosts.length}>
-          {savedPosts.length === 0 ? (
-            <p className="text-sm text-zinc-500">No saved posts yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {savedPosts.map((post) => (
-                <article
-                  key={post.id}
-                  className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+        <CollapsibleSection
+          title="Saved"
+          count={savedPosts.length}
+          emptyMessage="No saved posts yet."
+        >
+          {savedPosts.map((post) => (
+            <article
+              key={post.id}
+              className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+            >
+              <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                <Link
+                  href={`/c/${post.community.name}`}
+                  className="font-medium hover:underline"
                 >
-                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                    <Link
-                      href={`/c/${post.community.name}`}
-                      className="font-medium hover:underline"
-                    >
-                      {post.community.title}
-                    </Link>
-                    <span>•</span>
-                    <Link
-                      href={`/u/${post.author.username}`}
-                      className="hover:underline"
-                    >
-                      {post.author.username}
-                    </Link>
-                    <span>•</span>
-                    <span>{timeAgo(post.createdAt)}</span>
-                    <span>•</span>
-                    <span>{formatScore(post.score)} points</span>
-                  </div>
-                  <Link
-                    href={`/c/${post.community.name}/posts/${post.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {post.title}
-                  </Link>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500">
-                    <span>{post._count.comments} comments</span>
-                    <SaveButton postId={post.id} initialSaved />
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+                  {post.community.title}
+                </Link>
+                <span>•</span>
+                <Link
+                  href={`/u/${post.author.username}`}
+                  className="hover:underline"
+                >
+                  {post.author.username}
+                </Link>
+                <span>•</span>
+                <span>{timeAgo(post.createdAt)}</span>
+                <span>•</span>
+                <span>{formatScore(post.score)} points</span>
+              </div>
+              <Link
+                href={`/c/${post.community.name}/posts/${post.id}`}
+                className="font-medium hover:underline"
+              >
+                {post.title}
+              </Link>
+              <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500">
+                <span>{post._count.comments} comments</span>
+                <SaveButton postId={post.id} initialSaved />
+              </div>
+            </article>
+          ))}
         </CollapsibleSection>
       )}
 
-      <CollapsibleSection title="Recent Posts" count={posts.length}>
-        {posts.length === 0 ? (
-          <p className="text-sm text-zinc-500">No posts yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {posts.map((post) => (
-              <article
-                key={post.id}
-                className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+      <CollapsibleSection
+        title="Recent Posts"
+        count={posts.length}
+        emptyMessage="No posts yet."
+      >
+        {posts.map((post) => (
+          <article
+            key={post.id}
+            className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+          >
+            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+              <Link
+                href={`/c/${post.community.name}`}
+                className="font-medium hover:underline"
               >
-                <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                  <Link
-                    href={`/c/${post.community.name}`}
-                    className="font-medium hover:underline"
-                  >
-                    {post.community.title}
-                  </Link>
-                  <span>•</span>
-                  <span>{timeAgo(post.createdAt)}</span>
-                  <span>•</span>
-                  <span>{formatScore(post.score)} points</span>
-                </div>
-                <Link
-                  href={`/c/${post.community.name}/posts/${post.id}`}
-                  className="font-medium hover:underline"
-                >
-                  {post.title}
-                </Link>
-                <div className="mt-1 text-xs text-zinc-500">
-                  {post._count.comments} comments
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+                {post.community.title}
+              </Link>
+              <span>•</span>
+              <span>{timeAgo(post.createdAt)}</span>
+              <span>•</span>
+              <span>{formatScore(post.score)} points</span>
+            </div>
+            <Link
+              href={`/c/${post.community.name}/posts/${post.id}`}
+              className="font-medium hover:underline"
+            >
+              {post.title}
+            </Link>
+            <div className="mt-1 text-xs text-zinc-500">
+              {post._count.comments} comments
+            </div>
+          </article>
+        ))}
       </CollapsibleSection>
 
-      <CollapsibleSection title="Recent Comments" count={comments.length}>
-        {comments.length === 0 ? (
-          <p className="text-sm text-zinc-500">No comments yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+      <CollapsibleSection
+        title="Recent Comments"
+        count={comments.length}
+        emptyMessage="No comments yet."
+      >
+        {comments.map((comment) => (
+          <div
+            key={comment.id}
+            className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+          >
+            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+              <Link
+                href={`/c/${comment.post.community.name}/posts/${comment.post.id}`}
+                className="font-medium hover:underline"
               >
-                <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                  <Link
-                    href={`/c/${comment.post.community.name}/posts/${comment.post.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {comment.post.title}
-                  </Link>
-                  <span>•</span>
-                  <span>{comment.post.community.title}</span>
-                  <span>•</span>
-                  <span>{timeAgo(comment.createdAt)}</span>
-                </div>
-                <p className="whitespace-pre-wrap break-words text-sm">
-                  {comment.body}
-                </p>
-              </div>
-            ))}
+                {comment.post.title}
+              </Link>
+              <span>•</span>
+              <span>{comment.post.community.title}</span>
+              <span>•</span>
+              <span>{timeAgo(comment.createdAt)}</span>
+            </div>
+            <p className="whitespace-pre-wrap break-words text-sm">
+              {comment.body}
+            </p>
           </div>
-        )}
+        ))}
       </CollapsibleSection>
     </div>
   );
