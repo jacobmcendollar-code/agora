@@ -10,6 +10,7 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
 import { RemovePostButton } from "@/components/remove-post-button";
 import { EditPostButton } from "@/components/edit-post-button";
+import { ImageLightbox } from "@/components/image-lightbox";
 import { XEmbed } from "@/components/x-embed";
 import { TikTokEmbed } from "@/components/tiktok-embed";
 import { RedditEmbed } from "@/components/reddit-embed";
@@ -218,18 +219,7 @@ export default async function PostPage({ params }: Props) {
             {isReddit && post.url && <RedditEmbed url={post.url} />}
 
             {post.thumbnail && !hasRichEmbed && (
-              <a
-                href={post.url || post.thumbnail}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 block"
-              >
-                <img
-                  src={post.thumbnail}
-                  alt=""
-                  className="max-h-80 w-full rounded-lg object-cover transition hover:opacity-95"
-                />
-              </a>
+              <ImageLightbox src={post.thumbnail} alt={post.title} />
             )}
 
             {post.url &&
