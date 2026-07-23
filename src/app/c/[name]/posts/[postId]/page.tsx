@@ -194,12 +194,28 @@ export default async function PostPage({ params }: Props) {
               </a>
             ) : null}
 
-            {/* X oEmbed */}
+            {/* X card */}
             {isX && (
-              <div 
-                className="mt-4" 
-                dangerouslySetInnerHTML={{ __html: post.body || "" }}
-              />
+              <div className="mt-4 rounded-lg border bg-zinc-50 p-4 dark:bg-zinc-900">
+                <div className="mb-2 text-xs text-zinc-500">X post</div>
+                <a
+                  href={post.url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block hover:underline"
+                >
+                  <p className="text-sm line-clamp-6 text-zinc-800 dark:text-zinc-200">
+                    {post.body || "View post on X"}
+                  </p>
+                </a>
+                {post.thumbnail && (
+                  <img
+                    src={post.thumbnail}
+                    alt=""
+                    className="mt-3 max-h-64 w-full rounded-lg object-cover"
+                  />
+                )}
+              </div>
             )}
 
             {post.url && !youtubeId && !isX && !post.thumbnail && (
