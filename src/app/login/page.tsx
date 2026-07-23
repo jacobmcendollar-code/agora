@@ -9,7 +9,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "1";
-
+  const justReset = searchParams.get("reset") === "1";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -47,9 +47,17 @@ function LoginForm() {
             Account created. You can log in now.
           </p>
         )}
+        {justReset && (
+          <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+            Password updated. You can log in now.
+          </p>
+        )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900"
+      >
         {error && (
           <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
             {error}
@@ -71,9 +79,17 @@ function LoginForm() {
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
-            Password
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-medium">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-zinc-500 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             name="password"
