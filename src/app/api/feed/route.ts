@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
   const posts = await prisma.post.findMany({
     where: {
-      moderationStatus: "approved",
+      moderationStatus: { in: ["approved", "author_deleted"] },
       ...(communityIds ? { communityId: { in: communityIds } } : {}),
     },
     take: 200,
@@ -49,6 +49,10 @@ export async function GET(req: Request) {
 
   let ranked = posts.map((p) => ({
     ...p,
+    author: {
+      username:
+        p.moderationStatus === "author_deleted" ? "[deleted]" : p.author.username,
+    },
     hot: hotScore(p.score, p.createdAt),
   }));
 

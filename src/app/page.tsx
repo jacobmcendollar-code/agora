@@ -16,9 +16,11 @@ type Props = {
 export default async function HomePage({ searchParams }: Props) {
   const session = await auth();
   const params = await searchParams;
-  const sort = (["trending", "recent", "top"].includes(params.sort || "")
-    ? params.sort
-    : "trending") as SortOption;
+  const sort = (
+    ["trending", "recent", "top"].includes(params.sort || "")
+      ? params.sort
+      : "trending"
+  ) as SortOption;
 
   let communityIds: string[] | null = null;
 
@@ -27,7 +29,6 @@ export default async function HomePage({ searchParams }: Props) {
       where: { userId: session.user.id },
       select: { communityId: true },
     });
-
     if (subscriptions.length > 0) {
       communityIds = subscriptions.map((s) => s.communityId);
     }
@@ -35,7 +36,7 @@ export default async function HomePage({ searchParams }: Props) {
 
   const posts = await prisma.post.findMany({
     where: {
-      moderationStatus: "approved",
+      moderationStatus: { in: ["approved", "author_deleted"] },
       ...(communityIds ? { communityId: { in: communityIds } } : {}),
     },
     take: 20,
@@ -49,6 +50,12 @@ export default async function HomePage({ searchParams }: Props) {
 
   let ranked = posts.map((p) => ({
     ...p,
+    author: {
+      username:
+        p.moderationStatus === "author_deleted"
+          ? "[deleted]"
+          : p.author.username,
+    },
     hot: hotScore(p.score, p.createdAt),
     createdAt: p.createdAt.toISOString(),
   }));

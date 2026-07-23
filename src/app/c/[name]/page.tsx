@@ -20,9 +20,11 @@ export default async function CommunityPage({ params, searchParams }: Props) {
   const { sort: sortParam } = await searchParams;
   const session = await auth();
 
-  const sort = (["trending", "recent", "top"].includes(sortParam || "")
-    ? sortParam
-    : "trending") as SortOption;
+  const sort = (
+    ["trending", "recent", "top"].includes(sortParam || "")
+      ? sortParam
+      : "trending"
+  ) as SortOption;
 
   const community = await prisma.community.findUnique({
     where: { name },
@@ -46,7 +48,7 @@ export default async function CommunityPage({ params, searchParams }: Props) {
   const posts = await prisma.post.findMany({
     where: {
       communityId: community.id,
-      moderationStatus: "approved",
+      moderationStatus: { in: ["approved", "author_deleted"] },
     },
     take: 20,
     orderBy: { createdAt: "desc" },
@@ -59,6 +61,12 @@ export default async function CommunityPage({ params, searchParams }: Props) {
 
   let ranked = posts.map((p) => ({
     ...p,
+    author: {
+      username:
+        p.moderationStatus === "author_deleted"
+          ? "[deleted]"
+          : p.author.username,
+    },
     hot: hotScore(p.score, p.createdAt),
     createdAt: p.createdAt.toISOString(),
   }));

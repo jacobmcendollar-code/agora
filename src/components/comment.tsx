@@ -8,6 +8,7 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { CommentForm } from "@/components/comment-form";
 import { RemoveCommentButton } from "@/components/remove-comment-button";
 import { EditCommentButton } from "@/components/edit-comment-button";
+import { DeleteCommentButton } from "@/components/delete-comment-button";
 import { linkify } from "@/lib/linkify";
 
 type CommentData = {
@@ -16,6 +17,7 @@ type CommentData = {
   score: number;
   createdAt: Date | string;
   authorId: string;
+  moderationStatus?: string;
   author: { username: string };
   replies: CommentData[];
 };
@@ -49,6 +51,7 @@ export function Comment({
       adminUsernames.includes(session.user.username.toLowerCase()));
 
   const isAuthor = session?.user?.id === comment.authorId;
+  const isSoftDeleted = comment.moderationStatus === "author_deleted";
   const createdAtDate =
     typeof comment.createdAt === "string"
       ? new Date(comment.createdAt)
@@ -73,16 +76,20 @@ export function Comment({
 
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              <Link
-                href={`/u/${comment.author.username}`}
-                className="font-medium hover:underline"
-              >
-                {comment.author.username}
-              </Link>
+              {isSoftDeleted ? (
+                <span className="font-medium text-zinc-400">[deleted]</span>
+              ) : (
+                <Link
+                  href={`/u/${comment.author.username}`}
+                  className="font-medium hover:underline"
+                >
+                  {comment.author.username}
+                </Link>
+              )}
               <span>•</span>
               <time>{timeAgo(createdAtDate)}</time>
 
-              {isAuthor && (
+              {isAuthor && !isSoftDeleted && (
                 <>
                   <span>•</span>
                   <EditCommentButton
@@ -90,10 +97,15 @@ export function Comment({
                     initialBody={comment.body}
                     createdAt={createdAtDate.toISOString()}
                   />
+                  <span>•</span>
+                  <DeleteCommentButton
+                    commentId={comment.id}
+                    createdAt={createdAtDate.toISOString()}
+                  />
                 </>
               )}
 
-              {showRemove && (
+              {showRemove && !isSoftDeleted && (
                 <>
                   <span>•</span>
                   <RemoveCommentButton commentId={comment.id} />
@@ -105,12 +117,14 @@ export function Comment({
               {linkify(comment.body)}
             </div>
 
-            <button
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="mt-2 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
-            >
-              {showReplyForm ? "Cancel" : "Reply"}
-            </button>
+            {!isSoftDeleted && (
+              <button
+                onClick={() => setShowReplyForm(!showReplyForm)}
+                className="mt-2 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+              >
+                {showReplyForm ? "Cancel" : "Reply"}
+              </button>
+            )}
 
             {showReplyForm && (
               <div className="mt-3">

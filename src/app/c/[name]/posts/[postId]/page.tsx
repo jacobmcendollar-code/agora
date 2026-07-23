@@ -10,6 +10,7 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
 import { RemovePostButton } from "@/components/remove-post-button";
 import { EditPostButton } from "@/components/edit-post-button";
+import { DeletePostButton } from "@/components/delete-post-button";
 import { SaveButton } from "@/components/save-button";
 import { ImageLightbox } from "@/components/image-lightbox";
 import { XEmbed } from "@/components/x-embed";
@@ -141,10 +142,12 @@ export default async function PostPage({ params }: Props) {
   if (!post || post.community.name !== name) notFound();
   if (post.moderationStatus === "removed") notFound();
 
+  const isSoftDeleted = post.moderationStatus === "author_deleted";
+
   const allComments = await prisma.comment.findMany({
     where: {
       postId: post.id,
-      moderationStatus: "approved",
+      moderationStatus: { in: ["approved", "author_deleted"] },
     },
     orderBy: { createdAt: "asc" },
     include: {
@@ -167,7 +170,7 @@ export default async function PostPage({ params }: Props) {
         <Link href={`/c/${post.community.name}`} className="hover:underline">
           {post.community.title}
         </Link>
-        {showAdmin && <RemovePostButton postId={post.id} />}
+        {showAdmin && !isSoftDeleted && <RemovePostButton postId={post.id} />}
       </div>
 
       <article className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
@@ -180,21 +183,31 @@ export default async function PostPage({ params }: Props) {
 
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              <Link
-                href={`/u/${post.author.username}`}
-                className="hover:underline"
-              >
-                {post.author.username}
-              </Link>
+              {isSoftDeleted ? (
+                <span className="font-medium text-zinc-400">[deleted]</span>
+              ) : (
+                <Link
+                  href={`/u/${post.author.username}`}
+                  className="hover:underline"
+                >
+                  {post.author.username}
+                </Link>
+              )}
               <span>•</span>
               <time>{timeAgo(post.createdAt)}</time>
-              {isAuthor && (
+              {isAuthor && !isSoftDeleted && (
                 <>
                   <span>•</span>
                   <EditPostButton
                     postId={post.id}
                     initialTitle={post.title}
                     initialBody={post.body}
+                    createdAt={post.createdAt.toISOString()}
+                  />
+                  <span>•</span>
+                  <DeletePostButton
+                    postId={post.id}
+                    communityName={post.community.name}
                     createdAt={post.createdAt.toISOString()}
                   />
                 </>
@@ -255,7 +268,9 @@ export default async function PostPage({ params }: Props) {
           {post.commentCount} comment{post.commentCount !== 1 ? "s" : ""}
         </h2>
 
-        <CommentForm postId={post.id} communityName={post.community.name} />
+        {!isSoftDeleted && (
+          <CommentForm postId={post.id} communityName={post.community.name} />
+        )}
 
         <div className="space-y-4">
           {commentTree.map((comment) => (
