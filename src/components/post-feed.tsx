@@ -5,6 +5,7 @@ import Link from "next/link";
 import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { useNsfw } from "@/components/nsfw-provider";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 type Post = {
   id: string;
@@ -133,16 +134,13 @@ export function PostFeed({
                   />
                 </a>
               ) : (
-                <Link
-                  href={`/c/${post.community.name}/posts/${post.id}`}
-                  className="shrink-0"
-                >
-                  <img
+                <div className="shrink-0">
+                  <ImageLightbox
                     src={post.thumbnail}
-                    alt=""
+                    alt={post.title}
                     className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
                   />
-                </Link>
+                </div>
               )
             )}
 

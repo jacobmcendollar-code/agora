@@ -32,7 +32,7 @@ export function ImageLightbox({ src, alt = "", className }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-4 block w-full cursor-zoom-in text-left"
+        className="block cursor-zoom-in text-left"
       >
         <img
           src={src}
