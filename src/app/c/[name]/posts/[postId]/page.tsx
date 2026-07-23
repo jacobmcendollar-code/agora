@@ -229,6 +229,21 @@ export default async function PostPage({ params }: Props) {
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+              <Link
+                href={`/c/${post.community.name}`}
+                className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
+              >
+                {post.community.title}
+              </Link>
+
+              <a href="#comments" className="hover:underline">
+                {post.commentCount} comment{post.commentCount !== 1 ? "s" : ""}
+              </a>
+
+              <SaveButton postId={post.id} />
+
+              <ShareButton url={sharePath} title={post.title} />
+
               {isSoftDeleted ? (
                 <span className="font-medium text-zinc-400">[deleted]</span>
               ) : (
@@ -239,18 +254,17 @@ export default async function PostPage({ params }: Props) {
                   {post.author.username}
                 </Link>
               )}
-              <span>•</span>
+
               <time>{timeAgo(post.createdAt)}</time>
+
               {isAuthor && !isSoftDeleted && (
                 <>
-                  <span>•</span>
                   <EditPostButton
                     postId={post.id}
                     initialTitle={post.title}
                     initialBody={post.body}
                     createdAt={post.createdAt.toISOString()}
                   />
-                  <span>•</span>
                   <DeletePostButton
                     postId={post.id}
                     communityName={post.community.name}
@@ -258,10 +272,6 @@ export default async function PostPage({ params }: Props) {
                   />
                 </>
               )}
-              <span>•</span>
-              <SaveButton postId={post.id} />
-              <span>•</span>
-              <ShareButton url={sharePath} title={post.title} />
             </div>
           </div>
         </div>
