@@ -145,7 +145,19 @@ export function PostFeed({
             )}
 
             <div className="min-w-0 flex-1">
-              <div className="mb-1.5 flex flex-wrap items-center gap-x-2 text-sm text-zinc-500">
+              <Link href={`/c/${post.community.name}/posts/${post.id}`}>
+                <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
+                  {post.title}
+                </h2>
+              </Link>
+
+              {post.body && (
+                <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
+                  {post.body}
+                </p>
+              )}
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-zinc-500">
                 {!hideCommunity && (
                   <>
                     <Link
@@ -163,8 +175,8 @@ export function PostFeed({
                 >
                   {post.author.username}
                 </Link>
-                <span className="hidden sm:inline">•</span>
-                <time className="hidden sm:inline" dateTime={post.createdAt}>
+                <span>•</span>
+                <time dateTime={post.createdAt}>
                   {timeAgo(new Date(post.createdAt))}
                 </time>
                 {post.nsfw && (
@@ -173,24 +185,10 @@ export function PostFeed({
                     <span className="font-medium text-rose-500">NSFW</span>
                   </>
                 )}
-              </div>
-
-              <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
-                  {post.title}
-                </h2>
-              </Link>
-
-              {post.body && (
-                <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
-                  {post.body}
-                </p>
-              )}
-
-              <div className="mt-3">
+                <span>•</span>
                 <Link
                   href={`/c/${post.community.name}/posts/${post.id}#comments`}
-                  className="text-sm text-zinc-500 hover:underline"
+                  className="hover:underline"
                 >
                   {post._count.comments} comments
                 </Link>
