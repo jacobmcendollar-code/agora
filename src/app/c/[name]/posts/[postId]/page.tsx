@@ -10,6 +10,8 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
 import { RemovePostButton } from "@/components/remove-post-button";
 import { XEmbed } from "@/components/x-embed";
+import { TikTokEmbed } from "@/components/tiktok-embed";
+import { RedditEmbed } from "@/components/reddit-embed";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,16 @@ function getYouTubeId(url: string | null | undefined): string | null {
 function isXLink(url: string | null | undefined): boolean {
   if (!url) return false;
   return url.includes("x.com") || url.includes("twitter.com");
+}
+
+function isTikTokLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("tiktok.com");
+}
+
+function isRedditLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("reddit.com");
 }
 
 function buildCommentTree(comments: any[]) {
@@ -141,6 +153,11 @@ export default async function PostPage({ params }: Props) {
   const showAdmin = isAdmin(session?.user?.username);
   const youtubeId = getYouTubeId(post.url);
   const isX = isXLink(post.url);
+  const isTikTok = isTikTokLink(post.url);
+  const isReddit = isRedditLink(post.url);
+
+  // Hide the generic thumbnail when we have a rich embed
+  const hasRichEmbed = !!(youtubeId || isX || isTikTok || isReddit);
 
   return (
     <div className="space-y-6">
@@ -173,7 +190,7 @@ export default async function PostPage({ params }: Props) {
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
-            {/* YouTube embed */}
+            {/* YouTube */}
             {youtubeId ? (
               <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg">
                 <iframe
@@ -184,7 +201,19 @@ export default async function PostPage({ params }: Props) {
                   className="h-full w-full"
                 />
               </div>
-            ) : post.thumbnail && !isX ? (
+            ) : null}
+
+            {/* X */}
+            {isX && post.url && <XEmbed url={post.url} />}
+
+            {/* TikTok */}
+            {isTikTok && post.url && <TikTokEmbed url={post.url} />}
+
+            {/* Reddit */}
+            {isReddit && post.url && <RedditEmbed url={post.url} />}
+
+            {/* Generic thumbnail only when no rich embed exists */}
+            {post.thumbnail && !hasRichEmbed && (
               <a
                 href={post.url || post.thumbnail}
                 target="_blank"
@@ -197,13 +226,10 @@ export default async function PostPage({ params }: Props) {
                   className="max-h-80 w-full rounded-lg object-cover transition hover:opacity-95"
                 />
               </a>
-            ) : null}
+            )}
 
-            {/* Official X embed */}
-            {isX && post.url && <XEmbed url={post.url} />}
-
-            {/* Plain link fallback for non-YouTube, non-X, no-thumbnail posts */}
-            {post.url && !youtubeId && !isX && !post.thumbnail && (
+            {/* Plain link fallback */}
+            {post.url && !youtubeId && !isX && !isTikTok && !isReddit && !post.thumbnail && (
               <a
                 href={post.url}
                 target="_blank"
@@ -214,8 +240,8 @@ export default async function PostPage({ params }: Props) {
               </a>
             )}
 
-            {/* Body text (hidden for X posts so the embed is the focus) */}
-            {post.body && !isX && (
+            {/* Body text (hide when we have a rich embed so the embed is the focus) */}
+            {post.body && !hasRichEmbed && (
               <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
                 {post.body}
               </div>
