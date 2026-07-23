@@ -12,19 +12,6 @@ type Community = {
 
 type PostType = "text" | "link" | "image";
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1] || "";
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function SubmitForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -47,6 +34,7 @@ function SubmitForm() {
   const [uploading, setUploading] = useState(false);
   const [previewThumb, setPreviewThumb] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [titleLoading, setTitleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -69,6 +57,7 @@ function SubmitForm() {
       .catch(() => {});
   }, [preselected]);
 
+  // Auto title suggestion + thumbnail when URL changes
   useEffect(() => {
     if (postType !== "link" || !url.trim()) {
       setPreviewThumb(null);
@@ -77,27 +66,37 @@ function SubmitForm() {
 
     let cancelled = false;
     const timer = setTimeout(async () => {
+      setTitleLoading(true);
       setPreviewLoading(true);
       try {
         const res = await fetch(
-          `/api/thumbnail?url=${encodeURIComponent(url.trim())}`
+          `/api/link-preview?url=${encodeURIComponent(url.trim())}`
         );
         const data = await res.json();
+
         if (!cancelled) {
+          if (data.title && !title.trim()) {
+            setTitle(data.title);
+          }
           setPreviewThumb(data.thumbnail || null);
         }
       } catch {
-        if (!cancelled) setPreviewThumb(null);
+        if (!cancelled) {
+          setPreviewThumb(null);
+        }
       } finally {
-        if (!cancelled) setPreviewLoading(false);
+        if (!cancelled) {
+          setTitleLoading(false);
+          setPreviewLoading(false);
+        }
       }
-    }, 500);
+    }, 600);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [url, postType]);
+  }, [url, postType, title]);
 
   function handleSearch(value: string) {
     setQuery(value);
@@ -354,32 +353,33 @@ function SubmitForm() {
             placeholder="A clear, descriptive title"
             className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
           />
+          {titleLoading && (
+            <p className="mt-1 text-xs text-zinc-500">Fetching title…</p>
+          )}
         </div>
 
         {/* Link */}
         {postType === "link" && (
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
-                Link
-              </label>
-              <input
-                id="url"
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://"
-                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-              />
-            </div>
+          <div>
+            <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
+              Link
+            </label>
+            <input
+              id="url"
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+            />
             {previewLoading && (
-              <p className="text-xs text-zinc-500">Loading preview…</p>
+              <p className="mt-1 text-xs text-zinc-500">Loading preview…</p>
             )}
             {previewThumb && (
               <img
                 src={previewThumb}
                 alt="Link preview"
-                className="max-h-48 w-full rounded-lg object-cover"
+                className="mt-3 max-h-48 w-full rounded-lg object-cover"
               />
             )}
           </div>
@@ -456,7 +456,7 @@ function SubmitForm() {
           <span>NSFW</span>
         </label>
 
-                <button
+        <button
           type="submit"
           disabled={loading || uploading || !selected || !title.trim()}
           className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
