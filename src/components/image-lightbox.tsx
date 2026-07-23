@@ -49,20 +49,23 @@ export function ImageLightbox({ src, alt = "", className }: Props) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setOpen(false)}
         >
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="absolute right-4 top-4 rounded-md bg-black/50 px-3 py-1.5 text-sm text-white hover:bg-black/70"
-          >
-            Close
-          </button>
-
-          <img
-            src={src}
-            alt={alt}
-            className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
+          <div
+            className="relative max-h-[90vh] max-w-[95vw]"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute -top-10 right-0 rounded-md bg-black/50 px-3 py-1.5 text-sm text-white hover:bg-black/70"
+            >
+              Close
+            </button>
+            <img
+              src={src}
+              alt={alt}
+              className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
+            />
+          </div>
         </div>
       )}
     </>

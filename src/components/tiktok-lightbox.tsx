@@ -61,19 +61,20 @@ export function TikTokLightbox({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setOpen(false)}
         >
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="absolute right-4 top-4 rounded-md bg-black/50 px-3 py-1.5 text-sm text-white hover:bg-black/70"
-          >
-            Close
-          </button>
-
           <div
-            className="max-h-[90vh] w-full max-w-md overflow-auto"
+            className="relative w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <TikTokEmbed url={url} />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute -top-10 right-0 rounded-md bg-black/50 px-3 py-1.5 text-sm text-white hover:bg-black/70"
+            >
+              Close
+            </button>
+            <div className="max-h-[90vh] overflow-auto">
+              <TikTokEmbed url={url} />
+            </div>
           </div>
         </div>
       )}
