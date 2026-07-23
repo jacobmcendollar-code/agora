@@ -185,7 +185,7 @@ export default async function PostPage({ params }: Props) {
                   className="h-full w-full"
                 />
               </div>
-            ) : post.thumbnail ? (
+            ) : post.thumbnail && !isX ? (
               <a
                 href={post.url || post.thumbnail}
                 target="_blank"
