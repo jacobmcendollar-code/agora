@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useToast } from "@/components/toast-provider";
 
 type Community = {
   name: string;
@@ -31,6 +32,7 @@ function SubmitForm() {
   const searchParams = useSearchParams();
   const preselected = searchParams.get("community") || "";
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const [communities, setCommunities] = useState<Community[]>([]);
   const [filtered, setFiltered] = useState<Community[]>([]);
@@ -57,7 +59,6 @@ function SubmitForm() {
       .then((data) => {
         setCommunities(data);
         setFiltered(data);
-
         if (preselected) {
           const match = data.find((c: Community) => c.name === preselected);
           if (match) {
@@ -85,7 +86,6 @@ function SubmitForm() {
           `/api/link-preview?url=${encodeURIComponent(url.trim())}`
         );
         const data = await res.json();
-
         if (!cancelled) {
           if (data.title && !title.trim()) {
             setTitle(data.title);
@@ -93,9 +93,7 @@ function SubmitForm() {
           setPreviewThumb(data.thumbnail || null);
         }
       } catch {
-        if (!cancelled) {
-          setPreviewThumb(null);
-        }
+        if (!cancelled) setPreviewThumb(null);
       } finally {
         if (!cancelled) {
           setTitleLoading(false);
@@ -113,12 +111,10 @@ function SubmitForm() {
   function handleSearch(value: string) {
     setQuery(value);
     setShowDropdown(true);
-
     if (!value.trim()) {
       setFiltered(communities);
       return;
     }
-
     const lower = value.toLowerCase();
     setFiltered(
       communities.filter(
@@ -152,17 +148,18 @@ function SubmitForm() {
     try {
       if (!file.type.startsWith("image/")) {
         setError("File must be an image");
+        toast("File must be an image", "error");
         setUploading(false);
         return;
       }
       if (file.size > 4 * 1024 * 1024) {
         setError("Image must be under 4MB");
+        toast("Image must be under 4MB", "error");
         setUploading(false);
         return;
       }
 
       const fileData = await fileToBase64(file);
-
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -172,21 +169,21 @@ function SubmitForm() {
           fileData,
         }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "Upload failed");
+        toast(data.error || "Upload failed", "error");
       } else {
         setImageUrl(data.url);
+        toast("Image uploaded");
       }
     } catch {
       setError("Upload failed");
+      toast("Upload failed", "error");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -196,10 +193,12 @@ function SubmitForm() {
 
     if (!selected) {
       setError("Please select a community");
+      toast("Please select a community", "error");
       return;
     }
     if (!title.trim()) {
       setError("Please enter a title");
+      toast("Please enter a title", "error");
       return;
     }
 
@@ -218,18 +217,20 @@ function SubmitForm() {
           nsfw,
         }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "Failed to create post");
+        toast(data.error || "Failed to create post", "error");
         setLoading(false);
         return;
       }
 
+      toast("Post created");
       router.push(`/c/${selected}/posts/${data.id}`);
     } catch {
       setError("Something went wrong");
+      toast("Something went wrong", "error");
       setLoading(false);
     }
   }
@@ -279,10 +280,8 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Community */}
         <div className="relative">
           <label className="mb-1.5 block text-sm font-medium">Community</label>
-
           {selected ? (
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border bg-zinc-50 px-3 py-1.5 text-sm dark:bg-zinc-800">
@@ -326,7 +325,6 @@ function SubmitForm() {
           )}
         </div>
 
-        {/* Post type */}
         <div>
           <label className="mb-1.5 block text-sm font-medium">Type</label>
           <div className="flex gap-1 rounded-lg border p-1 dark:border-zinc-700">
@@ -347,7 +345,6 @@ function SubmitForm() {
           </div>
         </div>
 
-        {/* Title */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
             <label htmlFor="title" className="text-sm font-medium">
@@ -370,7 +367,6 @@ function SubmitForm() {
           )}
         </div>
 
-        {/* Link */}
         {postType === "link" && (
           <div>
             <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
@@ -397,7 +393,6 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Image */}
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
@@ -434,7 +429,6 @@ function SubmitForm() {
           </div>
         )}
 
-        {/* Body */}
         <div>
           <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
             Text{" "}
@@ -457,7 +451,6 @@ function SubmitForm() {
           />
         </div>
 
-        {/* NSFW */}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -482,7 +475,9 @@ function SubmitForm() {
 
 export default function SubmitPage() {
   return (
-    <Suspense fallback={<div className="py-12 text-center text-zinc-500">Loading…</div>}>
+    <Suspense
+      fallback={<div className="py-12 text-center text-zinc-500">Loading…</div>}
+    >
       <SubmitForm />
     </Suspense>
   );

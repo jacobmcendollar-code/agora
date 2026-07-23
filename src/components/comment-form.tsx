@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/toast-provider";
 
 type Props = {
   postId: string;
@@ -12,9 +13,15 @@ type Props = {
   onSuccess?: () => void;
 };
 
-export function CommentForm({ postId, communityName, parentId, onSuccess }: Props) {
+export function CommentForm({
+  postId,
+  communityName,
+  parentId,
+  onSuccess,
+}: Props) {
   const { data: session } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,20 +55,22 @@ export function CommentForm({ postId, communityName, parentId, onSuccess }: Prop
           communityName,
         }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "Failed to post comment");
+        toast(data.error || "Failed to post comment", "error");
         setLoading(false);
         return;
       }
 
       setBody("");
+      toast(parentId ? "Reply posted" : "Comment posted");
       router.refresh();
       onSuccess?.();
     } catch {
       setError("Something went wrong");
+      toast("Something went wrong", "error");
     } finally {
       setLoading(false);
     }
