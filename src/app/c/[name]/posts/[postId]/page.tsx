@@ -39,11 +39,6 @@ function isXLink(url: string | null | undefined): boolean {
   return url.includes("x.com") || url.includes("twitter.com");
 }
 
-function getXPostId(url: string): string | null {
-  const match = url.match(/\/status\/(\d+)/);
-  return match ? match[1] : null;
-}
-
 function buildCommentTree(comments: any[]) {
   const map = new Map<string, any>();
   const roots: any[] = [];
@@ -144,8 +139,7 @@ export default async function PostPage({ params }: Props) {
   const commentTree = buildCommentTree(allComments);
   const showAdmin = isAdmin(session?.user?.username);
   const youtubeId = getYouTubeId(post.url);
-  const isX = isXLink(post.url);
-  const xPostId = isX ? getXPostId(post.url!) : null;
+  const isX = post.url && (post.url.includes("x.com") || post.url.includes("twitter.com"));
 
   return (
     <div className="space-y-6">
@@ -200,27 +194,12 @@ export default async function PostPage({ params }: Props) {
               </a>
             ) : null}
 
-            {/* X card */}
+            {/* X embed */}
             {isX && (
-              <div className="mt-4 rounded-lg border bg-zinc-50 p-4 dark:bg-zinc-900">
-                <div className="mb-2 text-xs text-zinc-500">X post</div>
-                <a
-                  href={post.url!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block hover:underline"
-                >
-                  <p className="text-sm line-clamp-6 text-zinc-800 dark:text-zinc-200">
-                    {post.body || "View post on X"}
-                  </p>
-                </a>
-                {post.thumbnail && (
-                  <img
-                    src={post.thumbnail}
-                    alt=""
-                    className="mt-3 max-h-64 w-full rounded-lg object-cover"
-                  />
-                )}
+              <div className="mt-4">
+                <blockquote className="twitter-tweet" data-theme="dark">
+                  <a href={post.url!}>Loading X post...</a>
+                </blockquote>
               </div>
             )}
 
