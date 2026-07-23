@@ -6,6 +6,7 @@ import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { useNsfw } from "@/components/nsfw-provider";
 import { ImageLightbox } from "@/components/image-lightbox";
+import { YouTubeLightbox } from "@/components/youtube-lightbox";
 
 type Post = {
   id: string;
@@ -27,6 +28,26 @@ type Props = {
   communityName?: string;
   hideCommunity?: boolean;
 };
+
+function getYouTubeId(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) {
+      return u.pathname.slice(1).split("/")[0] || null;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return v;
+      const parts = u.pathname.split("/");
+      const idx = parts.findIndex((p) => p === "embed" || p === "shorts");
+      if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 export function PostFeed({
   initialPosts,
@@ -107,20 +128,29 @@ export function PostFeed({
 
   return (
     <div className="space-y-4">
-      {visiblePosts.map((post) => (
-        <article
-          key={post.id}
-          className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-5"
-        >
-          <div className="flex gap-3 sm:gap-4">
-            <VoteButtons
-              targetType="post"
-              targetId={post.id}
-              initialScore={post.score}
-            />
+      {visiblePosts.map((post) => {
+        const youtubeId = getYouTubeId(post.url);
 
-            {post.thumbnail && (
-              post.url ? (
+        return (
+          <article
+            key={post.id}
+            className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-5"
+          >
+            <div className="flex gap-3 sm:gap-4">
+              <VoteButtons
+                targetType="post"
+                targetId={post.id}
+                initialScore={post.score}
+              />
+
+              {post.thumbnail && youtubeId ? (
+                <YouTubeLightbox
+                  videoId={youtubeId}
+                  thumbnail={post.thumbnail}
+                  title={post.title}
+                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                />
+              ) : post.thumbnail && post.url ? (
                 <a
                   href={post.url}
                   target="_blank"
@@ -133,7 +163,7 @@ export function PostFeed({
                     className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
                   />
                 </a>
-              ) : (
+              ) : post.thumbnail ? (
                 <div className="shrink-0">
                   <ImageLightbox
                     src={post.thumbnail}
@@ -141,62 +171,62 @@ export function PostFeed({
                     className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
                   />
                 </div>
-              )
-            )}
+              ) : null}
 
-            <div className="min-w-0 flex-1">
-              <Link href={`/c/${post.community.name}/posts/${post.id}`}>
-                <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
-                  {post.title}
-                </h2>
-              </Link>
-
-              {post.body && (
-                <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
-                  {post.body}
-                </p>
-              )}
-
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-zinc-500">
-                {!hideCommunity && (
-                  <>
-                    <Link
-                      href={`/c/${post.community.name}`}
-                      className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-                    >
-                      {post.community.title}
-                    </Link>
-                    <span>•</span>
-                  </>
-                )}
-                <Link
-                  href={`/u/${post.author.username}`}
-                  className="hover:underline"
-                >
-                  {post.author.username}
+              <div className="min-w-0 flex-1">
+                <Link href={`/c/${post.community.name}/posts/${post.id}`}>
+                  <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
+                    {post.title}
+                  </h2>
                 </Link>
-                <span>•</span>
-                <time dateTime={post.createdAt}>
-                  {timeAgo(new Date(post.createdAt))}
-                </time>
-                {post.nsfw && (
-                  <>
-                    <span>•</span>
-                    <span className="font-medium text-rose-500">NSFW</span>
-                  </>
+
+                {post.body && (
+                  <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
+                    {post.body}
+                  </p>
                 )}
-                <span>•</span>
-                <Link
-                  href={`/c/${post.community.name}/posts/${post.id}#comments`}
-                  className="hover:underline"
-                >
-                  {post._count.comments} comments
-                </Link>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-zinc-500">
+                  {!hideCommunity && (
+                    <>
+                      <Link
+                        href={`/c/${post.community.name}`}
+                        className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
+                      >
+                        {post.community.title}
+                      </Link>
+                      <span>•</span>
+                    </>
+                  )}
+                  <Link
+                    href={`/u/${post.author.username}`}
+                    className="hover:underline"
+                  >
+                    {post.author.username}
+                  </Link>
+                  <span>•</span>
+                  <time dateTime={post.createdAt}>
+                    {timeAgo(new Date(post.createdAt))}
+                  </time>
+                  {post.nsfw && (
+                    <>
+                      <span>•</span>
+                      <span className="font-medium text-rose-500">NSFW</span>
+                    </>
+                  )}
+                  <span>•</span>
+                  <Link
+                    href={`/c/${post.community.name}/posts/${post.id}#comments`}
+                    className="hover:underline"
+                  >
+                    {post._count.comments} comments
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
 
       <div ref={sentinelRef} className="py-4 text-center text-sm text-zinc-500">
         {loading && "Loading more…"}
