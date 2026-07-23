@@ -7,7 +7,7 @@ export type ModerationResult = {
 
 /**
  * Minimal free-speech oriented moderation using Grok (xAI).
- * Rejects only clear spam, pure off-topic, and illegal content.
+ * Rejects only clear spam, pure off-topic, and clearly illegal content.
  */
 export async function moderateContent(params: {
   type: "post" | "comment";
@@ -17,11 +17,19 @@ export async function moderateContent(params: {
   communityDescription: string;
   communityRules?: string | null;
 }): Promise<ModerationResult> {
-  const { type, title, body, communityName, communityDescription, communityRules } = params;
+  const {
+    type,
+    title,
+    body,
+    communityName,
+    communityDescription,
+    communityRules,
+  } = params;
 
   if (!body || body.trim().length < 1) {
     return { allowed: false, reason: "Empty content" };
   }
+
   if (body.length > 40_000) {
     return { allowed: false, reason: "Content too long" };
   }
@@ -40,20 +48,27 @@ export async function moderateContent(params: {
 
 Community: "${communityName}"
 Description: ${communityDescription}
-${communityRules ? `Additional community rules for the AI: ${communityRules}` : ""}
+${communityRules ? `Additional community guidance for the AI: ${communityRules}` : ""}
 
-Your job is deliberately minimal. You exist only to stop spam and pure off-topic noise so communities remain usable. You are NOT a morality or politics police.
+Your job is deliberately minimal. You exist only to stop spam, pure off-topic noise, and clearly illegal harmful content. You are NOT a morality, politics, or etiquette police.
 
 STRICT RULES — Reject ONLY if the content clearly matches one of these:
+
 1. Spam / advertising / promotional content / bot-like repetitive posting
 2. Completely unrelated to the community topic (e.g. crypto spam in a gardening community)
-3. Illegal content: child sexual abuse material, credible real-world threats of violence, or direct solicitation of crimes
+3. Clearly illegal or directly harmful content, limited to:
+   - Child sexual abuse material or sexual content involving minors
+   - Credible threats of real-world violence against specific people
+   - Direct attempts to solicit or carry out serious crimes
+   - Fraud / scams intended to steal money, accounts, or personal data
 
 Do NOT reject for:
 - Offensive, rude, or "hateful" opinions
 - Political views of any kind
 - Controversy, edginess, dark humor, or strong language
 - Criticism of any group, ideology, or person
+- News, opinion, fiction, or general discussion of illegal topics
+- Hypothetical discussion that does not instruct or solicit real harm
 - Anything that is merely unpopular or uncomfortable
 
 When in doubt, ALLOW the content. Free speech is the default.
@@ -80,8 +95,8 @@ or
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-
     let parsed: ModerationResult;
+
     try {
       const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
       parsed = JSON.parse(cleaned) as ModerationResult;
@@ -97,6 +112,7 @@ or
     return parsed;
   } catch (err) {
     console.error("[moderation] Grok API call failed:", err);
+    // Fail open to preserve availability; admins can still remove content.
     return { allowed: true };
   }
 }
