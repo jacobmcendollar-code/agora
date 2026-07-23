@@ -9,6 +9,7 @@ import { ImageLightbox } from "@/components/image-lightbox";
 import { YouTubeLightbox } from "@/components/youtube-lightbox";
 import { XLightbox } from "@/components/x-lightbox";
 import { TikTokLightbox } from "@/components/tiktok-lightbox";
+import { SaveButton } from "@/components/save-button";
 
 type Post = {
   id: string;
@@ -276,6 +277,8 @@ export function PostFeed({
                     <IconComments />
                     <span>{post._count.comments}</span>
                   </Link>
+
+                  <SaveButton postId={post.id} />
                 </div>
               </div>
             </div>

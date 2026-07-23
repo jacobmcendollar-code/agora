@@ -6,6 +6,7 @@ import { isAdmin } from "@/lib/admin";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { JoinedCommunities } from "@/components/joined-communities";
 import { NsfwToggle } from "@/components/nsfw-toggle";
+import { SaveButton } from "@/components/save-button";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function UserProfilePage({ params }: Props) {
     session?.user?.username?.toLowerCase() === user.username;
   const showAdminTools = isOwnProfile && isAdmin(session?.user?.username);
 
-  const [posts, comments, subscriptions] = await Promise.all([
+  const [posts, comments, subscriptions, saved] = await Promise.all([
     prisma.post.findMany({
       where: { authorId: user.id, moderationStatus: "approved" },
       orderBy: { createdAt: "desc" },
@@ -70,12 +71,32 @@ export default async function UserProfilePage({ params }: Props) {
         },
       },
     }),
+    isOwnProfile
+      ? prisma.savedPost.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: "desc" },
+          take: 30,
+          include: {
+            post: {
+              include: {
+                community: { select: { name: true, title: true } },
+                author: { select: { username: true } },
+                _count: { select: { comments: true } },
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   const communities = subscriptions.map((s) => ({
     name: s.community.name,
     title: s.community.title,
   }));
+
+  const savedPosts = saved
+    .map((s) => s.post)
+    .filter((p) => p && p.moderationStatus === "approved");
 
   return (
     <div className="space-y-8">
@@ -113,6 +134,56 @@ export default async function UserProfilePage({ params }: Props) {
         </h2>
         <JoinedCommunities communities={communities} />
       </section>
+
+      {isOwnProfile && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">
+            Saved ({savedPosts.length})
+          </h2>
+          {savedPosts.length === 0 ? (
+            <p className="text-sm text-zinc-500">No saved posts yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {savedPosts.map((post) => (
+                <article
+                  key={post.id}
+                  className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
+                >
+                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                    <Link
+                      href={`/c/${post.community.name}`}
+                      className="font-medium hover:underline"
+                    >
+                      {post.community.title}
+                    </Link>
+                    <span>•</span>
+                    <Link
+                      href={`/u/${post.author.username}`}
+                      className="hover:underline"
+                    >
+                      {post.author.username}
+                    </Link>
+                    <span>•</span>
+                    <span>{timeAgo(post.createdAt)}</span>
+                    <span>•</span>
+                    <span>{formatScore(post.score)} points</span>
+                  </div>
+                  <Link
+                    href={`/c/${post.community.name}/posts/${post.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {post.title}
+                  </Link>
+                  <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500">
+                    <span>{post._count.comments} comments</span>
+                    <SaveButton postId={post.id} initialSaved />
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent Posts</h2>

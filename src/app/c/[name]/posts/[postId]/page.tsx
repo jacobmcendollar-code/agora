@@ -10,6 +10,7 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
 import { RemovePostButton } from "@/components/remove-post-button";
 import { EditPostButton } from "@/components/edit-post-button";
+import { SaveButton } from "@/components/save-button";
 import { ImageLightbox } from "@/components/image-lightbox";
 import { XEmbed } from "@/components/x-embed";
 import { TikTokEmbed } from "@/components/tiktok-embed";
@@ -198,6 +199,8 @@ export default async function PostPage({ params }: Props) {
                   />
                 </>
               )}
+              <span>•</span>
+              <SaveButton postId={post.id} />
             </div>
 
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>

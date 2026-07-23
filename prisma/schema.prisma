@@ -26,9 +26,10 @@ model User {
   communities   Community[]
   subscriptions Subscription[]
   notifications Notification[]
+  savedPosts    SavedPost[]
 
-  @@map("users")
   @@index([username])
+  @@map("users")
 }
 
 model Account {
@@ -83,59 +84,60 @@ model Community {
   posts         Post[]
   subscriptions Subscription[]
 
-  @@map("communities")
   @@index([name])
+  @@map("communities")
 }
 
 model Post {
-  id               String     @id @default(cuid())
+  id               String      @id @default(cuid())
   title            String
   body             String?
   url              String?
   thumbnail        String?
-  score            Int        @default(0)
-  commentCount     Int        @default(0)
-  nsfw             Boolean    @default(false)
-  moderationStatus String     @default("approved")
+  score            Int         @default(0)
+  commentCount     Int         @default(0)
+  nsfw             Boolean     @default(false)
+  moderationStatus String      @default("approved")
   moderationReason String?
   communityId      String
   authorId         String
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  community        Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  author           User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  community        Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author           User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments         Comment[]
   votes            PostVote[]
+  savedBy          SavedPost[]
 
-  @@map("posts")
   @@index([authorId])
   @@index([communityId, createdAt])
   @@index([communityId, score])
   @@index([createdAt])
+  @@map("posts")
 }
 
 model Comment {
-  id               String         @id @default(cuid())
+  id               String        @id @default(cuid())
   body             String
-  score            Int            @default(0)
-  moderationStatus String         @default("approved")
+  score            Int           @default(0)
+  moderationStatus String        @default("approved")
   moderationReason String?
   postId           String
   authorId         String
   parentId         String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  post             Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author           User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent           Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies          Comment[]      @relation("CommentReplies")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  post             Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author           User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent           Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies          Comment[]     @relation("CommentReplies")
   votes            CommentVote[]
 
-  @@map("comments")
   @@index([authorId])
   @@index([parentId])
   @@index([postId, createdAt])
   @@index([postId, score])
+  @@map("comments")
 }
 
 model PostVote {
@@ -148,8 +150,8 @@ model PostVote {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
-  @@map("post_votes")
   @@index([postId])
+  @@map("post_votes")
 }
 
 model CommentVote {
@@ -162,8 +164,8 @@ model CommentVote {
   comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
-  @@map("comment_votes")
   @@index([commentId])
+  @@map("comment_votes")
 }
 
 model Subscription {
@@ -175,9 +177,9 @@ model Subscription {
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   @@unique([userId, communityId])
-  @@map("subscriptions")
   @@index([communityId])
   @@index([userId])
+  @@map("subscriptions")
 }
 
 model Notification {
@@ -190,6 +192,20 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("notifications")
   @@index([userId, read])
+  @@map("notifications")
+}
+
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, createdAt])
+  @@index([postId])
+  @@map("saved_posts")
 }
