@@ -87,6 +87,7 @@ export async function POST(req: Request) {
       thumbnail = await fetchThumbnail(url);
     }
 
+    // Create the post with starting score of 1
     const post = await prisma.post.create({
       data: {
         title,
@@ -97,6 +98,16 @@ export async function POST(req: Request) {
         communityId: community.id,
         authorId: session.user.id,
         moderationStatus: "approved",
+        score: 1,
+      },
+    });
+
+    // Auto-upvote from the author
+    await prisma.postVote.create({
+      data: {
+        value: 1,
+        userId: session.user.id,
+        postId: post.id,
       },
     });
 
