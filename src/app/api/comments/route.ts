@@ -88,6 +88,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Create comment with starting score of 1
     const comment = await prisma.comment.create({
       data: {
         body: commentBody,
@@ -95,9 +96,20 @@ export async function POST(req: Request) {
         authorId: session.user.id,
         parentId: parentId || null,
         moderationStatus: "approved",
+        score: 1,
       },
     });
 
+    // Auto-upvote from the author
+    await prisma.commentVote.create({
+      data: {
+        value: 1,
+        userId: session.user.id,
+        commentId: comment.id,
+      },
+    });
+
+    // Update post comment count
     await prisma.post.update({
       where: { id: postId },
       data: { commentCount: { increment: 1 } },
@@ -106,6 +118,7 @@ export async function POST(req: Request) {
     const link = `/c/${post.community.name}/posts/${post.id}#comments`;
     const actorUsername = session.user.username || "Someone";
 
+    // Notify post author
     if (post.authorId !== session.user.id) {
       await prisma.notification.create({
         data: {
@@ -117,6 +130,7 @@ export async function POST(req: Request) {
       });
     }
 
+    // Notify parent comment author
     if (parentComment && parentComment.authorId !== session.user.id) {
       await prisma.notification.create({
         data: {
