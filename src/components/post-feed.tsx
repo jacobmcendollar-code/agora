@@ -254,6 +254,18 @@ export function PostFeed({
                   )}
 
                   <Link
+                    href={`${sharePath}#comments`}
+                    className="inline-flex items-center gap-1 hover:underline"
+                  >
+                    <IconComments />
+                    <span>{post._count.comments}</span>
+                  </Link>
+
+                  <SaveButton postId={post.id} />
+
+                  <ShareButton url={sharePath} title={post.title} />
+
+                  <Link
                     href={`/u/${post.author.username}`}
                     className="inline-flex items-center gap-1 hover:underline"
                   >
@@ -271,17 +283,6 @@ export function PostFeed({
                   {post.nsfw && (
                     <span className="font-medium text-rose-500">NSFW</span>
                   )}
-
-                  <Link
-                    href={`${sharePath}#comments`}
-                    className="inline-flex items-center gap-1 hover:underline"
-                  >
-                    <IconComments />
-                    <span>{post._count.comments}</span>
-                  </Link>
-
-                  <SaveButton postId={post.id} />
-                  <ShareButton url={sharePath} title={post.title} />
                 </div>
               </div>
             </div>
