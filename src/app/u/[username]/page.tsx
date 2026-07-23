@@ -7,6 +7,7 @@ import { formatScore, timeAgo } from "@/lib/utils";
 import { JoinedCommunities } from "@/components/joined-communities";
 import { NsfwToggle } from "@/components/nsfw-toggle";
 import { SaveButton } from "@/components/save-button";
+import { CollapsibleSection } from "@/components/collapsible-section";
 
 export const dynamic = "force-dynamic";
 
@@ -136,10 +137,7 @@ export default async function UserProfilePage({ params }: Props) {
       </section>
 
       {isOwnProfile && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">
-            Saved ({savedPosts.length})
-          </h2>
+        <CollapsibleSection title="Saved" count={savedPosts.length}>
           {savedPosts.length === 0 ? (
             <p className="text-sm text-zinc-500">No saved posts yet.</p>
           ) : (
@@ -182,11 +180,10 @@ export default async function UserProfilePage({ params }: Props) {
               ))}
             </div>
           )}
-        </section>
+        </CollapsibleSection>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Recent Posts</h2>
+      <CollapsibleSection title="Recent Posts" count={posts.length}>
         {posts.length === 0 ? (
           <p className="text-sm text-zinc-500">No posts yet.</p>
         ) : (
@@ -221,10 +218,9 @@ export default async function UserProfilePage({ params }: Props) {
             ))}
           </div>
         )}
-      </section>
+      </CollapsibleSection>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Recent Comments</h2>
+      <CollapsibleSection title="Recent Comments" count={comments.length}>
         {comments.length === 0 ? (
           <p className="text-sm text-zinc-500">No comments yet.</p>
         ) : (
@@ -253,7 +249,7 @@ export default async function UserProfilePage({ params }: Props) {
             ))}
           </div>
         )}
-      </section>
+      </CollapsibleSection>
     </div>
   );
 }
