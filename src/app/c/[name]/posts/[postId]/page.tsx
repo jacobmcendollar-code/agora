@@ -182,40 +182,6 @@ export default async function PostPage({ params }: Props) {
           />
 
           <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              {isSoftDeleted ? (
-                <span className="font-medium text-zinc-400">[deleted]</span>
-              ) : (
-                <Link
-                  href={`/u/${post.author.username}`}
-                  className="hover:underline"
-                >
-                  {post.author.username}
-                </Link>
-              )}
-              <span>•</span>
-              <time>{timeAgo(post.createdAt)}</time>
-              {isAuthor && !isSoftDeleted && (
-                <>
-                  <span>•</span>
-                  <EditPostButton
-                    postId={post.id}
-                    initialTitle={post.title}
-                    initialBody={post.body}
-                    createdAt={post.createdAt.toISOString()}
-                  />
-                  <span>•</span>
-                  <DeletePostButton
-                    postId={post.id}
-                    communityName={post.community.name}
-                    createdAt={post.createdAt.toISOString()}
-                  />
-                </>
-              )}
-              <span>•</span>
-              <SaveButton postId={post.id} />
-            </div>
-
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
             {youtubeId ? (
@@ -259,6 +225,40 @@ export default async function PostPage({ params }: Props) {
                 {post.body}
               </div>
             )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+              {isSoftDeleted ? (
+                <span className="font-medium text-zinc-400">[deleted]</span>
+              ) : (
+                <Link
+                  href={`/u/${post.author.username}`}
+                  className="hover:underline"
+                >
+                  {post.author.username}
+                </Link>
+              )}
+              <span>•</span>
+              <time>{timeAgo(post.createdAt)}</time>
+              {isAuthor && !isSoftDeleted && (
+                <>
+                  <span>•</span>
+                  <EditPostButton
+                    postId={post.id}
+                    initialTitle={post.title}
+                    initialBody={post.body}
+                    createdAt={post.createdAt.toISOString()}
+                  />
+                  <span>•</span>
+                  <DeletePostButton
+                    postId={post.id}
+                    communityName={post.community.name}
+                    createdAt={post.createdAt.toISOString()}
+                  />
+                </>
+              )}
+              <span>•</span>
+              <SaveButton postId={post.id} />
+            </div>
           </div>
         </div>
       </article>
