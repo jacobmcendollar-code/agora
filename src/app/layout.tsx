@@ -23,7 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950`}>
+      <body
+        className={`${inter.className} flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950`}
+      >
         <Providers>
           <Navbar />
           <main className="container mx-auto max-w-5xl flex-1 px-4 py-6">
@@ -32,7 +34,13 @@ export default function RootLayout({
           <Footer />
         </Providers>
         <Analytics />
-        <script async src="https://platform.twitter.com/widgets.js"></script>
+
+        {/* Official Twitter / X widgets script */}
+        <script
+          async
+          src="https://platform.twitter.com/widgets.js"
+          charSet="utf-8"
+        />
       </body>
     </html>
   );

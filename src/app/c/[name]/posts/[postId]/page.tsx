@@ -9,6 +9,7 @@ import { CommentForm } from "@/components/comment-form";
 import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
 import { RemovePostButton } from "@/components/remove-post-button";
+import { XEmbed } from "@/components/x-embed";
 
 export const dynamic = "force-dynamic";
 
@@ -139,7 +140,7 @@ export default async function PostPage({ params }: Props) {
   const commentTree = buildCommentTree(allComments);
   const showAdmin = isAdmin(session?.user?.username);
   const youtubeId = getYouTubeId(post.url);
-  const isX = post.url && (post.url.includes("x.com") || post.url.includes("twitter.com"));
+  const isX = isXLink(post.url);
 
   return (
     <div className="space-y-6">
@@ -152,7 +153,11 @@ export default async function PostPage({ params }: Props) {
 
       <article className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
         <div className="flex gap-4">
-          <VoteButtons targetType="post" targetId={post.id} initialScore={post.score} />
+          <VoteButtons
+            targetType="post"
+            targetId={post.id}
+            initialScore={post.score}
+          />
 
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
@@ -189,20 +194,15 @@ export default async function PostPage({ params }: Props) {
                 <img
                   src={post.thumbnail}
                   alt=""
-                  className="max-h-80 w-full rounded-lg object-cover hover:opacity-95 transition"
+                  className="max-h-80 w-full rounded-lg object-cover transition hover:opacity-95"
                 />
               </a>
             ) : null}
 
-            {/* X embed */}
-            {isX && (
-              <div className="mt-4">
-                <blockquote className="twitter-tweet" data-theme="dark">
-                  <a href={post.url!}>Loading X post...</a>
-                </blockquote>
-              </div>
-            )}
+            {/* Official X embed */}
+            {isX && post.url && <XEmbed url={post.url} />}
 
+            {/* Plain link fallback for non-YouTube, non-X, no-thumbnail posts */}
             {post.url && !youtubeId && !isX && !post.thumbnail && (
               <a
                 href={post.url}
@@ -214,6 +214,7 @@ export default async function PostPage({ params }: Props) {
               </a>
             )}
 
+            {/* Body text (hidden for X posts so the embed is the focus) */}
             {post.body && !isX && (
               <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
                 {post.body}
