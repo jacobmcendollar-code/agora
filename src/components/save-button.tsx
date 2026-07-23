@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast-provider";
 
 type Props = {
   postId: string;
@@ -10,8 +11,9 @@ type Props = {
 };
 
 export function SaveButton({ postId, initialSaved = false }: Props) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [saved, setSaved] = useState(initialSaved);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,9 @@ export function SaveButton({ postId, initialSaved = false }: Props) {
     fetch(`/api/posts/${postId}/save`)
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled) setSaved(!!data.saved);
+        if (!cancelled && typeof data.saved === "boolean") {
+          setSaved(data.saved);
+        }
       })
       .catch(() => {});
 
@@ -38,24 +42,39 @@ export function SaveButton({ postId, initialSaved = false }: Props) {
       return;
     }
 
+    if (loading) return;
+
     setLoading(true);
     const previous = saved;
+
+    // Optimistic UI
     setSaved(!previous);
 
     try {
       const res = await fetch(`/api/posts/${postId}/save`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
-      const data = await res.json();
+
+      let data: { saved?: boolean; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
 
       if (!res.ok) {
         setSaved(previous);
+        toast(data.error || "Could not save post", "error");
         return;
       }
 
-      setSaved(!!data.saved);
+      const next = typeof data.saved === "boolean" ? data.saved : !previous;
+      setSaved(next);
+      toast(next ? "Saved" : "Removed from saved");
     } catch {
       setSaved(previous);
+      toast("Could not save post", "error");
     } finally {
       setLoading(false);
     }
