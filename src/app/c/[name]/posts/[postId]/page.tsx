@@ -12,6 +12,7 @@ import { RemovePostButton } from "@/components/remove-post-button";
 import { EditPostButton } from "@/components/edit-post-button";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { SaveButton } from "@/components/save-button";
+import { ShareButton } from "@/components/share-button";
 import { ImageLightbox } from "@/components/image-lightbox";
 import { XEmbed } from "@/components/x-embed";
 import { TikTokEmbed } from "@/components/tiktok-embed";
@@ -163,6 +164,7 @@ export default async function PostPage({ params }: Props) {
   const isReddit = isRedditLink(post.url);
   const hasRichEmbed = !!(youtubeId || isX || isTikTok || isReddit);
   const isAuthor = session?.user?.id === post.authorId;
+  const sharePath = `/c/${post.community.name}/posts/${post.id}`;
 
   return (
     <div className="space-y-6">
@@ -258,6 +260,8 @@ export default async function PostPage({ params }: Props) {
               )}
               <span>•</span>
               <SaveButton postId={post.id} />
+              <span>•</span>
+              <ShareButton url={sharePath} title={post.title} />
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { YouTubeLightbox } from "@/components/youtube-lightbox";
 import { XLightbox } from "@/components/x-lightbox";
 import { TikTokLightbox } from "@/components/tiktok-lightbox";
 import { SaveButton } from "@/components/save-button";
+import { ShareButton } from "@/components/share-button";
 
 type Post = {
   id: string;
@@ -169,6 +170,7 @@ export function PostFeed({
         const youtubeId = getYouTubeId(post.url);
         const isX = isXLink(post.url);
         const isTikTok = isTikTokLink(post.url);
+        const sharePath = `/c/${post.community.name}/posts/${post.id}`;
 
         return (
           <article
@@ -228,7 +230,7 @@ export function PostFeed({
 
               <div className="flex min-h-[5rem] min-w-0 flex-1 flex-col sm:min-h-[6rem]">
                 <div className="flex-1">
-                  <Link href={`/c/${post.community.name}/posts/${post.id}`}>
+                  <Link href={sharePath}>
                     <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
                       {post.title}
                     </h2>
@@ -271,7 +273,7 @@ export function PostFeed({
                   )}
 
                   <Link
-                    href={`/c/${post.community.name}/posts/${post.id}#comments`}
+                    href={`${sharePath}#comments`}
                     className="inline-flex items-center gap-1 hover:underline"
                   >
                     <IconComments />
@@ -279,6 +281,7 @@ export function PostFeed({
                   </Link>
 
                   <SaveButton postId={post.id} />
+                  <ShareButton url={sharePath} title={post.title} />
                 </div>
               </div>
             </div>
