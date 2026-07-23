@@ -13,7 +13,7 @@ export function RedditEmbed({ url }: Props) {
       const script = document.createElement("script");
       script.src = "https://embed.reddit.com/widgets.js";
       script.async = true;
-      script.charSet = "UTF-8";
+      script.setAttribute("charset", "UTF-8");
       document.body.appendChild(script);
     }
 
