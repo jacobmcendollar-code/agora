@@ -1,58 +1,81 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   url: string;
 };
 
 export function XEmbed({ url }: Props) {
-  useEffect(() => {
-    // Wait for the Twitter widgets script to be ready, then force load
-    const load = () => {
-      if (window.twttr?.widgets) {
-        window.twttr.widgets.load();
-      }
-    };
+  const containerRef = useRef<HTMLDivElement>(null);
 
-    // If the script is already loaded
-    if (window.twttr) {
-      load();
-      return;
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 40; // ~8 seconds
+
+    function tryLoad() {
+      if (cancelled || !containerRef.current) return;
+
+      // Ensure the widgets script exists
+      if (!document.querySelector('script[src*="platform.twitter.com/widgets.js"]')) {
+        const script = document.createElement("script");
+        script.src = "https://platform.twitter.com/widgets.js";
+        script.async = true;
+        script.charset = "utf-8";
+        document.body.appendChild(script);
+      }
+
+      // @ts-ignore
+      const twttr = window.twttr;
+
+      if (twttr?.widgets?.load) {
+        twttr.widgets.load(containerRef.current);
+        return;
+      }
+
+      // @ts-ignore
+      if (twttr?.ready) {
+        // @ts-ignore
+        twttr.ready(() => {
+          if (!cancelled && containerRef.current) {
+            // @ts-ignore
+            window.twttr.widgets.load(containerRef.current);
+          }
+        });
+        return;
+      }
+
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        setTimeout(tryLoad, 200);
+      }
     }
 
-    // Otherwise poll briefly until it appears
-    const interval = setInterval(() => {
-      if (window.twttr) {
-        load();
-        clearInterval(interval);
-      }
-    }, 100);
-
-    // Safety timeout
-    const timeout = setTimeout(() => clearInterval(interval), 5000);
+    // Small delay helps mobile Safari after navigation / lightbox open
+    const start = setTimeout(tryLoad, 150);
 
     return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+      cancelled = true;
+      clearTimeout(start);
     };
   }, [url]);
 
   return (
-    <div className="mt-4">
-      <blockquote className="twitter-tweet" data-theme="dark">
-        <a href={url}>Loading X post…</a>
+    <div ref={containerRef} className="mt-4 overflow-hidden">
+      <blockquote className="twitter-tweet" data-theme="dark" data-dnt="true">
+        <a href={url}>View post on X</a>
       </blockquote>
     </div>
   );
 }
 
-// TypeScript helper
 declare global {
   interface Window {
     twttr?: {
+      ready?: (cb: () => void) => void;
       widgets: {
-        load: (element?: HTMLElement) => void;
+        load: (element?: HTMLElement | null) => void;
       };
     };
   }
