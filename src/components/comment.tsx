@@ -30,6 +30,14 @@ type Props = {
   isAdminUser?: boolean;
 };
 
+function countReplies(comment: CommentData): number {
+  let total = comment.replies.length;
+  for (const reply of comment.replies) {
+    total += countReplies(reply);
+  }
+  return total;
+}
+
 export function Comment({
   comment,
   postId,
@@ -38,6 +46,7 @@ export function Comment({
   isAdminUser = false,
 }: Props) {
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
 
   const adminUsernames = (process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "")
@@ -56,6 +65,36 @@ export function Comment({
     typeof comment.createdAt === "string"
       ? new Date(comment.createdAt)
       : comment.createdAt;
+
+  const replyCount = countReplies(comment);
+
+  if (collapsed) {
+    return (
+      <div
+        className={
+          depth > 0
+            ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700"
+            : ""
+        }
+      >
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="flex w-full items-center justify-between rounded-lg border bg-zinc-50 px-3 py-2 text-left text-xs text-zinc-500 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+        >
+          <span>
+            {isSoftDeleted ? "[deleted]" : comment.author.username}
+            {replyCount > 0
+              ? ` · ${replyCount} repl${replyCount === 1 ? "y" : "ies"} hidden`
+              : " · comment hidden"}
+          </span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">
+            Expand
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -76,41 +115,53 @@ export function Comment({
 
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              {isSoftDeleted ? (
-                <span className="font-medium text-zinc-400">[deleted]</span>
-              ) : (
-                <Link
-                  href={`/u/${comment.author.username}`}
-                  className="font-medium hover:underline"
-                >
-                  {comment.author.username}
-                </Link>
-              )}
-              <span>•</span>
-              <time>{timeAgo(createdAtDate)}</time>
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
+                {isSoftDeleted ? (
+                  <span className="font-medium text-zinc-400">[deleted]</span>
+                ) : (
+                  <Link
+                    href={`/u/${comment.author.username}`}
+                    className="font-medium hover:underline"
+                  >
+                    {comment.author.username}
+                  </Link>
+                )}
+                <span>•</span>
+                <time>{timeAgo(createdAtDate)}</time>
 
-              {isAuthor && !isSoftDeleted && (
-                <>
-                  <span>•</span>
-                  <EditCommentButton
-                    commentId={comment.id}
-                    initialBody={comment.body}
-                    createdAt={createdAtDate.toISOString()}
-                  />
-                  <span>•</span>
-                  <DeleteCommentButton
-                    commentId={comment.id}
-                    createdAt={createdAtDate.toISOString()}
-                  />
-                </>
-              )}
+                {isAuthor && !isSoftDeleted && (
+                  <>
+                    <span>•</span>
+                    <EditCommentButton
+                      commentId={comment.id}
+                      initialBody={comment.body}
+                      createdAt={createdAtDate.toISOString()}
+                    />
+                    <span>•</span>
+                    <DeleteCommentButton
+                      commentId={comment.id}
+                      createdAt={createdAtDate.toISOString()}
+                    />
+                  </>
+                )}
 
-              {showRemove && !isSoftDeleted && (
-                <>
-                  <span>•</span>
-                  <RemoveCommentButton commentId={comment.id} />
-                </>
-              )}
+                {showRemove && !isSoftDeleted && (
+                  <>
+                    <span>•</span>
+                    <RemoveCommentButton commentId={comment.id} />
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                className="ml-auto shrink-0 text-xs font-medium text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                aria-label="Collapse comment"
+                title="Collapse comment and replies"
+              >
+                Collapse
+              </button>
             </div>
 
             <div className="whitespace-pre-wrap break-words text-sm">
