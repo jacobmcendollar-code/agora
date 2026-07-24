@@ -9,6 +9,7 @@ import { ImageLightbox } from "@/components/image-lightbox";
 import { YouTubeLightbox } from "@/components/youtube-lightbox";
 import { XLightbox } from "@/components/x-lightbox";
 import { TikTokLightbox } from "@/components/tiktok-lightbox";
+import { InstagramLightbox } from "@/components/instagram-lightbox";
 import { SaveButton } from "@/components/save-button";
 import { ShareButton } from "@/components/share-button";
 
@@ -61,6 +62,11 @@ function isXLink(url: string | null | undefined): boolean {
 function isTikTokLink(url: string | null | undefined): boolean {
   if (!url) return false;
   return url.includes("tiktok.com");
+}
+
+function isInstagramLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("instagram.com") || url.includes("instagr.am");
 }
 
 function IconUser({ className = "h-3.5 w-3.5" }: { className?: string }) {
@@ -170,6 +176,7 @@ export function PostFeed({
         const youtubeId = getYouTubeId(post.url);
         const isX = isXLink(post.url);
         const isTikTok = isTikTokLink(post.url);
+        const isInstagram = isInstagramLink(post.url);
         const sharePath = `/c/${post.community.name}/posts/${post.id}`;
 
         return (
@@ -200,6 +207,13 @@ export function PostFeed({
                 />
               ) : post.thumbnail && isTikTok && post.url ? (
                 <TikTokLightbox
+                  url={post.url}
+                  thumbnail={post.thumbnail}
+                  title={post.title}
+                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                />
+              ) : post.thumbnail && isInstagram && post.url ? (
+                <InstagramLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
@@ -262,7 +276,6 @@ export function PostFeed({
                   </Link>
 
                   <SaveButton postId={post.id} />
-
                   <ShareButton url={sharePath} title={post.title} />
 
                   <Link

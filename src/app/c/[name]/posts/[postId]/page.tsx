@@ -17,6 +17,7 @@ import { ImageLightbox } from "@/components/image-lightbox";
 import { XEmbed } from "@/components/x-embed";
 import { TikTokEmbed } from "@/components/tiktok-embed";
 import { RedditEmbed } from "@/components/reddit-embed";
+import { InstagramEmbed } from "@/components/instagram-embed";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,11 @@ function isTikTokLink(url: string | null | undefined): boolean {
 function isRedditLink(url: string | null | undefined): boolean {
   if (!url) return false;
   return url.includes("reddit.com");
+}
+
+function isInstagramLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("instagram.com") || url.includes("instagr.am");
 }
 
 function buildCommentTree(comments: any[]) {
@@ -162,7 +168,8 @@ export default async function PostPage({ params }: Props) {
   const isX = isXLink(post.url);
   const isTikTok = isTikTokLink(post.url);
   const isReddit = isRedditLink(post.url);
-  const hasRichEmbed = !!(youtubeId || isX || isTikTok || isReddit);
+  const isInstagram = isInstagramLink(post.url);
+  const hasRichEmbed = !!(youtubeId || isX || isTikTok || isReddit || isInstagram);
   const isAuthor = session?.user?.id === post.authorId;
   const sharePath = `/c/${post.community.name}/posts/${post.id}`;
 
@@ -201,6 +208,7 @@ export default async function PostPage({ params }: Props) {
             {isX && post.url && <XEmbed url={post.url} />}
             {isTikTok && post.url && <TikTokEmbed url={post.url} />}
             {isReddit && post.url && <RedditEmbed url={post.url} />}
+            {isInstagram && post.url && <InstagramEmbed url={post.url} />}
 
             {post.thumbnail && !hasRichEmbed && (
               <ImageLightbox src={post.thumbnail} alt={post.title} />
@@ -211,6 +219,7 @@ export default async function PostPage({ params }: Props) {
               !isX &&
               !isTikTok &&
               !isReddit &&
+              !isInstagram &&
               !post.thumbnail && (
                 <a
                   href={post.url}
