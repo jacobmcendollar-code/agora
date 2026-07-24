@@ -8,6 +8,7 @@ import { JoinedCommunities } from "@/components/joined-communities";
 import { NsfwToggle } from "@/components/nsfw-toggle";
 import { SaveButton } from "@/components/save-button";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import { ProfileEditor } from "@/components/profile-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function UserProfilePage({ params }: Props) {
       username: true,
       createdAt: true,
       image: true,
+      bio: true,
     },
   });
 
@@ -101,32 +103,58 @@ export default async function UserProfilePage({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4 rounded-lg border bg-white p-6 dark:bg-zinc-900">
-        <div>
-          <h1 className="text-2xl font-bold">{user.username}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Joined{" "}
-            {user.createdAt.toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </div>
-
-        {isOwnProfile && (
-          <div className="flex shrink-0 flex-col items-end gap-3 pt-1">
-            <NsfwToggle />
-            {showAdminTools && (
-              <Link
-                href="/admin/users"
-                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              >
-                Admin tools
-              </Link>
+      <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            {user.image ? (
+              <img
+                src={user.image}
+                alt={user.username}
+                className="h-16 w-16 shrink-0 rounded-full object-cover sm:h-20 sm:w-20"
+              />
+            ) : (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xl font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 sm:h-20 sm:w-20 sm:text-2xl">
+                {user.username.slice(0, 1).toUpperCase()}
+              </div>
             )}
+
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold">{user.username}</h1>
+              <p className="mt-1 text-sm text-zinc-500">
+                Joined{" "}
+                {user.createdAt.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              {user.bio && (
+                <p className="mt-3 whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-300">
+                  {user.bio}
+                </p>
+              )}
+            </div>
           </div>
-        )}
+
+          {isOwnProfile && (
+            <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
+              <NsfwToggle />
+              <ProfileEditor
+                initialBio={user.bio}
+                initialImage={user.image}
+                username={user.username}
+              />
+              {showAdminTools && (
+                <Link
+                  href="/admin/users"
+                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  Admin tools
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <section>
