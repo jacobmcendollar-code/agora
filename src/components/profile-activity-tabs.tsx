@@ -44,6 +44,12 @@ type Props = {
 
 type TabKey = "saved" | "posts" | "comments";
 
+type Tab = {
+  key: TabKey;
+  label: string;
+  count: number;
+};
+
 export function ProfileActivityTabs({
   isOwnProfile,
   savedPosts,
@@ -54,26 +60,27 @@ export function ProfileActivityTabs({
   const [tab, setTab] = useState<TabKey>(initialTab);
   const [expanded, setExpanded] = useState(false);
 
-  const tabs: { key: TabKey; label: string; count: number; show: boolean }[] = [
-    {
+  const tabs: Tab[] = [];
+
+  if (isOwnProfile) {
+    tabs.push({
       key: "saved",
       label: "Saved",
       count: savedPosts.length,
-      show: isOwnProfile,
-    },
-    {
-      key: "posts",
-      label: "Recent Posts",
-      count: posts.length,
-      show: true,
-    },
-    {
-      key: "comments",
-      label: "Recent Comments",
-      count: comments.length,
-      show: true,
-    },
-  ].filter((t) => t.show);
+    });
+  }
+
+  tabs.push({
+    key: "posts",
+    label: "Recent Posts",
+    count: posts.length,
+  });
+
+  tabs.push({
+    key: "comments",
+    label: "Recent Comments",
+    count: comments.length,
+  });
 
   const previewCount = 10;
 
@@ -229,9 +236,7 @@ export function ProfileActivityTabs({
             onClick={() => setExpanded((v) => !v)}
             className="text-sm font-medium text-zinc-600 hover:underline dark:text-zinc-300"
           >
-            {expanded
-              ? "Show less"
-              : `Show all ${currentItems.length}`}
+            {expanded ? "Show less" : `Show all ${currentItems.length}`}
           </button>
         </div>
       )}
