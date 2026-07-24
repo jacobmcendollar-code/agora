@@ -26,6 +26,18 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+function isXUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return (
+      u.hostname.includes("x.com") ||
+      u.hostname.includes("twitter.com")
+    );
+  } catch {
+    return value.includes("x.com") || value.includes("twitter.com");
+  }
+}
+
 function SubmitForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -33,6 +45,7 @@ function SubmitForm() {
   const preselected = searchParams.get("community") || "";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const communityBoxRef = useRef<HTMLDivElement>(null);
+  const titleAutoFilledForUrl = useRef<string | null>(null);
   const { toast } = useToast();
 
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -92,23 +105,38 @@ function SubmitForm() {
   useEffect(() => {
     if (postType !== "link" || !url.trim()) {
       setPreviewThumb(null);
+      setTitleLoading(false);
+      setPreviewLoading(false);
       return;
     }
 
+    const trimmedUrl = url.trim();
+
+    // X posts: still try thumbnail, but never auto-suggest title
+    const skipTitleSuggest = isXUrl(trimmedUrl);
+
     let cancelled = false;
     const timer = setTimeout(async () => {
-      setTitleLoading(true);
+      if (!skipTitleSuggest) setTitleLoading(true);
       setPreviewLoading(true);
+
       try {
         const res = await fetch(
-          `/api/link-preview?url=${encodeURIComponent(url.trim())}`
+          `/api/link-preview?url=${encodeURIComponent(trimmedUrl)}`
         );
         const data = await res.json();
-        if (!cancelled) {
-          if (data.title && !title.trim()) {
-            setTitle(data.title);
-          }
-          setPreviewThumb(data.thumbnail || null);
+        if (cancelled) return;
+
+        setPreviewThumb(data.thumbnail || null);
+
+        if (
+          !skipTitleSuggest &&
+          data.title &&
+          titleAutoFilledForUrl.current !== trimmedUrl &&
+          !title.trim()
+        ) {
+          setTitle(data.title);
+          titleAutoFilledForUrl.current = trimmedUrl;
         }
       } catch {
         if (!cancelled) setPreviewThumb(null);
@@ -124,7 +152,14 @@ function SubmitForm() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [url, postType, title]);
+  }, [url, postType]);
+
+  // When the URL changes, allow one fresh auto-title for the new URL
+  useEffect(() => {
+    if (!url.trim()) {
+      titleAutoFilledForUrl.current = null;
+    }
+  }, [url]);
 
   const uploadImageFile = useCallback(
     async (file: File) => {
@@ -173,7 +208,6 @@ function SubmitForm() {
     [toast]
   );
 
-  // Paste image while on the Image post type
   useEffect(() => {
     async function handlePaste(e: ClipboardEvent) {
       if (postType !== "image" || imageUrl || uploading) return;
