@@ -3,12 +3,10 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
-import { formatScore, timeAgo } from "@/lib/utils";
 import { JoinedCommunities } from "@/components/joined-communities";
 import { NsfwToggle } from "@/components/nsfw-toggle";
-import { SaveButton } from "@/components/save-button";
-import { CollapsibleSection } from "@/components/collapsible-section";
 import { ProfileEditor } from "@/components/profile-editor";
+import { ProfileActivityTabs } from "@/components/profile-activity-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +40,7 @@ export default async function UserProfilePage({ params }: Props) {
     prisma.post.findMany({
       where: { authorId: user.id, moderationStatus: "approved" },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 50,
       include: {
         community: { select: { name: true, title: true } },
         _count: { select: { comments: true } },
@@ -51,7 +49,7 @@ export default async function UserProfilePage({ params }: Props) {
     prisma.comment.findMany({
       where: { authorId: user.id, moderationStatus: "approved" },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 50,
       include: {
         post: {
           select: {
@@ -78,7 +76,7 @@ export default async function UserProfilePage({ params }: Props) {
       ? prisma.savedPost.findMany({
           where: { userId: user.id },
           orderBy: { createdAt: "desc" },
-          take: 30,
+          take: 50,
           include: {
             post: {
               include: {
@@ -164,114 +162,12 @@ export default async function UserProfilePage({ params }: Props) {
         <JoinedCommunities communities={communities} />
       </section>
 
-      {isOwnProfile && (
-        <CollapsibleSection
-          title="Saved"
-          count={savedPosts.length}
-          emptyMessage="No saved posts yet."
-        >
-          {savedPosts.map((post) => (
-            <article
-              key={post.id}
-              className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
-            >
-              <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                <Link
-                  href={`/c/${post.community.name}`}
-                  className="font-medium hover:underline"
-                >
-                  {post.community.title}
-                </Link>
-                <span>•</span>
-                <Link
-                  href={`/u/${post.author.username}`}
-                  className="hover:underline"
-                >
-                  {post.author.username}
-                </Link>
-                <span>•</span>
-                <span>{timeAgo(post.createdAt)}</span>
-                <span>•</span>
-                <span>{formatScore(post.score)} points</span>
-              </div>
-              <Link
-                href={`/c/${post.community.name}/posts/${post.id}`}
-                className="font-medium hover:underline"
-              >
-                {post.title}
-              </Link>
-              <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500">
-                <span>{post._count.comments} comments</span>
-                <SaveButton postId={post.id} initialSaved />
-              </div>
-            </article>
-          ))}
-        </CollapsibleSection>
-      )}
-
-      <CollapsibleSection
-        title="Recent Posts"
-        count={posts.length}
-        emptyMessage="No posts yet."
-      >
-        {posts.map((post) => (
-          <article
-            key={post.id}
-            className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
-          >
-            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              <Link
-                href={`/c/${post.community.name}`}
-                className="font-medium hover:underline"
-              >
-                {post.community.title}
-              </Link>
-              <span>•</span>
-              <span>{timeAgo(post.createdAt)}</span>
-              <span>•</span>
-              <span>{formatScore(post.score)} points</span>
-            </div>
-            <Link
-              href={`/c/${post.community.name}/posts/${post.id}`}
-              className="font-medium hover:underline"
-            >
-              {post.title}
-            </Link>
-            <div className="mt-1 text-xs text-zinc-500">
-              {post._count.comments} comments
-            </div>
-          </article>
-        ))}
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        title="Recent Comments"
-        count={comments.length}
-        emptyMessage="No comments yet."
-      >
-        {comments.map((comment) => (
-          <div
-            key={comment.id}
-            className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
-          >
-            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              <Link
-                href={`/c/${comment.post.community.name}/posts/${comment.post.id}`}
-                className="font-medium hover:underline"
-              >
-                {comment.post.title}
-              </Link>
-              <span>•</span>
-              <span>{comment.post.community.title}</span>
-              <span>•</span>
-              <span>{timeAgo(comment.createdAt)}</span>
-            </div>
-            <p className="whitespace-pre-wrap break-words text-sm">
-              {comment.body}
-            </p>
-          </div>
-        ))}
-      </CollapsibleSection>
+      <ProfileActivityTabs
+        isOwnProfile={isOwnProfile}
+        savedPosts={savedPosts}
+        posts={posts}
+        comments={comments}
+      />
     </div>
   );
 }
