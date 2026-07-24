@@ -85,7 +85,7 @@ or
 
   try {
     const response = await client.chat.completions.create({
-      model: "grok-2-latest",
+      model: "grok-3-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
