@@ -5,10 +5,6 @@ export type ModerationResult = {
   reason?: string;
 };
 
-/**
- * Minimal free-speech oriented moderation using Grok (xAI).
- * Rejects only clear spam, pure off-topic, and clearly illegal content.
- */
 export async function moderateContent(params: {
   type: "post" | "comment";
   title?: string;
@@ -35,7 +31,7 @@ export async function moderateContent(params: {
   }
 
   if (!process.env.XAI_API_KEY) {
-    console.warn("[moderation] No XAI_API_KEY — allowing content in dev mode");
+    console.warn("[moderation] No XAI_API_KEY — allowing content");
     return { allowed: true };
   }
 
@@ -50,30 +46,19 @@ Community: "${communityName}"
 Description: ${communityDescription}
 ${communityRules ? `Additional community guidance for the AI: ${communityRules}` : ""}
 
-Your job is deliberately minimal. You exist only to stop spam, pure off-topic noise, and clearly illegal harmful content. You are NOT a morality, politics, or etiquette police.
-
-STRICT RULES — Reject ONLY if the content clearly matches one of these:
-
+Reject ONLY if the content clearly matches one of these:
 1. Spam / advertising / promotional content / bot-like repetitive posting
-2. Completely unrelated to the community topic (e.g. crypto spam in a gardening community)
-3. Clearly illegal or directly harmful content, limited to:
-   - Child sexual abuse material or sexual content involving minors
-   - Credible threats of real-world violence against specific people
-   - Direct attempts to solicit or carry out serious crimes
-   - Fraud / scams intended to steal money, accounts, or personal data
+2. Completely unrelated to the community topic
+3. Clearly illegal harmful content:
+   - child sexual abuse material or sexual content involving minors
+   - credible threats of real-world violence against specific people
+   - direct attempts to solicit serious crimes
+   - fraud/scams intended to steal money, accounts, or personal data
 
-Do NOT reject for:
-- Offensive, rude, or "hateful" opinions
-- Political views of any kind
-- Controversy, edginess, dark humor, or strong language
-- Criticism of any group, ideology, or person
-- News, opinion, fiction, or general discussion of illegal topics
-- Hypothetical discussion that does not instruct or solicit real harm
-- Anything that is merely unpopular or uncomfortable
+Do NOT reject offensive opinions, politics, strong language, dark humor, or unpopular views.
+When in doubt, ALLOW.
 
-When in doubt, ALLOW the content. Free speech is the default.
-
-Respond with a single JSON object and nothing else:
+Respond with JSON only:
 {"allowed": true}
 or
 {"allowed": false, "reason": "brief reason"}`;
@@ -84,8 +69,14 @@ or
       : `New comment:\n${body}`;
 
   try {
+    console.log("[moderation] checking", {
+      type,
+      communityName,
+      title: title || null,
+    });
+
     const response = await client.chat.completions.create({
-      model: "grok-3-mini",
+      model: "grok-3",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
@@ -95,24 +86,26 @@ or
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-    let parsed: ModerationResult;
+    console.log("[moderation] raw response:", raw);
 
+    let parsed: ModerationResult;
     try {
       const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
       parsed = JSON.parse(cleaned) as ModerationResult;
     } catch {
-      console.warn("[moderation] Could not parse Grok response, allowing:", raw);
+      console.warn("[moderation] parse failed, allowing:", raw);
       return { allowed: true };
     }
 
     if (typeof parsed.allowed !== "boolean") {
+      console.warn("[moderation] invalid shape, allowing:", parsed);
       return { allowed: true };
     }
 
+    console.log("[moderation] decision:", parsed);
     return parsed;
   } catch (err) {
     console.error("[moderation] Grok API call failed:", err);
-    // Fail open to preserve availability; admins can still remove content.
     return { allowed: true };
   }
 }
