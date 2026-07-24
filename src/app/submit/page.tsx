@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense, useRef } from "react";
+import { useState, useEffect, Suspense, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -72,7 +72,6 @@ function SubmitForm() {
       .catch(() => {});
   }, [preselected]);
 
-  // Close community dropdown when clicking outside
   useEffect(() => {
     function handlePointerDown(e: MouseEvent | TouchEvent) {
       if (!communityBoxRef.current) return;
@@ -127,6 +126,77 @@ function SubmitForm() {
     };
   }, [url, postType, title]);
 
+  const uploadImageFile = useCallback(
+    async (file: File) => {
+      setError(null);
+      setUploading(true);
+
+      try {
+        if (!file.type.startsWith("image/")) {
+          setError("File must be an image");
+          toast("File must be an image", "error");
+          return;
+        }
+        if (file.size > 4 * 1024 * 1024) {
+          setError("Image must be under 4MB");
+          toast("Image must be under 4MB", "error");
+          return;
+        }
+
+        const fileData = await fileToBase64(file);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name || "pasted-image.png",
+            fileType: file.type,
+            fileData,
+          }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || "Upload failed");
+          toast(data.error || "Upload failed", "error");
+        } else {
+          setImageUrl(data.url);
+          toast("Image uploaded");
+        }
+      } catch {
+        setError("Upload failed");
+        toast("Upload failed", "error");
+      } finally {
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    },
+    [toast]
+  );
+
+  // Paste image while on the Image post type
+  useEffect(() => {
+    async function handlePaste(e: ClipboardEvent) {
+      if (postType !== "image" || imageUrl || uploading) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            await uploadImageFile(file);
+          }
+          break;
+        }
+      }
+    }
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [postType, imageUrl, uploading, uploadImageFile]);
+
   function handleSearch(value: string) {
     setQuery(value);
     setShowDropdown(true);
@@ -160,50 +230,7 @@ function SubmitForm() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setError(null);
-    setUploading(true);
-
-    try {
-      if (!file.type.startsWith("image/")) {
-        setError("File must be an image");
-        toast("File must be an image", "error");
-        setUploading(false);
-        return;
-      }
-      if (file.size > 4 * 1024 * 1024) {
-        setError("Image must be under 4MB");
-        toast("Image must be under 4MB", "error");
-        setUploading(false);
-        return;
-      }
-
-      const fileData = await fileToBase64(file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          fileData,
-        }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Upload failed");
-        toast(data.error || "Upload failed", "error");
-      } else {
-        setImageUrl(data.url);
-        toast("Image uploaded");
-      }
-    } catch {
-      setError("Upload failed");
-      toast("Upload failed", "error");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    await uploadImageFile(file);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -444,7 +471,9 @@ function SubmitForm() {
                   className="block w-full text-sm text-zinc-600 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white dark:text-zinc-400 dark:file:bg-zinc-100 dark:file:text-zinc-900"
                 />
                 <p className="mt-2 text-xs text-zinc-500">
-                  {uploading ? "Uploading…" : "Image up to 4MB"}
+                  {uploading
+                    ? "Uploading…"
+                    : "Upload a file, or paste an image (Ctrl/Cmd+V)"}
                 </p>
               </div>
             )}
@@ -453,8 +482,7 @@ function SubmitForm() {
 
         <div>
           <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
-            Text{" "}
-            <span className="font-normal text-zinc-400">(optional)</span>
+            Text <span className="font-normal text-zinc-400">(optional)</span>
           </label>
           <textarea
             id="body"
