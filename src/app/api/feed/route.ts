@@ -8,6 +8,7 @@ export async function GET(req: Request) {
   const sort = searchParams.get("sort") || "trending";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const communityName = searchParams.get("community");
+  const scope = searchParams.get("scope") || "all"; // "joined" | "all"
   const limit = 15;
 
   const session = await auth();
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ posts: [], nextPage: null });
     }
     communityIds = [community.id];
-  } else if (session?.user?.id) {
+  } else if (scope === "joined" && session?.user?.id) {
     const subscriptions = await prisma.subscription.findMany({
       where: { userId: session.user.id },
       select: { communityId: true },
@@ -51,15 +52,22 @@ export async function GET(req: Request) {
     ...p,
     author: {
       username:
-        p.moderationStatus === "author_deleted" ? "[deleted]" : p.author.username,
+        p.moderationStatus === "author_deleted"
+          ? "[deleted]"
+          : p.author.username,
     },
     hot: hotScore(p.score, p.createdAt),
   }));
 
-  if (sort === "trending") {
+  if (sort === "my" || sort === "trending") {
     ranked.sort((a, b) => b.hot - a.hot);
   } else if (sort === "top") {
     ranked.sort((a, b) => b.score - a.score);
+  } else {
+    ranked.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   const start = (page - 1) * limit;

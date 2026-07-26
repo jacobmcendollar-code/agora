@@ -7,7 +7,7 @@ import { WelcomeBanner } from "@/components/welcome-banner";
 
 export const dynamic = "force-dynamic";
 
-type SortOption = "trending" | "recent" | "top";
+type SortOption = "my" | "trending" | "recent" | "top";
 
 type Props = {
   searchParams: Promise<{ sort?: string }>;
@@ -16,30 +16,45 @@ type Props = {
 export default async function HomePage({ searchParams }: Props) {
   const session = await auth();
   const params = await searchParams;
-  const sort = (
-    ["trending", "recent", "top"].includes(params.sort || "")
-      ? params.sort
-      : "trending"
-  ) as SortOption;
 
-  let communityIds: string[] | null = null;
+  const isLoggedIn = !!session?.user?.id;
 
-  if (session?.user?.id) {
+  let joinedCommunityIds: string[] = [];
+  if (isLoggedIn) {
     const subscriptions = await prisma.subscription.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session!.user!.id },
       select: { communityId: true },
     });
-    if (subscriptions.length > 0) {
-      communityIds = subscriptions.map((s) => s.communityId);
-    }
+    joinedCommunityIds = subscriptions.map((s) => s.communityId);
   }
+
+  const hasJoinedCommunities = joinedCommunityIds.length > 0;
+
+  // Default: My Feed if logged in, otherwise Trending
+  const requested = params.sort || (isLoggedIn ? "my" : "trending");
+  const allowed: SortOption[] = isLoggedIn
+    ? ["my", "trending", "recent", "top"]
+    : ["trending", "recent", "top"];
+
+  const sort = (allowed.includes(requested as SortOption)
+    ? requested
+    : isLoggedIn
+      ? "my"
+      : "trending") as SortOption;
+
+  // My Feed = joined communities only.
+  // If user has joined none yet, My Feed falls back to all communities.
+  // Trending/Recent/Top are always global.
+  const useJoinedOnly = sort === "my" && hasJoinedCommunities;
 
   const posts = await prisma.post.findMany({
     where: {
       moderationStatus: { in: ["approved", "author_deleted"] },
-      ...(communityIds ? { communityId: { in: communityIds } } : {}),
+      ...(useJoinedOnly
+        ? { communityId: { in: joinedCommunityIds } }
+        : {}),
     },
-    take: 20,
+    take: 200,
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { username: true } },
@@ -60,20 +75,35 @@ export default async function HomePage({ searchParams }: Props) {
     createdAt: p.createdAt.toISOString(),
   }));
 
-  if (sort === "trending") {
+  if (sort === "my" || sort === "trending") {
     ranked.sort((a, b) => b.hot - a.hot);
   } else if (sort === "top") {
     ranked.sort((a, b) => b.score - a.score);
+  } else {
+    // recent: already ordered by createdAt desc from query, keep that
+    ranked.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   const initialPosts = ranked.slice(0, 15);
-  const showingSubscribed = !!communityIds;
 
-  const sortOptions: { key: SortOption; label: string }[] = [
+  const sortOptions: { key: SortOption; label: string }[] = [];
+  if (isLoggedIn) {
+    sortOptions.push({ key: "my", label: "My Feed" });
+  }
+  sortOptions.push(
     { key: "trending", label: "Trending" },
     { key: "recent", label: "Recent" },
-    { key: "top", label: "Top" },
-  ];
+    { key: "top", label: "Top" }
+  );
+
+  function hrefFor(key: SortOption) {
+    if (key === "my") return "/";
+    if (key === "trending" && !isLoggedIn) return "/";
+    return `/?sort=${key}`;
+  }
 
   return (
     <div className="space-y-6">
@@ -84,7 +114,7 @@ export default async function HomePage({ searchParams }: Props) {
           {sortOptions.map((option) => (
             <Link
               key={option.key}
-              href={option.key === "trending" ? "/" : `/?sort=${option.key}`}
+              href={hrefFor(option.key)}
               className={`shrink-0 px-4 py-2 text-sm font-medium transition ${
                 sort === option.key
                   ? "border-b-2 border-emerald-500 text-zinc-900 dark:text-zinc-100"
@@ -105,11 +135,11 @@ export default async function HomePage({ searchParams }: Props) {
 
       {initialPosts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
-          {showingSubscribed ? (
+          {sort === "my" && hasJoinedCommunities ? (
             <>
-              <p className="text-lg font-medium">Nothing here yet</p>
+              <p className="text-lg font-medium">Nothing in your feed yet</p>
               <p className="mt-2 text-sm text-zinc-500">
-                The communities you’ve joined don’t have any posts.
+                Communities you’ve joined don’t have posts yet.
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Link
@@ -150,7 +180,11 @@ export default async function HomePage({ searchParams }: Props) {
           )}
         </div>
       ) : (
-        <PostFeed initialPosts={initialPosts} sort={sort} />
+        <PostFeed
+          initialPosts={initialPosts}
+          sort={sort}
+          scope={useJoinedOnly ? "joined" : "all"}
+        />
       )}
     </div>
   );

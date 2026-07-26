@@ -32,6 +32,7 @@ type Props = {
   sort: string;
   communityName?: string;
   hideCommunity?: boolean;
+  scope?: "joined" | "all";
 };
 
 function getYouTubeId(url: string | null | undefined): string | null {
@@ -98,6 +99,7 @@ export function PostFeed({
   sort,
   communityName,
   hideCommunity = false,
+  scope = "all",
 }: Props) {
   const { showNsfw, ready } = useNsfw();
   const [posts, setPosts] = useState<Post[]>(initialPosts);
@@ -110,7 +112,7 @@ export function PostFeed({
     setPosts(initialPosts);
     setPage(2);
     setHasMore(initialPosts.length >= 15);
-  }, [initialPosts, sort, communityName]);
+  }, [initialPosts, sort, communityName, scope]);
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -140,6 +142,7 @@ export function PostFeed({
       const params = new URLSearchParams({
         sort,
         page: String(page),
+        scope,
       });
       if (communityName) params.set("community", communityName);
 
