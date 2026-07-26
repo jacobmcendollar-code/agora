@@ -30,8 +30,7 @@ function isXUrl(value: string): boolean {
   try {
     const u = new URL(value);
     return (
-      u.hostname.includes("x.com") ||
-      u.hostname.includes("twitter.com")
+      u.hostname.includes("x.com") || u.hostname.includes("twitter.com")
     );
   } catch {
     return value.includes("x.com") || value.includes("twitter.com");
@@ -95,7 +94,6 @@ function SubmitForm() {
 
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("touchstart", handlePointerDown);
-
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("touchstart", handlePointerDown);
@@ -111,11 +109,9 @@ function SubmitForm() {
     }
 
     const trimmedUrl = url.trim();
-
-    // X posts: still try thumbnail, but never auto-suggest title
     const skipTitleSuggest = isXUrl(trimmedUrl);
-
     let cancelled = false;
+
     const timer = setTimeout(async () => {
       if (!skipTitleSuggest) setTitleLoading(true);
       setPreviewLoading(true);
@@ -154,7 +150,6 @@ function SubmitForm() {
     };
   }, [url, postType]);
 
-  // When the URL changes, allow one fresh auto-title for the new URL
   useEffect(() => {
     if (!url.trim()) {
       titleAutoFilledForUrl.current = null;
@@ -188,8 +183,8 @@ function SubmitForm() {
             fileData,
           }),
         });
-        const data = await res.json();
 
+        const data = await res.json();
         if (!res.ok) {
           setError(data.error || "Upload failed");
           toast(data.error || "Upload failed", "error");
@@ -211,7 +206,6 @@ function SubmitForm() {
   useEffect(() => {
     async function handlePaste(e: ClipboardEvent) {
       if (postType !== "image" || imageUrl || uploading) return;
-
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -219,9 +213,7 @@ function SubmitForm() {
         if (item.type.startsWith("image/")) {
           e.preventDefault();
           const file = item.getAsFile();
-          if (file) {
-            await uploadImageFile(file);
-          }
+          if (file) await uploadImageFile(file);
           break;
         }
       }
@@ -276,9 +268,22 @@ function SubmitForm() {
       toast("Please select a community", "error");
       return;
     }
+
     if (!title.trim()) {
       setError("Please enter a title");
       toast("Please enter a title", "error");
+      return;
+    }
+
+    if (postType === "link" && !url.trim()) {
+      setError("Please enter a link");
+      toast("Please enter a link", "error");
+      return;
+    }
+
+    if (postType === "image" && !imageUrl) {
+      setError("Please upload an image");
+      toast("Please upload an image", "error");
       return;
     }
 
@@ -291,14 +296,18 @@ function SubmitForm() {
         body: JSON.stringify({
           communityName: selected,
           title: title.trim(),
-          body: body.trim() || null,
+          // Link posts: no user body. Server may still store site subtitle.
+          body:
+            postType === "link"
+              ? null
+              : body.trim() || null,
           url: postType === "link" ? url.trim() || null : null,
           imageUrl: postType === "image" ? imageUrl : null,
           nsfw,
         }),
       });
-      const data = await res.json();
 
+      const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to create post");
         toast(data.error || "Failed to create post", "error");
@@ -463,6 +472,9 @@ function SubmitForm() {
               placeholder="https://"
               className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
             />
+            <p className="mt-1 text-xs text-zinc-500">
+              Add discussion in the comments after posting.
+            </p>
             {previewLoading && (
               <p className="mt-1 text-xs text-zinc-500">Loading preview…</p>
             )}
@@ -514,24 +526,27 @@ function SubmitForm() {
           </div>
         )}
 
-        <div>
-          <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
-            Text <span className="font-normal text-zinc-400">(optional)</span>
-          </label>
-          <textarea
-            id="body"
-            rows={postType === "text" ? 6 : 3}
-            maxLength={40000}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={
-              postType === "text"
-                ? "Add more detail if you want..."
-                : "Add more context if you want..."
-            }
-            className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-          />
-        </div>
+        {(postType === "text" || postType === "image") && (
+          <div>
+            <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
+              Text{" "}
+              <span className="font-normal text-zinc-400">(optional)</span>
+            </label>
+            <textarea
+              id="body"
+              rows={postType === "text" ? 6 : 3}
+              maxLength={40000}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={
+                postType === "text"
+                  ? "Add more detail if you want..."
+                  : "Add a caption if you want..."
+              }
+              className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+            />
+          </div>
+        )}
 
         <label className="flex items-center gap-2 text-sm">
           <input

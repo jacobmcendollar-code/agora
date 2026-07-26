@@ -134,9 +134,13 @@ export async function POST(req: Request) {
       thumbnail = await fetchThumbnail(url);
     }
 
-    let finalBody = postBody?.trim() || null;
-    if (!finalBody && url) {
+    // Link posts: ignore any user body. Store website subtitle only.
+    // Text/image posts: keep optional user body.
+    let finalBody: string | null = null;
+    if (url) {
       finalBody = await fetchLinkDescription(url);
+    } else {
+      finalBody = postBody?.trim() || null;
     }
 
     const post = await prisma.post.create({
