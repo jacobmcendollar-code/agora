@@ -31,13 +31,18 @@ export async function POST(req: Request) {
     });
 
     if (!user?.email) {
+      console.log("[forgot-password] no user for email");
+      return successResponse;
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error("[forgot-password] RESEND_API_KEY missing");
       return successResponse;
     }
 
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // Clean old tokens for this email
     await prisma.verificationToken.deleteMany({
       where: { identifier: email },
     });
@@ -57,15 +62,10 @@ export async function POST(req: Request) {
 
     const resetUrl = `${baseUrl.replace(/\/$/, "")}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
-    if (!process.env.RESEND_API_KEY) {
-      console.error("[forgot-password] RESEND_API_KEY missing");
-      return successResponse;
-    }
-
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    await resend.emails.send({
-      from: "Agora <onboarding@resend.dev>",
+    const result = await resend.emails.send({
+      from: "Agora <noreply@agor4.com>",
       to: email,
       subject: "Reset your Agora password",
       html: `
@@ -76,6 +76,12 @@ export async function POST(req: Request) {
         <p>If you didn’t request this, you can ignore this email.</p>
       `,
     });
+
+    if (result.error) {
+      console.error("[forgot-password] Resend error:", result.error);
+    } else {
+      console.log("[forgot-password] email sent:", result.data?.id);
+    }
 
     return successResponse;
   } catch (err) {
