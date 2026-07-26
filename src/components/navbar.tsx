@@ -190,7 +190,7 @@ export function Navbar() {
                     <Link
                       href={`/u/${session.user.username}`}
                       onClick={() => setMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                      className="block rounded-md px-2 py-2 text-right text-sm font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                     >
                       {session.user.username}
                     </Link>
@@ -200,7 +200,7 @@ export function Navbar() {
                         setMenuOpen(false);
                         signOut({ callbackUrl: "/" });
                       }}
-                      className="block w-full rounded-md px-2 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      className="block w-full rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     >
                       Log out
                     </button>
@@ -210,14 +210,14 @@ export function Navbar() {
                     <Link
                       href="/login"
                       onClick={() => setMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      className="block rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     >
                       Log in
                     </Link>
                     <Link
                       href="/register"
                       onClick={() => setMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      className="block rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     >
                       Sign up
                     </Link>
