@@ -64,6 +64,18 @@ function isInstagramLink(url: string | null | undefined): boolean {
   return url.includes("instagram.com") || url.includes("instagr.am");
 }
 
+function decodeBasicEntities(text: string) {
+  return text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&#x27;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    );
+}
+
 function buildCommentTree(comments: any[]) {
   const map = new Map<string, any>();
   const roots: any[] = [];
@@ -223,6 +235,7 @@ export default async function PostPage({ params }: Props) {
                   url={post.url}
                   title={post.title}
                   thumbnail={post.thumbnail}
+                  showDescription={!post.body}
                 />
               </div>
             )}
@@ -235,7 +248,7 @@ export default async function PostPage({ params }: Props) {
 
             {post.body && (
               <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
-                {post.body}
+                {decodeBasicEntities(post.body)}
               </div>
             )}
 

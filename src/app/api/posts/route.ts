@@ -14,6 +14,18 @@ const schema = z.object({
   nsfw: z.boolean().optional().default(false),
 });
 
+function decodeHtmlEntities(text: string) {
+  return text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&#x27;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    );
+}
+
 async function fetchLinkDescription(url: string): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -43,7 +55,9 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
     for (const pattern of patterns) {
       const match = html.match(pattern);
       if (match?.[1]) {
-        return match[1].trim().replace(/\s+/g, " ").slice(0, 300);
+        return decodeHtmlEntities(
+          match[1].trim().replace(/\s+/g, " ")
+        ).slice(0, 300);
       }
     }
 
@@ -120,8 +134,6 @@ export async function POST(req: Request) {
       thumbnail = await fetchThumbnail(url);
     }
 
-    // If this is a link post with no user-written body,
-    // use the page's short preview description as the subtitle on feeds.
     let finalBody = postBody?.trim() || null;
     if (!finalBody && url) {
       finalBody = await fetchLinkDescription(url);
