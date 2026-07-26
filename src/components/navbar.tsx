@@ -147,85 +147,81 @@ export function Navbar() {
             </Link>
           )}
 
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              className="rounded-md p-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              aria-label="Open menu"
-              aria-expanded={menuOpen}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {status === "loading" ? (
+            <div className="h-8 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+          ) : session ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="rounded-md p-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                aria-label="Open menu"
+                aria-expanded={menuOpen}
               >
-                <line x1="4" x2="20" y1="6" y2="6" />
-                <line x1="4" x2="20" y1="12" y2="12" />
-                <line x1="4" x2="20" y1="18" y2="18" />
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="4" x2="20" y1="6" y2="6" />
+                  <line x1="4" x2="20" y1="12" y2="12" />
+                  <line x1="4" x2="20" y1="18" y2="18" />
+                </svg>
+              </button>
 
-            {menuOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-lg border bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-                <div className="flex items-center justify-end gap-2 rounded-md px-2 py-2">
-                  <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                    Theme
-                  </span>
-                  <ThemeToggle />
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-lg border bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                  <div className="flex items-center justify-end gap-2 rounded-md px-2 py-2">
+                    <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                      Theme
+                    </span>
+                    <ThemeToggle />
+                  </div>
+
+                  <div className="my-1 border-t dark:border-zinc-700" />
+
+                  <Link
+                    href={`/u/${session.user.username}`}
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-md px-2 py-2 text-right text-sm font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    {session.user.username}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      signOut({ callbackUrl: "/" });
+                    }}
+                    className="block w-full rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    Log out
+                  </button>
                 </div>
-
-                <div className="my-1 border-t dark:border-zinc-700" />
-
-                {status === "loading" ? (
-                  <div className="h-8 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
-                ) : session ? (
-                  <>
-                    <Link
-                      href={`/u/${session.user.username}`}
-                      onClick={() => setMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-right text-sm font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                    >
-                      {session.user.username}
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        signOut({ callbackUrl: "/" });
-                      }}
-                      className="block w-full rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    >
-                      Log out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    >
-                      Log in
-                    </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setMenuOpen(false)}
-                      className="block rounded-md px-2 py-2 text-right text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    >
-                      Sign up
-                    </Link>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-md px-2.5 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-md bg-zinc-900 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
