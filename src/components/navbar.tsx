@@ -173,8 +173,8 @@ export function Navbar() {
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-                <div className="flex items-center justify-between gap-2 rounded-md px-2 py-2">
+              <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-lg border bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                <div className="flex items-center justify-end gap-2 rounded-md px-2 py-2">
                   <span className="text-sm text-zinc-600 dark:text-zinc-300">
                     Theme
                   </span>
