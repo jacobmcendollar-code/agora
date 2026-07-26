@@ -14,6 +14,7 @@ import { DeletePostButton } from "@/components/delete-post-button";
 import { SaveButton } from "@/components/save-button";
 import { ShareButton } from "@/components/share-button";
 import { ImageLightbox } from "@/components/image-lightbox";
+import { LinkPreviewCard } from "@/components/link-preview-card";
 import { XEmbed } from "@/components/x-embed";
 import { TikTokEmbed } from "@/components/tiktok-embed";
 import { RedditEmbed } from "@/components/reddit-embed";
@@ -87,13 +88,11 @@ function buildCommentTree(comments: any[]) {
 
   roots.sort(sortFn);
   map.forEach((node) => node.replies.sort(sortFn));
-
   return roots;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { name, postId } = await params;
-
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: {
@@ -108,8 +107,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${post.title} · ${post.community.title}`;
   const description =
-    post.body?.slice(0, 160) ||
-    `A post in ${post.community.title} on Agora`;
+    post.body?.slice(0, 160) || `A post in ${post.community.title} on Agora`;
   const url = `https://agor4.com/c/${post.community.name}/posts/${post.id}`;
 
   return {
@@ -164,14 +162,23 @@ export default async function PostPage({ params }: Props) {
 
   const commentTree = buildCommentTree(allComments);
   const showAdmin = isAdmin(session?.user?.username);
+
   const youtubeId = getYouTubeId(post.url);
   const isX = isXLink(post.url);
   const isTikTok = isTikTokLink(post.url);
   const isReddit = isRedditLink(post.url);
   const isInstagram = isInstagramLink(post.url);
-  const hasRichEmbed = !!(youtubeId || isX || isTikTok || isReddit || isInstagram);
+  const hasRichEmbed = !!(
+    youtubeId ||
+    isX ||
+    isTikTok ||
+    isReddit ||
+    isInstagram
+  );
+
   const isAuthor = session?.user?.id === post.authorId;
   const sharePath = `/c/${post.community.name}/posts/${post.id}`;
+  const isPlainLink = !!(post.url && !hasRichEmbed);
 
   return (
     <div className="space-y-6">
@@ -210,28 +217,23 @@ export default async function PostPage({ params }: Props) {
             {isReddit && post.url && <RedditEmbed url={post.url} />}
             {isInstagram && post.url && <InstagramEmbed url={post.url} />}
 
-            {post.thumbnail && !hasRichEmbed && (
-              <ImageLightbox src={post.thumbnail} alt={post.title} />
+            {isPlainLink && post.url && (
+              <div className="mt-4">
+                <LinkPreviewCard
+                  url={post.url}
+                  title={post.title}
+                  thumbnail={post.thumbnail}
+                />
+              </div>
             )}
 
-            {post.url &&
-              !youtubeId &&
-              !isX &&
-              !isTikTok &&
-              !isReddit &&
-              !isInstagram &&
-              !post.thumbnail && (
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 block text-sm text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {post.url}
-                </a>
-              )}
+            {!isPlainLink && post.thumbnail && !hasRichEmbed && (
+              <div className="mt-4">
+                <ImageLightbox src={post.thumbnail} alt={post.title} />
+              </div>
+            )}
 
-            {post.body && !hasRichEmbed && (
+            {post.body && (
               <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
                 {post.body}
               </div>
@@ -244,11 +246,8 @@ export default async function PostPage({ params }: Props) {
               >
                 {post.community.title}
               </Link>
-
               <SaveButton postId={post.id} />
-
               <ShareButton url={sharePath} title={post.title} />
-
               {isSoftDeleted ? (
                 <span className="font-medium text-zinc-400">[deleted]</span>
               ) : (
@@ -259,9 +258,7 @@ export default async function PostPage({ params }: Props) {
                   {post.author.username}
                 </Link>
               )}
-
               <time>{timeAgo(post.createdAt)}</time>
-
               {isAuthor && !isSoftDeleted && (
                 <>
                   <EditPostButton
