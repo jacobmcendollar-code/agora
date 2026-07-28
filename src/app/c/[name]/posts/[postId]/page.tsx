@@ -64,6 +64,15 @@ function isInstagramLink(url: string | null | undefined): boolean {
   return url.includes("instagram.com") || url.includes("instagr.am");
 }
 
+function isGenericBody(body: string | null | undefined): boolean {
+  if (!body) return true;
+  const lower = body.toLowerCase();
+  return (
+    lower.includes("enjoy the videos and music you love") ||
+    lower.includes("upload original content, and share it all")
+  );
+}
+
 function decodeBasicEntities(text: string) {
   return text
     .replace(/&nbsp;/gi, " ")
@@ -118,8 +127,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = `${post.title} · ${post.community.title}`;
+  const rawDescription = post.body && !isGenericBody(post.body) ? post.body : null;
   const description =
-    post.body?.slice(0, 160) || `A post in ${post.community.title} on Agora`;
+    rawDescription?.slice(0, 160) ||
+    `A post in ${post.community.title} on Agora`;
   const url = `https://agor4.com/c/${post.community.name}/posts/${post.id}`;
 
   return {
@@ -191,6 +202,7 @@ export default async function PostPage({ params }: Props) {
   const isAuthor = session?.user?.id === post.authorId;
   const sharePath = `/c/${post.community.name}/posts/${post.id}`;
   const isPlainLink = !!(post.url && !hasRichEmbed);
+  const showBody = !!(post.body && !isGenericBody(post.body));
 
   return (
     <div className="space-y-6">
@@ -228,7 +240,7 @@ export default async function PostPage({ params }: Props) {
                   url={post.url}
                   title={post.title}
                   thumbnail={post.thumbnail}
-                  showDescription={!post.body}
+                  showDescription={!showBody}
                 />
               </div>
             )}
@@ -239,9 +251,9 @@ export default async function PostPage({ params }: Props) {
               </div>
             )}
 
-            {post.body && (
+            {showBody && (
               <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
-                {decodeBasicEntities(post.body)}
+                {decodeBasicEntities(post.body!)}
               </div>
             )}
 
@@ -271,7 +283,7 @@ export default async function PostPage({ params }: Props) {
                     <EditPostButton
                       postId={post.id}
                       initialTitle={post.title}
-                      initialBody={post.body}
+                      initialBody={showBody ? post.body : null}
                       createdAt={post.createdAt.toISOString()}
                     />
                     <DeletePostButton
