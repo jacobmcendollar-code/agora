@@ -34,7 +34,11 @@ export default function AboutPage() {
         </p>
         <ul className="list-disc space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
           <li>Spam and obvious scams</li>
-          <li>Content that is completely off-topic for the community it was posted in</li>
+          <li>
+            Content that is completely off-topic for the community it was posted
+            in
+          </li>
+          <li>Content that is clearly illegal</li>
         </ul>
         <p className="text-zinc-700 dark:text-zinc-300">
           It does not police tone, politics, or ideology. If something is legal
@@ -43,7 +47,9 @@ export default function AboutPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Community ranking, not personal clout</h2>
+        <h2 className="text-xl font-semibold">
+          Community ranking, not personal clout
+        </h2>
         <p className="text-zinc-700 dark:text-zinc-300">
           Posts rise or fall based on how the community votes. We show vote
           scores on posts so people can see what is resonating. We deliberately
@@ -65,8 +71,8 @@ export default function AboutPage() {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">This is an early version</h2>
         <p className="text-zinc-700 dark:text-zinc-300">
-          Agora is still being built. Features will change. The core idea will not:
-          a public square where people can speak with minimal interference.
+          Agora is still being built. Features will change. The core idea will
+          not: a public square where people can speak with minimal interference.
         </p>
       </section>
 
