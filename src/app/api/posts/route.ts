@@ -14,6 +14,12 @@ const schema = z.object({
   nsfw: z.boolean().optional().default(false),
 });
 
+const GENERIC_DESCRIPTIONS = [
+  "enjoy the videos and music you love",
+  "upload original content, and share it all",
+  "this site requires javascript",
+];
+
 function decodeHtmlEntities(text: string) {
   return text
     .replace(/&nbsp;/gi, " ")
@@ -26,7 +32,37 @@ function decodeHtmlEntities(text: string) {
     );
 }
 
+function isGenericDescription(text: string) {
+  const lower = text.toLowerCase();
+  return GENERIC_DESCRIPTIONS.some((g) => lower.includes(g));
+}
+
+function getYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) {
+      return u.pathname.slice(1).split("/")[0] || null;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return v;
+      const parts = u.pathname.split("/");
+      const idx = parts.findIndex((p) => p === "embed" || p === "shorts");
+      if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 async function fetchLinkDescription(url: string): Promise<string | null> {
+  // YouTube oEmbed does not give a useful short description.
+  // Never store YouTube's generic site blurb.
+  if (getYouTubeId(url)) {
+    return null;
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
@@ -55,9 +91,15 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
     for (const pattern of patterns) {
       const match = html.match(pattern);
       if (match?.[1]) {
-        return decodeHtmlEntities(
+        const cleaned = decodeHtmlEntities(
           match[1].trim().replace(/\s+/g, " ")
         ).slice(0, 300);
+
+        if (!cleaned || isGenericDescription(cleaned)) {
+          return null;
+        }
+
+        return cleaned;
       }
     }
 
@@ -134,8 +176,7 @@ export async function POST(req: Request) {
       thumbnail = await fetchThumbnail(url);
     }
 
-    // Link posts: ignore any user body. Store website subtitle only.
-    // Text/image posts: keep optional user body.
+    // Link posts: ignore user body. Store useful site subtitle only.
     let finalBody: string | null = null;
     if (url) {
       finalBody = await fetchLinkDescription(url);
