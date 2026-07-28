@@ -194,13 +194,6 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between text-sm text-zinc-500">
-        <Link href={`/c/${post.community.name}`} className="hover:underline">
-          {post.community.title}
-        </Link>
-        {showAdmin && !isSoftDeleted && <RemovePostButton postId={post.id} />}
-      </div>
-
       <article className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
         <div className="flex gap-4">
           <VoteButtons
@@ -252,40 +245,48 @@ export default async function PostPage({ params }: Props) {
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
-              <Link
-                href={`/c/${post.community.name}`}
-                className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-              >
-                {post.community.title}
-              </Link>
-              <SaveButton postId={post.id} />
-              <ShareButton url={sharePath} title={post.title} />
-              {isSoftDeleted ? (
-                <span className="font-medium text-zinc-400">[deleted]</span>
-              ) : (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-zinc-500">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <Link
-                  href={`/u/${post.author.username}`}
-                  className="hover:underline"
+                  href={`/c/${post.community.name}`}
+                  className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
                 >
-                  {post.author.username}
+                  {post.community.title}
                 </Link>
-              )}
-              <time>{timeAgo(post.createdAt)}</time>
-              {isAuthor && !isSoftDeleted && (
-                <>
-                  <EditPostButton
-                    postId={post.id}
-                    initialTitle={post.title}
-                    initialBody={post.body}
-                    createdAt={post.createdAt.toISOString()}
-                  />
-                  <DeletePostButton
-                    postId={post.id}
-                    communityName={post.community.name}
-                    createdAt={post.createdAt.toISOString()}
-                  />
-                </>
+                <SaveButton postId={post.id} />
+                <ShareButton url={sharePath} title={post.title} />
+                {isSoftDeleted ? (
+                  <span className="font-medium text-zinc-400">[deleted]</span>
+                ) : (
+                  <Link
+                    href={`/u/${post.author.username}`}
+                    className="hover:underline"
+                  >
+                    {post.author.username}
+                  </Link>
+                )}
+                <time>{timeAgo(post.createdAt)}</time>
+                {isAuthor && !isSoftDeleted && (
+                  <>
+                    <EditPostButton
+                      postId={post.id}
+                      initialTitle={post.title}
+                      initialBody={post.body}
+                      createdAt={post.createdAt.toISOString()}
+                    />
+                    <DeletePostButton
+                      postId={post.id}
+                      communityName={post.community.name}
+                      createdAt={post.createdAt.toISOString()}
+                    />
+                  </>
+                )}
+              </div>
+
+              {showAdmin && !isSoftDeleted && (
+                <div className="ml-auto">
+                  <RemovePostButton postId={post.id} />
+                </div>
               )}
             </div>
           </div>
