@@ -8,7 +8,7 @@ import { SuggestedCommunities } from "@/components/suggested-communities";
 
 export const metadata = {
   title: {
-    absolute: "Agora",
+    absolute: "Agora | Free Speech Communities",
   },
   description: "Create communities. Speak freely. Minimal AI moderation.",
 };

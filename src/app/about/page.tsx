@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "About · Agora",
+  title: "About",
   description: "What Agora is and how it works",
 };
 

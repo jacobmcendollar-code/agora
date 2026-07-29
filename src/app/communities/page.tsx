@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { CommunitiesList } from "@/components/communities-list";
 
+export const metadata = {
+  title: "Communities",
+  description: "Browse and join communities on Agora",
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function CommunitiesPage() {
@@ -56,10 +61,7 @@ export default async function CommunitiesPage() {
         </Link>
       </div>
 
-      <CommunitiesList
-        communities={list}
-        isLoggedIn={!!session?.user}
-      />
+      <CommunitiesList communities={list} isLoggedIn={!!session?.user} />
     </div>
   );
 }
