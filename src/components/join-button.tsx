@@ -7,9 +7,16 @@ import { useSession } from "next-auth/react";
 type Props = {
   communityId: string;
   initialJoined: boolean;
+  skipRefresh?: boolean;
+  onToggle?: (joined: boolean) => void;
 };
 
-export function JoinButton({ communityId, initialJoined }: Props) {
+export function JoinButton({
+  communityId,
+  initialJoined,
+  skipRefresh = false,
+  onToggle,
+}: Props) {
   const { data: session } = useSession();
   const router = useRouter();
   const [joined, setJoined] = useState(initialJoined);
@@ -35,7 +42,10 @@ export function JoinButton({ communityId, initialJoined }: Props) {
       if (res.ok) {
         const data = await res.json();
         setJoined(data.joined);
-        router.refresh();
+        onToggle?.(data.joined);
+        if (!skipRefresh) {
+          router.refresh();
+        }
       }
     } finally {
       setLoading(false);

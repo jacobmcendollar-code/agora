@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { JoinButton } from "@/components/join-button";
 
@@ -13,10 +14,14 @@ type Community = {
 
 type Props = {
   communities: Community[];
+  initialShow: boolean;
 };
 
-export function SuggestedCommunities({ communities }: Props) {
-  if (communities.length === 0) return null;
+export function SuggestedCommunities({ communities, initialShow }: Props) {
+  // Stay visible until the user navigates away, even after joining.
+  const [show] = useState(initialShow);
+
+  if (!show || communities.length === 0) return null;
 
   return (
     <div className="rounded-xl border bg-white p-4 dark:bg-zinc-900 sm:p-5">
@@ -50,7 +55,11 @@ export function SuggestedCommunities({ communities }: Props) {
               </p>
             </div>
             <div className="shrink-0">
-              <JoinButton communityId={community.id} initialJoined={false} />
+              <JoinButton
+                communityId={community.id}
+                initialJoined={false}
+                skipRefresh
+              />
             </div>
           </div>
         ))}
@@ -61,7 +70,7 @@ export function SuggestedCommunities({ communities }: Props) {
           href="/communities"
           className="text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-400"
         >
-          Browse all communities
+          Show all communities
         </Link>
       </div>
     </div>

@@ -43,7 +43,6 @@ export default async function HomePage({ searchParams }: Props) {
   ) as SortOption;
 
   const useJoinedOnly = sort === "my" && hasJoinedCommunities;
-
   const showSuggestions = isLoggedIn && !hasJoinedCommunities;
 
   const [posts, suggestedCommunities] = await Promise.all([
@@ -62,11 +61,11 @@ export default async function HomePage({ searchParams }: Props) {
         _count: { select: { comments: true } },
       },
     }),
-    showSuggestions
+    isLoggedIn
       ? prisma.community.findMany({
           where: { nsfw: false },
           orderBy: { subscriptions: { _count: "desc" } },
-          take: 12,
+          take: 6,
           select: {
             id: true,
             name: true,
@@ -147,8 +146,11 @@ export default async function HomePage({ searchParams }: Props) {
         </Link>
       </div>
 
-      {showSuggestions && (
-        <SuggestedCommunities communities={suggestedCommunities} />
+      {isLoggedIn && (
+        <SuggestedCommunities
+          communities={suggestedCommunities}
+          initialShow={showSuggestions}
+        />
       )}
 
       {initialPosts.length === 0 ? (
