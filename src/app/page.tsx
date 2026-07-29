@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
 import { PostFeed } from "@/components/post-feed";
 import { WelcomeBanner } from "@/components/welcome-banner";
+import { SuggestedCommunities } from "@/components/suggested-communities";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,6 @@ type Props = {
 export default async function HomePage({ searchParams }: Props) {
   const session = await auth();
   const params = await searchParams;
-
   const isLoggedIn = !!session?.user?.id;
 
   let joinedCommunityIds: string[] = [];
@@ -30,38 +30,53 @@ export default async function HomePage({ searchParams }: Props) {
 
   const hasJoinedCommunities = joinedCommunityIds.length > 0;
 
-  // Default: My Feed if logged in, otherwise Trending
   const requested = params.sort || (isLoggedIn ? "my" : "trending");
   const allowed: SortOption[] = isLoggedIn
     ? ["my", "trending", "recent", "top"]
     : ["trending", "recent", "top"];
+  const sort = (
+    allowed.includes(requested as SortOption)
+      ? requested
+      : isLoggedIn
+        ? "my"
+        : "trending"
+  ) as SortOption;
 
-  const sort = (allowed.includes(requested as SortOption)
-    ? requested
-    : isLoggedIn
-      ? "my"
-      : "trending") as SortOption;
-
-  // My Feed = joined communities only.
-  // If user has joined none yet, My Feed falls back to all communities.
-  // Trending/Recent/Top are always global.
   const useJoinedOnly = sort === "my" && hasJoinedCommunities;
 
-  const posts = await prisma.post.findMany({
-    where: {
-      moderationStatus: { in: ["approved", "author_deleted"] },
-      ...(useJoinedOnly
-        ? { communityId: { in: joinedCommunityIds } }
-        : {}),
-    },
-    take: 200,
-    orderBy: { createdAt: "desc" },
-    include: {
-      author: { select: { username: true } },
-      community: { select: { name: true, title: true } },
-      _count: { select: { comments: true } },
-    },
-  });
+  const showSuggestions = isLoggedIn && !hasJoinedCommunities;
+
+  const [posts, suggestedCommunities] = await Promise.all([
+    prisma.post.findMany({
+      where: {
+        moderationStatus: { in: ["approved", "author_deleted"] },
+        ...(useJoinedOnly
+          ? { communityId: { in: joinedCommunityIds } }
+          : {}),
+      },
+      take: 200,
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: { select: { username: true } },
+        community: { select: { name: true, title: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
+    showSuggestions
+      ? prisma.community.findMany({
+          where: { nsfw: false },
+          orderBy: { subscriptions: { _count: "desc" } },
+          take: 12,
+          select: {
+            id: true,
+            name: true,
+            title: true,
+            description: true,
+            _count: { select: { subscriptions: true } },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
 
   let ranked = posts.map((p) => ({
     ...p,
@@ -80,7 +95,6 @@ export default async function HomePage({ searchParams }: Props) {
   } else if (sort === "top") {
     ranked.sort((a, b) => b.score - a.score);
   } else {
-    // recent: already ordered by createdAt desc from query, keep that
     ranked.sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -132,6 +146,10 @@ export default async function HomePage({ searchParams }: Props) {
           Create Post
         </Link>
       </div>
+
+      {showSuggestions && (
+        <SuggestedCommunities communities={suggestedCommunities} />
+      )}
 
       {initialPosts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
