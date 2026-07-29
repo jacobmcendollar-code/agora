@@ -57,6 +57,7 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
 
   const joined = filtered.filter((c) => c.joined);
   const rest = isLoggedIn ? filtered.filter((c) => !c.joined) : filtered;
+
   const visibleJoined = joinedExpanded
     ? joined
     : joined.slice(0, JOINED_PREVIEW);
@@ -123,9 +124,15 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
                           {community.description}
                         </p>
                       </Link>
-                      <div className="shrink-0 text-xs text-zinc-400">
-                        {community.postCount} post
-                        {community.postCount !== 1 ? "s" : ""}
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="hidden text-xs text-zinc-400 sm:inline">
+                          {community.postCount} post
+                          {community.postCount !== 1 ? "s" : ""}
+                        </span>
+                        <JoinButton
+                          communityId={community.id}
+                          initialJoined={true}
+                        />
                       </div>
                     </div>
                   ))}
