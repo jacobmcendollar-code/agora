@@ -6,6 +6,13 @@ import { PostFeed } from "@/components/post-feed";
 import { WelcomeBanner } from "@/components/welcome-banner";
 import { SuggestedCommunities } from "@/components/suggested-communities";
 
+export const metadata = {
+  title: {
+    absolute: "Agora",
+  },
+  description: "Create communities. Speak freely. Minimal AI moderation.",
+};
+
 export const dynamic = "force-dynamic";
 
 type SortOption = "my" | "trending" | "recent" | "top";

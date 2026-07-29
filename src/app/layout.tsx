@@ -9,7 +9,10 @@ import { Analytics } from "@vercel/analytics/react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Agora — Free Speech Communities",
+  title: {
+    default: "Agora",
+    template: "%s · Agora",
+  },
   description: "Create communities. Speak freely. Minimal AI moderation.",
   icons: {
     icon: "/icon.svg",
@@ -34,8 +37,6 @@ export default function RootLayout({
           <Footer />
         </Providers>
         <Analytics />
-
-        {/* Official Twitter / X widgets script */}
         <script
           async
           src="https://platform.twitter.com/widgets.js"
