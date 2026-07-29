@@ -53,6 +53,7 @@ function SubmitForm() {
   const [selected, setSelected] = useState(preselected);
   const [selectedTitle, setSelectedTitle] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
   const [postType, setPostType] = useState<PostType>("link");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -91,7 +92,6 @@ function SubmitForm() {
         setShowDropdown(false);
       }
     }
-
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("touchstart", handlePointerDown);
     return () => {
@@ -99,6 +99,10 @@ function SubmitForm() {
       document.removeEventListener("touchstart", handlePointerDown);
     };
   }, []);
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [filtered, showDropdown]);
 
   useEffect(() => {
     if (postType !== "link" || !url.trim()) {
@@ -115,16 +119,13 @@ function SubmitForm() {
     const timer = setTimeout(async () => {
       if (!skipTitleSuggest) setTitleLoading(true);
       setPreviewLoading(true);
-
       try {
         const res = await fetch(
           `/api/link-preview?url=${encodeURIComponent(trimmedUrl)}`
         );
         const data = await res.json();
         if (cancelled) return;
-
         setPreviewThumb(data.thumbnail || null);
-
         if (
           !skipTitleSuggest &&
           data.title &&
@@ -160,7 +161,6 @@ function SubmitForm() {
     async (file: File) => {
       setError(null);
       setUploading(true);
-
       try {
         if (!file.type.startsWith("image/")) {
           setError("File must be an image");
@@ -172,7 +172,6 @@ function SubmitForm() {
           toast("Image must be under 4MB", "error");
           return;
         }
-
         const fileData = await fileToBase64(file);
         const res = await fetch("/api/upload", {
           method: "POST",
@@ -183,7 +182,6 @@ function SubmitForm() {
             fileData,
           }),
         });
-
         const data = await res.json();
         if (!res.ok) {
           setError(data.error || "Upload failed");
@@ -208,7 +206,6 @@ function SubmitForm() {
       if (postType !== "image" || imageUrl || uploading) return;
       const items = e.clipboardData?.items;
       if (!items) return;
-
       for (const item of Array.from(items)) {
         if (item.type.startsWith("image/")) {
           e.preventDefault();
@@ -218,7 +215,6 @@ function SubmitForm() {
         }
       }
     }
-
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, [postType, imageUrl, uploading, uploadImageFile]);
@@ -245,12 +241,38 @@ function SubmitForm() {
     setSelectedTitle(community.title);
     setQuery("");
     setShowDropdown(false);
+    setHighlightIndex(0);
   }
 
   function clearCommunity() {
     setSelected("");
     setSelectedTitle("");
     setQuery("");
+  }
+
+  function handleCommunityKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showDropdown || filtered.length === 0) {
+      if (e.key === "ArrowDown") {
+        setShowDropdown(true);
+        setFiltered(communities);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((i) => (i + 1) % filtered.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((i) => (i - 1 + filtered.length) % filtered.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const choice = filtered[highlightIndex];
+      if (choice) selectCommunity(choice);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowDropdown(false);
+    }
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -268,19 +290,16 @@ function SubmitForm() {
       toast("Please select a community", "error");
       return;
     }
-
     if (!title.trim()) {
       setError("Please enter a title");
       toast("Please enter a title", "error");
       return;
     }
-
     if (postType === "link" && !url.trim()) {
       setError("Please enter a link");
       toast("Please enter a link", "error");
       return;
     }
-
     if (postType === "image" && !imageUrl) {
       setError("Please upload an image");
       toast("Please upload an image", "error");
@@ -288,7 +307,6 @@ function SubmitForm() {
     }
 
     setLoading(true);
-
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
@@ -296,17 +314,12 @@ function SubmitForm() {
         body: JSON.stringify({
           communityName: selected,
           title: title.trim(),
-          // Link posts: no user body. Server may still store site subtitle.
-          body:
-            postType === "link"
-              ? null
-              : body.trim() || null,
+          body: postType === "link" ? null : body.trim() || null,
           url: postType === "link" ? url.trim() || null : null,
           imageUrl: postType === "image" ? imageUrl : null,
           nsfw,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to create post");
@@ -314,7 +327,6 @@ function SubmitForm() {
         setLoading(false);
         return;
       }
-
       toast("Post created");
       router.push(`/c/${selected}/posts/${data.id}`);
     } catch {
@@ -395,18 +407,32 @@ function SubmitForm() {
                   setShowDropdown(true);
                   setFiltered(communities);
                 }}
+                onKeyDown={handleCommunityKeyDown}
                 placeholder="Search communities..."
                 autoComplete="off"
+                role="combobox"
+                aria-expanded={showDropdown}
+                aria-autocomplete="list"
                 className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
               />
               {showDropdown && filtered.length > 0 && (
-                <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-                  {filtered.map((c) => (
+                <div
+                  className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                  role="listbox"
+                >
+                  {filtered.map((c, index) => (
                     <button
                       key={c.name}
                       type="button"
+                      role="option"
+                      aria-selected={index === highlightIndex}
                       onClick={() => selectCommunity(c)}
-                      className="block w-full px-3 py-2.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      onMouseEnter={() => setHighlightIndex(index)}
+                      className={`block w-full px-3 py-2.5 text-left text-sm ${
+                        index === highlightIndex
+                          ? "bg-zinc-100 dark:bg-zinc-800"
+                          : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      }`}
                     >
                       {c.title}
                     </button>
