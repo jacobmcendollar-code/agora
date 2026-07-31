@@ -27,12 +27,21 @@ export default async function HomePage({ searchParams }: Props) {
   const isLoggedIn = !!session?.user?.id;
 
   let joinedCommunityIds: string[] = [];
+  let mutedIds: string[] = [];
+
   if (isLoggedIn) {
-    const subscriptions = await prisma.subscription.findMany({
-      where: { userId: session!.user!.id },
-      select: { communityId: true },
-    });
+    const [subscriptions, mutes] = await Promise.all([
+      prisma.subscription.findMany({
+        where: { userId: session!.user!.id },
+        select: { communityId: true },
+      }),
+      prisma.mute.findMany({
+        where: { muterId: session!.user!.id },
+        select: { mutedId: true },
+      }),
+    ]);
     joinedCommunityIds = subscriptions.map((s) => s.communityId);
+    mutedIds = mutes.map((m) => m.mutedId);
   }
 
   const hasJoinedCommunities = joinedCommunityIds.length > 0;
@@ -59,6 +68,7 @@ export default async function HomePage({ searchParams }: Props) {
         ...(useJoinedOnly
           ? { communityId: { in: joinedCommunityIds } }
           : {}),
+        ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
       },
       take: 200,
       orderBy: { createdAt: "desc" },

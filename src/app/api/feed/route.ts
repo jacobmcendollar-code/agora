@@ -13,6 +13,15 @@ export async function GET(req: Request) {
 
   const session = await auth();
 
+  let mutedIds: string[] = [];
+  if (session?.user?.id) {
+    const mutes = await prisma.mute.findMany({
+      where: { muterId: session.user.id },
+      select: { mutedId: true },
+    });
+    mutedIds = mutes.map((m) => m.mutedId);
+  }
+
   let communityIds: string[] | null = null;
 
   if (communityName) {
@@ -38,6 +47,7 @@ export async function GET(req: Request) {
     where: {
       moderationStatus: { in: ["approved", "author_deleted"] },
       ...(communityIds ? { communityId: { in: communityIds } } : {}),
+      ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
     },
     take: 200,
     orderBy: { createdAt: "desc" },

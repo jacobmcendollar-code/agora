@@ -127,7 +127,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = `${post.title} · ${post.community.title}`;
-  const rawDescription = post.body && !isGenericBody(post.body) ? post.body : null;
+  const rawDescription =
+    post.body && !isGenericBody(post.body) ? post.body : null;
   const description =
     rawDescription?.slice(0, 160) ||
     `A post in ${post.community.title} on Agora`;
@@ -172,10 +173,20 @@ export default async function PostPage({ params }: Props) {
 
   const isSoftDeleted = post.moderationStatus === "author_deleted";
 
+  let mutedIds: string[] = [];
+  if (session?.user?.id) {
+    const mutes = await prisma.mute.findMany({
+      where: { muterId: session.user.id },
+      select: { mutedId: true },
+    });
+    mutedIds = mutes.map((m) => m.mutedId);
+  }
+
   const allComments = await prisma.comment.findMany({
     where: {
       postId: post.id,
       moderationStatus: { in: ["approved", "author_deleted"] },
+      ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
     },
     orderBy: { createdAt: "asc" },
     include: {
@@ -185,7 +196,6 @@ export default async function PostPage({ params }: Props) {
 
   const commentTree = buildCommentTree(allComments);
   const showAdmin = isAdmin(session?.user?.username);
-
   const youtubeId = getYouTubeId(post.url);
   const isX = isXLink(post.url);
   const isTikTok = isTikTokLink(post.url);
@@ -198,7 +208,6 @@ export default async function PostPage({ params }: Props) {
     isReddit ||
     isInstagram
   );
-
   const isAuthor = session?.user?.id === post.authorId;
   const sharePath = `/c/${post.community.name}/posts/${post.id}`;
   const isPlainLink = !!(post.url && !hasRichEmbed);
@@ -213,7 +222,6 @@ export default async function PostPage({ params }: Props) {
             targetId={post.id}
             initialScore={post.score}
           />
-
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
 
@@ -294,7 +302,6 @@ export default async function PostPage({ params }: Props) {
                   </>
                 )}
               </div>
-
               {showAdmin && !isSoftDeleted && (
                 <div className="ml-auto">
                   <RemovePostButton postId={post.id} />
@@ -309,11 +316,9 @@ export default async function PostPage({ params }: Props) {
         <h2 className="text-lg font-semibold">
           {post.commentCount} comment{post.commentCount !== 1 ? "s" : ""}
         </h2>
-
         {!isSoftDeleted && (
           <CommentForm postId={post.id} communityName={post.community.name} />
         )}
-
         <div className="space-y-4">
           {commentTree.map((comment) => (
             <Comment

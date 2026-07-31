@@ -29,26 +29,35 @@ export default async function CommunityPage({ params, searchParams }: Props) {
   const community = await prisma.community.findUnique({
     where: { name },
   });
-
   if (!community) notFound();
 
   let isJoined = false;
+  let mutedIds: string[] = [];
+
   if (session?.user?.id) {
-    const sub = await prisma.subscription.findUnique({
-      where: {
-        userId_communityId: {
-          userId: session.user.id,
-          communityId: community.id,
+    const [sub, mutes] = await Promise.all([
+      prisma.subscription.findUnique({
+        where: {
+          userId_communityId: {
+            userId: session.user.id,
+            communityId: community.id,
+          },
         },
-      },
-    });
+      }),
+      prisma.mute.findMany({
+        where: { muterId: session.user.id },
+        select: { mutedId: true },
+      }),
+    ]);
     isJoined = !!sub;
+    mutedIds = mutes.map((m) => m.mutedId);
   }
 
   const posts = await prisma.post.findMany({
     where: {
       communityId: community.id,
       moderationStatus: { in: ["approved", "author_deleted"] },
+      ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
     },
     take: 20,
     orderBy: { createdAt: "desc" },
