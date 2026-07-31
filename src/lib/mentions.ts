@@ -36,6 +36,18 @@ export async function notifyMentions({
   for (const user of users) {
     if (user.id === actorId) continue;
 
+    // Do not notify if this user has muted the actor
+    const muted = await prisma.mute.findUnique({
+      where: {
+        muterId_mutedId: {
+          muterId: user.id,
+          mutedId: actorId,
+        },
+      },
+      select: { id: true },
+    });
+    if (muted) continue;
+
     await prisma.notification.create({
       data: {
         type: "mention",

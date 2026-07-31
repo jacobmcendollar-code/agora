@@ -11,6 +11,19 @@ const schema = z.object({
   parentId: z.string().optional().nullable(),
 });
 
+async function isMutedBy(muterId: string, mutedId: string) {
+  const mute = await prisma.mute.findUnique({
+    where: {
+      muterId_mutedId: {
+        muterId,
+        mutedId,
+      },
+    },
+    select: { id: true },
+  });
+  return !!mute;
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -31,7 +44,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
-
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.errors[0]?.message || "Invalid input" },
@@ -50,7 +62,6 @@ export async function POST(req: Request) {
         author: { select: { id: true, username: true } },
       },
     });
-
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -88,7 +99,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create comment with starting score of 1
     const comment = await prisma.comment.create({
       data: {
         body: commentBody,
@@ -100,7 +110,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Auto-upvote from the author
     await prisma.commentVote.create({
       data: {
         value: 1,
@@ -109,7 +118,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update post comment count
     await prisma.post.update({
       where: { id: postId },
       data: { commentCount: { increment: 1 } },
@@ -118,31 +126,37 @@ export async function POST(req: Request) {
     const link = `/c/${post.community.name}/posts/${post.id}#comments`;
     const actorUsername = session.user.username || "Someone";
 
-    // Notify post author
+    // Notify post author only if they have not muted the commenter
     if (post.authorId !== session.user.id) {
-      await prisma.notification.create({
-        data: {
-          type: "comment_on_post",
-          message: `${actorUsername} commented on your post “${post.title}”`,
-          link,
-          userId: post.authorId,
-        },
-      });
+      const muted = await isMutedBy(post.authorId, session.user.id);
+      if (!muted) {
+        await prisma.notification.create({
+          data: {
+            type: "comment_on_post",
+            message: `${actorUsername} commented on your post “${post.title}”`,
+            link,
+            userId: post.authorId,
+          },
+        });
+      }
     }
 
-    // Notify parent comment author
+    // Notify parent comment author only if they have not muted the replier
     if (parentComment && parentComment.authorId !== session.user.id) {
-      await prisma.notification.create({
-        data: {
-          type: "reply_to_comment",
-          message: `${actorUsername} replied to your comment`,
-          link,
-          userId: parentComment.authorId,
-        },
-      });
+      const muted = await isMutedBy(parentComment.authorId, session.user.id);
+      if (!muted) {
+        await prisma.notification.create({
+          data: {
+            type: "reply_to_comment",
+            message: `${actorUsername} replied to your comment`,
+            link,
+            userId: parentComment.authorId,
+          },
+        });
+      }
     }
 
-    // @mentions
+    // @mentions (also respects mutes inside notifyMentions)
     await notifyMentions({
       text: commentBody,
       actorUsername,
