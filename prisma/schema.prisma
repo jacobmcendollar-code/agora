@@ -8,16 +8,17 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  username      String         @unique
-  email         String         @unique
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String    @unique
   emailVerified DateTime?
   passwordHash  String?
   image         String?
   bio           String?
-  banned        Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  banned        Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
@@ -28,6 +29,8 @@ model User {
   subscriptions Subscription[]
   notifications Notification[]
   savedPosts    SavedPost[]
+  mutes         Mute[]    @relation("UserMutes")
+  mutedBy       Mute[]    @relation("UserMutedBy")
 
   @@index([username])
   @@map("users")
@@ -209,4 +212,18 @@ model SavedPost {
   @@index([userId, createdAt])
   @@index([postId])
   @@map("saved_posts")
+}
+
+model Mute {
+  id        String   @id @default(cuid())
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+  muter     User     @relation("UserMutes", fields: [muterId], references: [id], onDelete: Cascade)
+  muted     User     @relation("UserMutedBy", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
+  @@index([mutedId])
+  @@map("mutes")
 }
