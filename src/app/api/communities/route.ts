@@ -3,6 +3,16 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+}
+
 export async function GET() {
   try {
     const communities = await prisma.community.findMany({
@@ -14,7 +24,6 @@ export async function GET() {
         nsfw: true,
       },
     });
-
     return NextResponse.json(communities);
   } catch (err) {
     console.error("[communities GET]", err);
@@ -23,12 +32,7 @@ export async function GET() {
 }
 
 const createSchema = z.object({
-  name: z
-    .string()
-    .min(3)
-    .max(32)
-    .regex(/^[a-z0-9_]+$/, "Name must be lowercase letters, numbers, underscores"),
-  title: z.string().min(1).max(100),
+  title: z.string().min(2).max(100),
   description: z.string().min(1).max(500),
   rules: z.string().max(500).optional().nullable(),
   nsfw: z.boolean().optional().default(false),
@@ -43,7 +47,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = createSchema.safeParse(body);
-
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.errors[0]?.message || "Invalid input" },
@@ -51,12 +54,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, title, description, rules, nsfw } = parsed.data;
+    const { title, description, rules, nsfw } = parsed.data;
+    const name = slugify(title);
+
+    if (name.length < 2) {
+      return NextResponse.json(
+        { error: "Community name must include letters or numbers" },
+        { status: 400 }
+      );
+    }
 
     const existing = await prisma.community.findUnique({ where: { name } });
     if (existing) {
       return NextResponse.json(
-        { error: "A community with that name already exists" },
+        { error: "Name already in use" },
         { status: 400 }
       );
     }
@@ -64,7 +75,7 @@ export async function POST(req: Request) {
     const community = await prisma.community.create({
       data: {
         name,
-        title,
+        title: title.trim(),
         description,
         rules: rules || null,
         nsfw: nsfw || false,
@@ -72,7 +83,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Auto-join the creator
     await prisma.subscription.create({
       data: {
         userId: session.user.id,
