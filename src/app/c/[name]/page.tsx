@@ -94,11 +94,13 @@ export default async function CommunityPage({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-4 dark:bg-zinc-900 sm:p-6">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl font-bold sm:text-2xl">{community.title}</h1>
-            <p className="mt-1 text-sm text-zinc-500">{community.description}</p>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {community.description}
+            </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <JoinButton communityId={community.id} initialJoined={isJoined} />
