@@ -100,13 +100,13 @@ export default async function CommunityPage({ params, searchParams }: Props) {
             <h1 className="text-xl font-bold sm:text-2xl">{community.title}</h1>
             <p className="mt-1 text-sm text-zinc-500">{community.description}</p>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <JoinButton communityId={community.id} initialJoined={isJoined} />
             <Link
               href={`/submit?community=${community.name}`}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+              className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >
-              Post
+              New Post
             </Link>
           </div>
         </div>
@@ -139,9 +139,9 @@ export default async function CommunityPage({ params, searchParams }: Props) {
           <div className="mt-5">
             <Link
               href={`/submit?community=${community.name}`}
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+              className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >
-              Post
+              New Post
             </Link>
           </div>
         </div>

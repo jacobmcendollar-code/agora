@@ -137,7 +137,7 @@ export default async function HomePage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <WelcomeBanner />
-      <div className="flex items-center justify-between gap-4 border-b">
+      <div className="flex items-center justify-between gap-4 border-b pb-2">
         <div className="flex gap-1 overflow-x-auto">
           {sortOptions.map((option) => (
             <Link
@@ -155,9 +155,9 @@ export default async function HomePage({ searchParams }: Props) {
         </div>
         <Link
           href="/submit"
-          className="shrink-0 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+          className="inline-flex shrink-0 items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
-          Post
+          New Post
         </Link>
       </div>
       {isLoggedIn && (
@@ -177,15 +177,15 @@ export default async function HomePage({ searchParams }: Props) {
               <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/communities"
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
                   Browse communities
                 </Link>
                 <Link
                   href="/submit"
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
-                  Post
+                  New Post
                 </Link>
               </div>
             </>
@@ -198,13 +198,13 @@ export default async function HomePage({ searchParams }: Props) {
               <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/communities"
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
                   Browse communities
                 </Link>
                 <Link
                   href="/communities/new"
-                  className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                  className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 >
                   Create a community
                 </Link>
