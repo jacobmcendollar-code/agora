@@ -29,7 +29,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { username, password } = parsed.data;
-
         const user = await prisma.user.findUnique({
           where: { username: username.toLowerCase() },
         });
@@ -41,25 +40,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return {
           id: user.id,
-          name: user.username, // public identity is the username
+          name: user.username,
           email: user.email,
           image: user.image,
+          showNsfw: user.showNsfw,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = user.id;
-        token.username = user.name; // we put username in name
+        token.id = user.id!;
+        token.username = user.name as string;
+        token.showNsfw = Boolean(user.showNsfw);
       }
+
+      // After toggle: session.update({ showNsfw }) refreshes the token
+      if (trigger === "update" && session && typeof session.showNsfw === "boolean") {
+        token.showNsfw = session.showNsfw;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
+        session.user.showNsfw = Boolean(token.showNsfw);
       }
       return session;
     },
