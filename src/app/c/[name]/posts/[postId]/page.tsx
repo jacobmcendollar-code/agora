@@ -332,15 +332,26 @@ export default async function PostPage({ params, searchParams }: Props) {
         </div>
       </article>
 
-      <section id="comments" className="space-y-4">
+      <section id="comments" className="space-y-0">
         {!isSoftDeleted && (
-          <CommentForm postId={post.id} communityName={post.community.name} />
+          <div className="space-y-3">
+            <CommentForm
+              postId={post.id}
+              communityName={post.community.name}
+            />
+          </div>
         )}
-        <CommentSortTabs
-          basePath={sharePath}
-          sort={sort}
-          commentCount={post.commentCount}
-        />
+
+        <div className="my-6 border-t border-zinc-200 dark:border-zinc-800" />
+
+        <div className="mb-4">
+          <CommentSortTabs
+            basePath={sharePath}
+            sort={sort}
+            commentCount={post.commentCount}
+          />
+        </div>
+
         <div className="space-y-4">
           {commentTree.map((comment) => (
             <Comment
