@@ -45,7 +45,6 @@ export default async function HomePage({ searchParams }: Props) {
   }
 
   const hasJoinedCommunities = joinedCommunityIds.length > 0;
-
   const requested = params.sort || (isLoggedIn ? "my" : "trending");
   const allowed: SortOption[] = isLoggedIn
     ? ["my", "trending", "recent", "top"]
@@ -138,7 +137,6 @@ export default async function HomePage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <WelcomeBanner />
-
       <div className="flex items-center justify-between gap-4 border-b">
         <div className="flex gap-1 overflow-x-auto">
           {sortOptions.map((option) => (
@@ -159,17 +157,15 @@ export default async function HomePage({ searchParams }: Props) {
           href="/submit"
           className="shrink-0 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
         >
-          Create Post
+          Post
         </Link>
       </div>
-
       {isLoggedIn && (
         <SuggestedCommunities
           communities={suggestedCommunities}
           initialShow={showSuggestions}
         />
       )}
-
       {initialPosts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           {sort === "my" && hasJoinedCommunities ? (
@@ -187,9 +183,9 @@ export default async function HomePage({ searchParams }: Props) {
                 </Link>
                 <Link
                   href="/submit"
-                  className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
-                  Create a post
+                  Post
                 </Link>
               </div>
             </>

@@ -19,7 +19,6 @@ export default async function CommunityPage({ params, searchParams }: Props) {
   const { name } = await params;
   const { sort: sortParam } = await searchParams;
   const session = await auth();
-
   const sort = (
     ["trending", "recent", "top"].includes(sortParam || "")
       ? sortParam
@@ -33,7 +32,6 @@ export default async function CommunityPage({ params, searchParams }: Props) {
 
   let isJoined = false;
   let mutedIds: string[] = [];
-
   if (session?.user?.id) {
     const [sub, mutes] = await Promise.all([
       prisma.subscription.findUnique({
@@ -106,14 +104,13 @@ export default async function CommunityPage({ params, searchParams }: Props) {
             <JoinButton communityId={community.id} initialJoined={isJoined} />
             <Link
               href={`/submit?community=${community.name}`}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
             >
-              Create Post
+              Post
             </Link>
           </div>
         </div>
       </div>
-
       <div className="flex gap-1 overflow-x-auto border-b">
         {sortOptions.map((option) => (
           <Link
@@ -133,7 +130,6 @@ export default async function CommunityPage({ params, searchParams }: Props) {
           </Link>
         ))}
       </div>
-
       {initialPosts.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="text-lg font-medium">No posts yet</p>
@@ -143,9 +139,9 @@ export default async function CommunityPage({ params, searchParams }: Props) {
           <div className="mt-5">
             <Link
               href={`/submit?community=${community.name}`}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >
-              Create a post
+              Post
             </Link>
           </div>
         </div>
