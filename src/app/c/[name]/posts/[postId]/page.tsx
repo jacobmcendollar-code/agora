@@ -120,8 +120,6 @@ function buildCommentTree(
           );
         };
 
-  // Top-level follows Best / Newest. Replies always keep score order
-  // so threads stay readable under either mode.
   roots.sort(sortFn);
   map.forEach((node) => {
     node.replies.sort((a: any, b: any) => {
@@ -335,14 +333,14 @@ export default async function PostPage({ params, searchParams }: Props) {
       </article>
 
       <section id="comments" className="space-y-4">
+        {!isSoftDeleted && (
+          <CommentForm postId={post.id} communityName={post.community.name} />
+        )}
         <CommentSortTabs
           basePath={sharePath}
           sort={sort}
           commentCount={post.commentCount}
         />
-        {!isSoftDeleted && (
-          <CommentForm postId={post.id} communityName={post.community.name} />
-        )}
         <div className="space-y-4">
           {commentTree.map((comment) => (
             <Comment
