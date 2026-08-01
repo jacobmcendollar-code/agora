@@ -4,12 +4,11 @@ import { useNsfw } from "@/components/nsfw-provider";
 
 export function NsfwToggle() {
   const { showNsfw, setShowNsfw, ready } = useNsfw();
-
   if (!ready) return null;
 
   return (
     <label className="flex items-center gap-2 text-sm">
-      <span className="text-zinc-600 dark:text-zinc-300">Show NSFW</span>
+      <span className="text-zinc-600 dark:text-zinc-300">Show Adult Content</span>
       <button
         type="button"
         role="switch"

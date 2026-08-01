@@ -11,7 +11,6 @@ const schema = z.object({
   body: z.string().max(40000).optional().nullable(),
   url: z.string().url().optional().nullable().or(z.literal("")),
   imageUrl: z.string().url().optional().nullable(),
-  nsfw: z.boolean().optional().default(false),
 });
 
 const GENERIC_DESCRIPTIONS = [
@@ -57,16 +56,12 @@ function getYouTubeId(url: string): string | null {
 }
 
 async function fetchLinkDescription(url: string): Promise<string | null> {
-  // YouTube oEmbed does not give a useful short description.
-  // Never store YouTube's generic site blurb.
   if (getYouTubeId(url)) {
     return null;
   }
-
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
-
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -76,33 +71,26 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
       },
     });
     clearTimeout(timeout);
-
     if (!res.ok) return null;
-
     const html = await res.text();
-
     const patterns = [
       /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
       /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i,
       /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i,
       /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i,
     ];
-
     for (const pattern of patterns) {
       const match = html.match(pattern);
       if (match?.[1]) {
         const cleaned = decodeHtmlEntities(
           match[1].trim().replace(/\s+/g, " ")
         ).slice(0, 300);
-
         if (!cleaned || isGenericDescription(cleaned)) {
           return null;
         }
-
         return cleaned;
       }
     }
-
     return null;
   } catch {
     return null;
@@ -119,7 +107,6 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
     select: { banned: true },
   });
-
   if (dbUser?.banned) {
     return NextResponse.json(
       { error: "Your account is restricted from posting." },
@@ -130,7 +117,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
-
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.errors[0]?.message || "Invalid input" },
@@ -138,13 +124,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { communityName, title, body: postBody, url, imageUrl, nsfw } =
-      parsed.data;
+    const { communityName, title, body: postBody, url, imageUrl } = parsed.data;
 
     const community = await prisma.community.findUnique({
       where: { name: communityName },
     });
-
     if (!community) {
       return NextResponse.json({ error: "Community not found" }, { status: 404 });
     }
@@ -159,6 +143,7 @@ export async function POST(req: Request) {
       communityName: community.name,
       communityDescription: community.description,
       communityRules: community.rules,
+      communityNsfw: community.nsfw,
     });
 
     if (!moderation.allowed) {
@@ -176,7 +161,6 @@ export async function POST(req: Request) {
       thumbnail = await fetchThumbnail(url);
     }
 
-    // Link posts: ignore user body. Store useful site subtitle only.
     let finalBody: string | null = null;
     if (url) {
       finalBody = await fetchLinkDescription(url);
@@ -184,13 +168,14 @@ export async function POST(req: Request) {
       finalBody = postBody?.trim() || null;
     }
 
+    // Adult status comes only from the community
     const post = await prisma.post.create({
       data: {
         title,
         body: finalBody,
         url: url || null,
         thumbnail,
-        nsfw: nsfw || community.nsfw || false,
+        nsfw: community.nsfw,
         communityId: community.id,
         authorId: session.user.id,
         moderationStatus: "approved",

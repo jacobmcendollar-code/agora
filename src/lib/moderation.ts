@@ -12,6 +12,7 @@ export async function moderateContent(params: {
   communityName: string;
   communityDescription: string;
   communityRules?: string | null;
+  communityNsfw?: boolean;
 }): Promise<ModerationResult> {
   const {
     type,
@@ -20,12 +21,12 @@ export async function moderateContent(params: {
     communityName,
     communityDescription,
     communityRules,
+    communityNsfw = false,
   } = params;
 
   if (!body || body.trim().length < 1) {
     return { allowed: false, reason: "Empty content" };
   }
-
   if (body.length > 40_000) {
     return { allowed: false, reason: "Content too long" };
   }
@@ -40,10 +41,17 @@ export async function moderateContent(params: {
     baseURL: "https://api.x.ai/v1",
   });
 
+  const adultRule = communityNsfw
+    ? ""
+    : `
+4. Explicit adult sexual content / pornography
+   This is not an adults-only community. Clear pornographic or explicit sexual material should be rejected. Mild references, news, or non-explicit discussion are fine.`;
+
   const systemPrompt = `You are a light-touch content moderator for a free-speech discussion platform called Agora.
 
 Community: "${communityName}"
 Description: ${communityDescription}
+Adults-only community: ${communityNsfw ? "yes" : "no"}
 ${communityRules ? `Additional community guidance for the AI: ${communityRules}` : ""}
 
 Reject ONLY if the content clearly matches one of these:
@@ -53,7 +61,7 @@ Reject ONLY if the content clearly matches one of these:
    - child sexual abuse material or sexual content involving minors
    - credible threats of real-world violence against specific people
    - direct attempts to solicit serious crimes
-   - fraud/scams intended to steal money, accounts, or personal data
+   - fraud/scams intended to steal money, accounts, or personal data${adultRule}
 
 Do NOT reject offensive opinions, politics, strong language, dark humor, or unpopular views.
 When in doubt, ALLOW.
@@ -72,6 +80,7 @@ or
     console.log("[moderation] checking", {
       type,
       communityName,
+      communityNsfw,
       title: title || null,
     });
 

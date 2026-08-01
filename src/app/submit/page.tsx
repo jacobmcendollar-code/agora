@@ -59,7 +59,6 @@ function SubmitForm() {
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [nsfw, setNsfw] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewThumb, setPreviewThumb] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -111,11 +110,9 @@ function SubmitForm() {
       setPreviewLoading(false);
       return;
     }
-
     const trimmedUrl = url.trim();
     const skipTitleSuggest = isXUrl(trimmedUrl);
     let cancelled = false;
-
     const timer = setTimeout(async () => {
       if (!skipTitleSuggest) setTitleLoading(true);
       setPreviewLoading(true);
@@ -144,7 +141,6 @@ function SubmitForm() {
         }
       }
     }, 600);
-
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -258,7 +254,6 @@ function SubmitForm() {
       }
       return;
     }
-
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHighlightIndex((i) => (i + 1) % filtered.length);
@@ -284,7 +279,6 @@ function SubmitForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
     if (!selected) {
       setError("Please select a community");
       toast("Please select a community", "error");
@@ -305,7 +299,6 @@ function SubmitForm() {
       toast("Please upload an image", "error");
       return;
     }
-
     setLoading(true);
     try {
       const res = await fetch("/api/posts", {
@@ -317,7 +310,6 @@ function SubmitForm() {
           body: postType === "link" ? null : body.trim() || null,
           url: postType === "link" ? url.trim() || null : null,
           imageUrl: postType === "image" ? imageUrl : null,
-          nsfw,
         }),
       });
       const data = await res.json();
@@ -370,7 +362,6 @@ function SubmitForm() {
           Posts are lightly checked for spam and off-topic content.
         </p>
       </div>
-
       <form
         onSubmit={handleSubmit}
         className="space-y-5 rounded-xl border bg-white p-5 shadow-sm dark:bg-zinc-900 sm:p-6"
@@ -380,7 +371,6 @@ function SubmitForm() {
             {error}
           </div>
         )}
-
         <div className="relative" ref={communityBoxRef}>
           <label className="mb-1.5 block text-sm font-medium">Community</label>
           {selected ? (
@@ -442,7 +432,6 @@ function SubmitForm() {
             </>
           )}
         </div>
-
         <div>
           <label className="mb-1.5 block text-sm font-medium">Type</label>
           <div className="flex gap-1 rounded-lg border p-1 dark:border-zinc-700">
@@ -462,7 +451,6 @@ function SubmitForm() {
             ))}
           </div>
         </div>
-
         <div>
           <div className="mb-1.5 flex items-center justify-between">
             <label htmlFor="title" className="text-sm font-medium">
@@ -484,7 +472,6 @@ function SubmitForm() {
             <p className="mt-1 text-xs text-zinc-500">Fetching title…</p>
           )}
         </div>
-
         {postType === "link" && (
           <div>
             <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
@@ -513,7 +500,6 @@ function SubmitForm() {
             )}
           </div>
         )}
-
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
@@ -551,7 +537,6 @@ function SubmitForm() {
             )}
           </div>
         )}
-
         {(postType === "text" || postType === "image") && (
           <div>
             <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
@@ -573,17 +558,6 @@ function SubmitForm() {
             />
           </div>
         )}
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={nsfw}
-            onChange={(e) => setNsfw(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300"
-          />
-          <span>NSFW</span>
-        </label>
-
         <button
           type="submit"
           disabled={loading || uploading || !selected || !title.trim()}

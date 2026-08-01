@@ -31,28 +31,23 @@ export default function NewCommunityPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     const form = new FormData(e.currentTarget);
     const name = (form.get("name") as string).trim().toLowerCase();
     const title = (form.get("title") as string).trim();
     const description = (form.get("description") as string).trim();
     const rules = (form.get("rules") as string).trim() || null;
-
     try {
       const res = await fetch("/api/communities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, title, description, rules, nsfw }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error || "Failed to create community");
         setLoading(false);
         return;
       }
-
       router.push(`/c/${data.name}`);
     } catch {
       setError("Something went wrong");
@@ -69,7 +64,6 @@ export default function NewCommunityPage() {
           (and optional rules) to keep posts roughly on-topic and free of spam.
         </p>
       </div>
-
       <form
         onSubmit={handleSubmit}
         className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900"
@@ -79,7 +73,6 @@ export default function NewCommunityPage() {
             {error}
           </div>
         )}
-
         <div>
           <label htmlFor="name" className="mb-1 block text-sm font-medium">
             Community name (slug)
@@ -99,7 +92,6 @@ export default function NewCommunityPage() {
             Lowercase letters, numbers, underscores only
           </p>
         </div>
-
         <div>
           <label htmlFor="title" className="mb-1 block text-sm font-medium">
             Display title
@@ -114,9 +106,11 @@ export default function NewCommunityPage() {
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
         </div>
-
         <div>
-          <label htmlFor="description" className="mb-1 block text-sm font-medium">
+          <label
+            htmlFor="description"
+            className="mb-1 block text-sm font-medium"
+          >
             Description
           </label>
           <textarea
@@ -129,7 +123,6 @@ export default function NewCommunityPage() {
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
         </div>
-
         <div>
           <label htmlFor="rules" className="mb-1 block text-sm font-medium">
             Extra AI guidance (optional)
@@ -143,18 +136,22 @@ export default function NewCommunityPage() {
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
         </div>
-
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"
             checked={nsfw}
             onChange={(e) => setNsfw(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300"
+            className="mt-0.5 h-4 w-4 rounded border-zinc-300"
           />
-          <span>NSFW community</span>
+          <span>
+            <span className="font-medium">This community is for adults only</span>
+            <span className="mt-0.5 block text-xs text-zinc-500">
+              Adult content is allowed here. The community stays hidden from
+              users who have not opted in to adult content.
+            </span>
+          </span>
         </label>
-
-                <button
+        <button
           type="submit"
           disabled={loading}
           className="w-full rounded-md bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
