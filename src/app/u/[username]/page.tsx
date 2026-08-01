@@ -135,7 +135,7 @@ export default async function UserProfilePage({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-lg border bg-white p-6 dark:bg-zinc-900">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900 dark:bg-emerald-950/40">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             {user.image ? (
@@ -166,7 +166,6 @@ export default async function UserProfilePage({ params }: Props) {
               )}
             </div>
           </div>
-
           <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
             {isOwnProfile ? (
               <>
