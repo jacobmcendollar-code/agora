@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useToast } from "@/components/toast-provider";
+import { useNsfw } from "@/components/nsfw-provider";
 
 type Community = {
   name: string;
   title: string;
+  nsfw?: boolean;
 };
 
 type PostType = "text" | "link" | "image";
@@ -46,6 +48,7 @@ function SubmitForm() {
   const communityBoxRef = useRef<HTMLDivElement>(null);
   const titleAutoFilledForUrl = useRef<string | null>(null);
   const { toast } = useToast();
+  const { showNsfw, ready: nsfwReady } = useNsfw();
 
   const [communities, setCommunities] = useState<Community[]>([]);
   const [filtered, setFiltered] = useState<Community[]>([]);
@@ -66,15 +69,20 @@ function SubmitForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Communities the user is allowed to see/post in
+  const visibleCommunities = communities.filter(
+    (c) => showNsfw || !c.nsfw
+  );
+
   useEffect(() => {
     fetch("/api/communities")
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: Community[]) => {
         setCommunities(data);
-        setFiltered(data);
         if (preselected) {
-          const match = data.find((c: Community) => c.name === preselected);
-          if (match) {
+          const match = data.find((c) => c.name === preselected);
+          // Only preselect if user can see that community
+          if (match && (showNsfw || !match.nsfw)) {
             setSelected(match.name);
             setSelectedTitle(match.title);
             setQuery("");
@@ -82,7 +90,7 @@ function SubmitForm() {
         }
       })
       .catch(() => {});
-  }, [preselected]);
+  }, [preselected, showNsfw]);
 
   useEffect(() => {
     function handlePointerDown(e: MouseEvent | TouchEvent) {
@@ -217,25 +225,30 @@ function SubmitForm() {
 
   function handleSearch(value: string) {
     setQuery(value);
-    setShowDropdown(true);
-    if (!value.trim()) {
-      setFiltered(communities);
+    const trimmed = value.trim();
+
+    // Only suggest after at least one character
+    if (trimmed.length < 1) {
+      setFiltered([]);
+      setShowDropdown(false);
       return;
     }
-    const lower = value.toLowerCase();
-    setFiltered(
-      communities.filter(
-        (c) =>
-          c.title.toLowerCase().includes(lower) ||
-          c.name.toLowerCase().includes(lower)
-      )
+
+    const lower = trimmed.toLowerCase();
+    const matches = visibleCommunities.filter(
+      (c) =>
+        c.title.toLowerCase().includes(lower) ||
+        c.name.toLowerCase().includes(lower)
     );
+    setFiltered(matches);
+    setShowDropdown(true);
   }
 
   function selectCommunity(community: Community) {
     setSelected(community.name);
     setSelectedTitle(community.title);
     setQuery("");
+    setFiltered([]);
     setShowDropdown(false);
     setHighlightIndex(0);
   }
@@ -244,14 +257,12 @@ function SubmitForm() {
     setSelected("");
     setSelectedTitle("");
     setQuery("");
+    setFiltered([]);
+    setShowDropdown(false);
   }
 
   function handleCommunityKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (!showDropdown || filtered.length === 0) {
-      if (e.key === "ArrowDown") {
-        setShowDropdown(true);
-        setFiltered(communities);
-      }
       return;
     }
     if (e.key === "ArrowDown") {
@@ -328,7 +339,7 @@ function SubmitForm() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !nsfwReady) {
     return <div className="py-12 text-center text-zinc-500">Loading…</div>;
   }
 
@@ -394,8 +405,10 @@ function SubmitForm() {
                 value={query}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => {
-                  setShowDropdown(true);
-                  setFiltered(communities);
+                  // Do not open the full list on focus — wait for typing
+                  if (query.trim().length >= 1 && filtered.length > 0) {
+                    setShowDropdown(true);
+                  }
                 }}
                 onKeyDown={handleCommunityKeyDown}
                 placeholder="Search communities..."
@@ -425,6 +438,11 @@ function SubmitForm() {
                       }`}
                     >
                       {c.title}
+                      {c.nsfw && (
+                        <span className="ml-2 text-xs font-medium text-rose-500">
+                          Adult
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
