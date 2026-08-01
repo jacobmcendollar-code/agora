@@ -61,12 +61,14 @@ export function ShareButton({ url, title, iconOnly = false }: Props) {
       type="button"
       onClick={handleShare}
       disabled={loading}
-      className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-800 disabled:opacity-50 dark:hover:text-zinc-300"
+      className={`inline-flex items-center gap-1 text-zinc-600 hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:text-zinc-200 ${
+        iconOnly ? "text-sm" : "text-xs text-zinc-500 dark:hover:text-zinc-300"
+      }`}
       aria-label="Share post"
       title="Share"
     >
       <svg
-        className="h-3.5 w-3.5"
+        className={iconOnly ? "h-4 w-4" : "h-3.5 w-3.5"}
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"

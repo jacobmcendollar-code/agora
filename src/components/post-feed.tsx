@@ -78,7 +78,7 @@ function isGenericBody(body: string | null | undefined): boolean {
   );
 }
 
-function IconComments({ className = "h-3.5 w-3.5" }: { className?: string }) {
+function IconComments({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -255,31 +255,38 @@ export function PostFeed({
                   )}
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 sm:text-sm">
-                  {!hideCommunity && (
+                <div className="mt-3 flex items-center justify-between gap-3 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
+                  <div className="min-w-0 truncate">
+                    {!hideCommunity ? (
+                      <Link
+                        href={`/c/${post.community.name}`}
+                        className="font-medium text-zinc-800 hover:underline dark:text-zinc-200"
+                      >
+                        {post.community.title}
+                      </Link>
+                    ) : post.nsfw ? (
+                      <span className="font-medium text-rose-500">NSFW</span>
+                    ) : null}
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-3 text-zinc-600 dark:text-zinc-400">
                     <Link
-                      href={`/c/${post.community.name}`}
-                      className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
+                      href={`${sharePath}#comments`}
+                      className="inline-flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-200"
                     >
-                      {post.community.title}
+                      <IconComments />
+                      <span className="font-medium">{post._count.comments}</span>
                     </Link>
-                  )}
-                  <Link
-                    href={`${sharePath}#comments`}
-                    className="inline-flex items-center gap-1 hover:underline"
-                  >
-                    <IconComments />
-                    <span>{post._count.comments}</span>
-                  </Link>
-                  <SaveButton postId={post.id} iconOnly />
-                  <ShareButton
-                    url={sharePath}
-                    title={post.title}
-                    iconOnly
-                  />
-                  {post.nsfw && (
-                    <span className="font-medium text-rose-500">NSFW</span>
-                  )}
+                    <SaveButton postId={post.id} iconOnly />
+                    <ShareButton
+                      url={sharePath}
+                      title={post.title}
+                      iconOnly
+                    />
+                    {!hideCommunity && post.nsfw && (
+                      <span className="font-medium text-rose-500">NSFW</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
