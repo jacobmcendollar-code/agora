@@ -24,20 +24,19 @@ export function SuggestedCommunities({ communities, initialShow }: Props) {
   if (!show || communities.length === 0) return null;
 
   return (
-    <div className="rounded-xl border bg-white p-4 dark:bg-zinc-900 sm:p-5">
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40 sm:p-5">
       <div className="mb-3">
         <h2 className="text-base font-semibold">Join a few communities</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           My Feed fills with posts from communities you join. Start with a few
           topics you care about.
         </p>
       </div>
-
       <div className="grid gap-3 sm:grid-cols-2">
         {communities.map((community) => (
           <div
             key={community.id}
-            className="flex items-start justify-between gap-3 rounded-lg border p-3 dark:border-zinc-700"
+            className="flex items-start justify-between gap-3 rounded-lg border border-emerald-200/80 bg-white/70 p-3 dark:border-emerald-900/80 dark:bg-zinc-950/40"
           >
             <div className="min-w-0">
               <Link
@@ -64,11 +63,10 @@ export function SuggestedCommunities({ communities, initialShow }: Props) {
           </div>
         ))}
       </div>
-
       <div className="mt-4 text-center">
         <Link
           href="/communities"
-          className="text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+          className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
         >
           Show all communities
         </Link>
