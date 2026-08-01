@@ -8,6 +8,7 @@ import { timeAgo } from "@/lib/utils";
 import { CommentForm } from "@/components/comment-form";
 import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
+import { CommentSortTabs } from "@/components/comment-sort-tabs";
 import { RemovePostButton } from "@/components/remove-post-button";
 import { EditPostButton } from "@/components/edit-post-button";
 import { DeletePostButton } from "@/components/delete-post-button";
@@ -22,7 +23,10 @@ import { InstagramEmbed } from "@/components/instagram-embed";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ name: string; postId: string }> };
+type Props = {
+  params: Promise<{ name: string; postId: string }>;
+  searchParams: Promise<{ sort?: string }>;
+};
 
 function getYouTubeId(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -85,7 +89,10 @@ function decodeBasicEntities(text: string) {
     );
 }
 
-function buildCommentTree(comments: any[]) {
+function buildCommentTree(
+  comments: any[],
+  sort: "best" | "newest"
+) {
   const map = new Map<string, any>();
   const roots: any[] = [];
 
@@ -102,13 +109,29 @@ function buildCommentTree(comments: any[]) {
     }
   });
 
-  const sortFn = (a: any, b: any) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  };
+  const sortFn =
+    sort === "newest"
+      ? (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      : (a: any, b: any) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        };
 
+  // Top-level follows Best / Newest. Replies always keep score order
+  // so threads stay readable under either mode.
   roots.sort(sortFn);
-  map.forEach((node) => node.replies.sort(sortFn));
+  map.forEach((node) => {
+    node.replies.sort((a: any, b: any) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return (
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    });
+  });
+
   return roots;
 }
 
@@ -121,11 +144,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       author: { select: { username: true } },
     },
   });
-
   if (!post || post.community.name !== name) {
     return { title: "Post not found · Agora" };
   }
-
   const title = `${post.title} · ${post.community.title}`;
   const rawDescription =
     post.body && !isGenericBody(post.body) ? post.body : null;
@@ -133,7 +154,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     rawDescription?.slice(0, 160) ||
     `A post in ${post.community.title} on Agora`;
   const url = `https://agor4.com/c/${post.community.name}/posts/${post.id}`;
-
   return {
     title,
     description,
@@ -156,10 +176,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PostPage({ params }: Props) {
+export default async function PostPage({ params, searchParams }: Props) {
   const { name, postId } = await params;
-  const session = await auth();
+  const sp = await searchParams;
+  const sort: "best" | "newest" =
+    sp.sort === "newest" ? "newest" : "best";
 
+  const session = await auth();
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: {
@@ -167,7 +190,6 @@ export default async function PostPage({ params }: Props) {
       community: { select: { name: true, title: true } },
     },
   });
-
   if (!post || post.community.name !== name) notFound();
   if (post.moderationStatus === "removed") notFound();
 
@@ -194,7 +216,7 @@ export default async function PostPage({ params }: Props) {
     },
   });
 
-  const commentTree = buildCommentTree(allComments);
+  const commentTree = buildCommentTree(allComments, sort);
   const showAdmin = isAdmin(session?.user?.username);
   const youtubeId = getYouTubeId(post.url);
   const isX = isXLink(post.url);
@@ -313,9 +335,11 @@ export default async function PostPage({ params }: Props) {
       </article>
 
       <section id="comments" className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          {post.commentCount} comment{post.commentCount !== 1 ? "s" : ""}
-        </h2>
+        <CommentSortTabs
+          basePath={sharePath}
+          sort={sort}
+          commentCount={post.commentCount}
+        />
         {!isSoftDeleted && (
           <CommentForm postId={post.id} communityName={post.community.name} />
         )}

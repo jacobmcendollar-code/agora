@@ -48,31 +48,28 @@ export function Comment({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
-
   const adminUsernames = (process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
-
   const showRemove =
     isAdminUser ||
     (session?.user?.username &&
       adminUsernames.includes(session.user.username.toLowerCase()));
-
   const isAuthor = session?.user?.id === comment.authorId;
   const isSoftDeleted = comment.moderationStatus === "author_deleted";
   const createdAtDate =
     typeof comment.createdAt === "string"
       ? new Date(comment.createdAt)
       : comment.createdAt;
-
   const replyCount = countReplies(comment);
+  const isNested = depth > 0;
 
   if (collapsed) {
     return (
       <div
         className={
-          depth > 0
+          isNested
             ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700"
             : ""
         }
@@ -80,7 +77,11 @@ export function Comment({
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className="flex w-full items-center justify-between rounded-lg border bg-zinc-50 px-3 py-2 text-left text-xs text-zinc-500 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+            isNested
+              ? "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
+              : "bg-zinc-50 dark:bg-zinc-900"
+          }`}
         >
           <span>
             {isSoftDeleted ? "[deleted]" : comment.author.username}
@@ -99,12 +100,18 @@ export function Comment({
   return (
     <div
       className={
-        depth > 0
+        isNested
           ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700"
           : ""
       }
     >
-      <div className="rounded-lg border bg-white p-4 dark:bg-zinc-900">
+      <div
+        className={`rounded-lg border p-4 ${
+          isNested
+            ? "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
+            : "bg-white dark:bg-zinc-900"
+        }`}
+      >
         <div className="flex gap-3">
           <VoteButtons
             targetType="comment"
@@ -112,7 +119,6 @@ export function Comment({
             initialScore={comment.score}
             size="sm"
           />
-
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
@@ -128,7 +134,6 @@ export function Comment({
                 )}
                 <span>•</span>
                 <time>{timeAgo(createdAtDate)}</time>
-
                 {isAuthor && !isSoftDeleted && (
                   <>
                     <span>•</span>
@@ -144,7 +149,6 @@ export function Comment({
                     />
                   </>
                 )}
-
                 {showRemove && !isSoftDeleted && (
                   <>
                     <span>•</span>
@@ -152,7 +156,6 @@ export function Comment({
                   </>
                 )}
               </div>
-
               <button
                 type="button"
                 onClick={() => setCollapsed(true)}
@@ -163,11 +166,9 @@ export function Comment({
                 Collapse
               </button>
             </div>
-
             <div className="whitespace-pre-wrap break-words text-sm">
               {linkify(comment.body)}
             </div>
-
             {!isSoftDeleted && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
@@ -176,7 +177,6 @@ export function Comment({
                 {showReplyForm ? "Cancel" : "Reply"}
               </button>
             )}
-
             {showReplyForm && (
               <div className="mt-3">
                 <CommentForm
@@ -190,7 +190,6 @@ export function Comment({
           </div>
         </div>
       </div>
-
       {comment.replies.length > 0 && (
         <div className="mt-3 space-y-3">
           {comment.replies.map((reply) => (
