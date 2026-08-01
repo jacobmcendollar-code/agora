@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { useNsfw } from "@/components/nsfw-provider";
 import { ImageLightbox } from "@/components/image-lightbox";
@@ -79,42 +78,6 @@ function isGenericBody(body: string | null | undefined): boolean {
   );
 }
 
-function IconUser({ className = "h-3.5 w-3.5" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-      />
-    </svg>
-  );
-}
-
-function IconClock({ className = "h-3.5 w-3.5" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
 function IconComments({ className = "h-3.5 w-3.5" }: { className?: string }) {
   return (
     <svg
@@ -155,7 +118,6 @@ export function PostFeed({
 
   useEffect(() => {
     if (!hasMore || loading) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
@@ -164,10 +126,8 @@ export function PostFeed({
       },
       { rootMargin: "300px" }
     );
-
     const el = sentinelRef.current;
     if (el) observer.observe(el);
-
     return () => {
       if (el) observer.unobserve(el);
     };
@@ -176,7 +136,6 @@ export function PostFeed({
   async function loadMore() {
     if (loading || !hasMore) return;
     setLoading(true);
-
     try {
       const params = new URLSearchParams({
         sort,
@@ -184,10 +143,8 @@ export function PostFeed({
         scope,
       });
       if (communityName) params.set("community", communityName);
-
       const res = await fetch(`/api/feed?${params.toString()}`);
       const data = await res.json();
-
       if (data.posts?.length) {
         setPosts((prev) => {
           const existing = new Set(prev.map((p) => p.id));
@@ -291,7 +248,6 @@ export function PostFeed({
                       {post.title}
                     </h2>
                   </Link>
-
                   {post.body && !isGenericBody(post.body) && (
                     <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
                       {post.body}
@@ -308,7 +264,6 @@ export function PostFeed({
                       {post.community.title}
                     </Link>
                   )}
-
                   <Link
                     href={`${sharePath}#comments`}
                     className="inline-flex items-center gap-1 hover:underline"
@@ -316,25 +271,12 @@ export function PostFeed({
                     <IconComments />
                     <span>{post._count.comments}</span>
                   </Link>
-
-                  <SaveButton postId={post.id} />
-                  <ShareButton url={sharePath} title={post.title} />
-
-                  <Link
-                    href={`/u/${post.author.username}`}
-                    className="inline-flex items-center gap-1 hover:underline"
-                  >
-                    <IconUser />
-                    <span>{post.author.username}</span>
-                  </Link>
-
-                  <span className="inline-flex items-center gap-1">
-                    <IconClock />
-                    <time dateTime={post.createdAt}>
-                      {timeAgo(new Date(post.createdAt))}
-                    </time>
-                  </span>
-
+                  <SaveButton postId={post.id} iconOnly />
+                  <ShareButton
+                    url={sharePath}
+                    title={post.title}
+                    iconOnly
+                  />
                   {post.nsfw && (
                     <span className="font-medium text-rose-500">NSFW</span>
                   )}
@@ -344,7 +286,6 @@ export function PostFeed({
           </article>
         );
       })}
-
       <div ref={sentinelRef} className="py-4 text-center text-sm text-zinc-500">
         {loading && "Loading more…"}
         {!hasMore && visiblePosts.length > 0 && "You’ve reached the end"}
