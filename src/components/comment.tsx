@@ -48,26 +48,32 @@ export function Comment({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
+
   const adminUsernames = (process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+
   const showRemove =
     isAdminUser ||
     (session?.user?.username &&
       adminUsernames.includes(session.user.username.toLowerCase()));
+
   const isAuthor = session?.user?.id === comment.authorId;
   const isSoftDeleted = comment.moderationStatus === "author_deleted";
+
   const createdAtDate =
     typeof comment.createdAt === "string"
       ? new Date(comment.createdAt)
       : comment.createdAt;
+
   const replyCount = countReplies(comment);
   const isNested = depth > 0;
 
   if (collapsed) {
     return (
       <div
+        id={`comment-${comment.id}`}
         className={
           isNested
             ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700"
@@ -99,6 +105,7 @@ export function Comment({
 
   return (
     <div
+      id={`comment-${comment.id}`}
       className={
         isNested
           ? "ml-4 border-l-2 border-zinc-200 pl-4 dark:border-zinc-700"
