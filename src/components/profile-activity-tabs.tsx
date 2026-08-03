@@ -247,28 +247,29 @@ export function ProfileActivityTabs({
           {comments.length === 0 ? (
             <p className="text-sm text-zinc-500">No comments yet.</p>
           ) : (
-            comments.slice(0, visibleCount).map((comment) => (
-              <div
-                key={comment.id}
-                className="rounded-lg border bg-white p-4 dark:bg-zinc-900"
-              >
-                <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-                  <Link
-                    href={`/c/${comment.post.community.name}/posts/${comment.post.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {comment.post.title}
-                  </Link>
-                  <span>•</span>
-                  <span>{comment.post.community.title}</span>
-                  <span>•</span>
-                  <span>{timeAgo(new Date(comment.createdAt))}</span>
-                </div>
-                <p className="whitespace-pre-wrap break-words text-sm">
-                  {comment.body}
-                </p>
-              </div>
-            ))
+            comments.slice(0, visibleCount).map((comment) => {
+              const commentHref = `/c/${comment.post.community.name}/posts/${comment.post.id}#comment-${comment.id}`;
+              return (
+                <Link
+                  key={comment.id}
+                  href={commentHref}
+                  className="block rounded-lg border bg-white p-4 transition hover:border-zinc-400 dark:bg-zinc-900 dark:hover:border-zinc-600"
+                >
+                  <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      {comment.post.title}
+                    </span>
+                    <span>•</span>
+                    <span>{comment.post.community.title}</span>
+                    <span>•</span>
+                    <span>{timeAgo(new Date(comment.createdAt))}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap break-words text-sm">
+                    {comment.body}
+                  </p>
+                </Link>
+              );
+            })
           )}
         </div>
       )}
