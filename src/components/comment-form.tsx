@@ -40,10 +40,8 @@ export function CommentForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim()) return;
-
     setError(null);
     setLoading(true);
-
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
@@ -56,14 +54,12 @@ export function CommentForm({
         }),
       });
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error || "Failed to post comment");
         toast(data.error || "Failed to post comment", "error");
         setLoading(false);
         return;
       }
-
       setBody("");
       toast(parentId ? "Reply posted" : "Comment posted");
       router.refresh();
@@ -91,11 +87,14 @@ export function CommentForm({
         placeholder={parentId ? "Write a reply..." : "What are your thoughts?"}
         className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
       />
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-zinc-500">
+          **bold** · *italic* · - lists · &gt; quotes · [links](url)
+        </p>
         <button
           type="submit"
           disabled={loading || !body.trim()}
-          className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {loading ? "Posting…" : parentId ? "Reply" : "Comment"}
         </button>

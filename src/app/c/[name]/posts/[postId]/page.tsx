@@ -20,6 +20,7 @@ import { XEmbed } from "@/components/x-embed";
 import { TikTokEmbed } from "@/components/tiktok-embed";
 import { RedditEmbed } from "@/components/reddit-embed";
 import { InstagramEmbed } from "@/components/instagram-embed";
+import { MarkdownBody } from "@/components/markdown-body";
 
 export const dynamic = "force-dynamic";
 
@@ -89,10 +90,7 @@ function decodeBasicEntities(text: string) {
     );
 }
 
-function buildCommentTree(
-  comments: any[],
-  sort: "best" | "newest"
-) {
+function buildCommentTree(comments: any[], sort: "best" | "newest") {
   const map = new Map<string, any>();
   const roots: any[] = [];
 
@@ -142,9 +140,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       author: { select: { username: true } },
     },
   });
+
   if (!post || post.community.name !== name) {
     return { title: "Post not found · Agora" };
   }
+
   const title = `${post.title} · ${post.community.title}`;
   const rawDescription =
     post.body && !isGenericBody(post.body) ? post.body : null;
@@ -152,6 +152,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     rawDescription?.slice(0, 160) ||
     `A post in ${post.community.title} on Agora`;
   const url = `https://agor4.com/c/${post.community.name}/posts/${post.id}`;
+
   return {
     title,
     description,
@@ -177,10 +178,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PostPage({ params, searchParams }: Props) {
   const { name, postId } = await params;
   const sp = await searchParams;
-  const sort: "best" | "newest" =
-    sp.sort === "newest" ? "newest" : "best";
+  const sort: "best" | "newest" = sp.sort === "newest" ? "newest" : "best";
 
   const session = await auth();
+
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: {
@@ -188,6 +189,7 @@ export default async function PostPage({ params, searchParams }: Props) {
       community: { select: { name: true, title: true } },
     },
   });
+
   if (!post || post.community.name !== name) notFound();
   if (post.moderationStatus === "removed") notFound();
 
@@ -232,6 +234,7 @@ export default async function PostPage({ params, searchParams }: Props) {
   const sharePath = `/c/${post.community.name}/posts/${post.id}`;
   const isPlainLink = !!(post.url && !hasRichEmbed);
   const showBody = !!(post.body && !isGenericBody(post.body));
+  const bodyText = showBody ? decodeBasicEntities(post.body!) : null;
 
   return (
     <div className="space-y-6">
@@ -279,9 +282,9 @@ export default async function PostPage({ params, searchParams }: Props) {
               </div>
             )}
 
-            {showBody && (
-              <div className="mt-4 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
-                {decodeBasicEntities(post.body!)}
+            {bodyText && (
+              <div className="mt-4 text-zinc-800 dark:text-zinc-200">
+                <MarkdownBody text={bodyText} className="text-base" />
               </div>
             )}
 
@@ -300,7 +303,7 @@ export default async function PostPage({ params, searchParams }: Props) {
                 ) : (
                   <Link
                     href={`/u/${post.author.username}`}
-                    className="hover:underline"
+                    className="font-medium text-emerald-500 hover:underline"
                   >
                     {post.author.username}
                   </Link>
@@ -350,7 +353,6 @@ export default async function PostPage({ params, searchParams }: Props) {
               commentCount={post.commentCount}
             />
           </div>
-
           <div className="space-y-4">
             {commentTree.map((comment) => (
               <Comment

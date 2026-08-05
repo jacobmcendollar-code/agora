@@ -9,7 +9,7 @@ import { CommentForm } from "@/components/comment-form";
 import { RemoveCommentButton } from "@/components/remove-comment-button";
 import { EditCommentButton } from "@/components/edit-comment-button";
 import { DeleteCommentButton } from "@/components/delete-comment-button";
-import { linkify } from "@/lib/linkify";
+import { MarkdownBody } from "@/components/markdown-body";
 
 type CommentData = {
   id: string;
@@ -90,7 +90,9 @@ export function Comment({
           }`}
         >
           <span>
-            {isSoftDeleted ? "[deleted]" : comment.author.username}
+            <span className="font-medium text-emerald-500">
+              {isSoftDeleted ? "[deleted]" : comment.author.username}
+            </span>
             {replyCount > 0
               ? ` · ${replyCount} repl${replyCount === 1 ? "y" : "ies"} hidden`
               : " · comment hidden"}
@@ -134,7 +136,7 @@ export function Comment({
                 ) : (
                   <Link
                     href={`/u/${comment.author.username}`}
-                    className="font-medium hover:underline"
+                    className="font-medium text-emerald-500 hover:underline"
                   >
                     {comment.author.username}
                   </Link>
@@ -173,9 +175,13 @@ export function Comment({
                 Collapse
               </button>
             </div>
-            <div className="whitespace-pre-wrap break-words text-sm">
-              {linkify(comment.body)}
-            </div>
+
+            {isSoftDeleted ? (
+              <p className="text-sm text-zinc-400">[deleted]</p>
+            ) : (
+              <MarkdownBody text={comment.body} />
+            )}
+
             {!isSoftDeleted && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
@@ -197,6 +203,7 @@ export function Comment({
           </div>
         </div>
       </div>
+
       {comment.replies.length > 0 && (
         <div className="mt-3 space-y-3">
           {comment.replies.map((reply) => (
