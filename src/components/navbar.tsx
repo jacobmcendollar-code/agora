@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -37,7 +38,6 @@ export function Navbar() {
   });
   const [showSuggest, setShowSuggest] = useState(false);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
-
   const menuRef = useRef<HTMLDivElement>(null);
   const desktopSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
@@ -90,7 +90,6 @@ export function Navbar() {
 
   useEffect(() => {
     if (suggestTimer.current) clearTimeout(suggestTimer.current);
-
     const q = query.trim();
     if (q.length < 1) {
       setSuggestions({ communities: [], posts: [] });
@@ -98,7 +97,6 @@ export function Navbar() {
       setLoadingSuggest(false);
       return;
     }
-
     setLoadingSuggest(true);
     suggestTimer.current = setTimeout(async () => {
       try {
@@ -117,7 +115,6 @@ export function Navbar() {
         setLoadingSuggest(false);
       }
     }, 200);
-
     return () => {
       if (suggestTimer.current) clearTimeout(suggestTimer.current);
     };
@@ -152,7 +149,6 @@ export function Navbar() {
 
   function SuggestDropdown() {
     if (!showSuggest || query.trim().length < 1) return null;
-
     return (
       <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
         {loadingSuggest && !hasSuggestions ? (
@@ -231,11 +227,15 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-zinc-900/80">
       <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-3 sm:px-4">
         <div className="flex items-center gap-3 sm:gap-5">
-          <Link
-            href="/"
-            className="text-lg font-bold tracking-tight text-emerald-500 sm:text-xl"
-          >
-            Agora
+          <Link href="/" className="flex shrink-0 items-center" aria-label="Agora home">
+            <Image
+              src="/agora-logo.png"
+              alt="Agora"
+              width={120}
+              height={44}
+              className="h-7 w-auto sm:h-8"
+              priority
+            />
           </Link>
           <Link
             href="/communities"
@@ -251,7 +251,10 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div ref={desktopSearchRef} className="relative hidden max-w-xs flex-1 sm:block">
+        <div
+          ref={desktopSearchRef}
+          className="relative hidden max-w-xs flex-1 sm:block"
+        >
           <form onSubmit={handleSearch}>
             <input
               type="search"
@@ -395,7 +398,10 @@ export function Navbar() {
       </div>
 
       {searchOpen && (
-        <div ref={mobileSearchRef} className="relative border-t px-3 py-2 sm:hidden">
+        <div
+          ref={mobileSearchRef}
+          className="relative border-t px-3 py-2 sm:hidden"
+        >
           <form onSubmit={handleSearch}>
             <input
               type="search"
