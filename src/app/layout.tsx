@@ -15,7 +15,8 @@ export const metadata: Metadata = {
   },
   description: "Create communities. Speak freely. Minimal AI moderation.",
   icons: {
-    icon: "/icon.svg",
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
   },
 };
 
