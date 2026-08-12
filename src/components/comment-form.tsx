@@ -144,6 +144,20 @@ export function CommentForm({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) uploadFile(file);
+        return;
+      }
+    }
+  }
+
   function searchGifs(q: string) {
     setGifQuery(q);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
@@ -234,6 +248,7 @@ export function CommentForm({
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          onPaste={handlePaste}
           rows={3}
           maxLength={10000}
           placeholder={parentId ? "Write a reply..." : "What are your thoughts?"}
@@ -273,6 +288,16 @@ export function CommentForm({
         <div className="absolute bottom-2 right-2 flex items-center gap-0.5">
           <button
             type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            title={uploading ? "Uploading…" : "Add image"}
+            aria-label={uploading ? "Uploading…" : "Add image"}
+          >
+            <ImageIcon />
+          </button>
+          <button
+            type="button"
             onClick={() => {
               setGifOpen((o) => !o);
               if (gifOpen) {
@@ -285,16 +310,6 @@ export function CommentForm({
             aria-label="Add GIF"
           >
             <GifIcon />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-            title={uploading ? "Uploading…" : "Add image"}
-            aria-label={uploading ? "Uploading…" : "Add image"}
-          >
-            <ImageIcon />
           </button>
         </div>
       </div>
