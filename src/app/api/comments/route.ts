@@ -7,8 +7,9 @@ import { notifyMentions } from "@/lib/mentions";
 
 const schema = z.object({
   postId: z.string().min(1),
-  body: z.string().min(1).max(10000),
+  body: z.string().max(10000).optional().nullable(),
   parentId: z.string().optional().nullable(),
+  imageUrl: z.string().url().optional().nullable(),
 });
 
 async function isMutedBy(muterId: string, mutedId: string) {
@@ -51,7 +52,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const { postId, body: commentBody, parentId } = parsed.data;
+    const { postId, body: rawBody, parentId, imageUrl } = parsed.data;
+    const commentBody = (rawBody || "").trim();
+
+    if (!commentBody && !imageUrl) {
+      return NextResponse.json(
+        { error: "Comment must have text or an image" },
+        { status: 400 }
+      );
+    }
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -80,15 +89,15 @@ export async function POST(req: Request) {
       }
     }
 
+    const moderationText = commentBody || "[Image comment]";
     const moderation = await moderateContent({
       type: "comment",
       title: "",
-      body: commentBody,
+      body: moderationText,
       communityName: post.community.name,
       communityDescription: post.community.description,
       communityRules: post.community.rules,
     });
-
     if (!moderation.allowed) {
       return NextResponse.json(
         {
@@ -102,6 +111,7 @@ export async function POST(req: Request) {
     const comment = await prisma.comment.create({
       data: {
         body: commentBody,
+        imageUrl: imageUrl || null,
         postId,
         authorId: session.user.id,
         parentId: parentId || null,
@@ -126,7 +136,6 @@ export async function POST(req: Request) {
     const link = `/c/${post.community.name}/posts/${post.id}#comments`;
     const actorUsername = session.user.username || "Someone";
 
-    // Notify post author only if they have not muted the commenter
     if (post.authorId !== session.user.id) {
       const muted = await isMutedBy(post.authorId, session.user.id);
       if (!muted) {
@@ -141,7 +150,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Notify parent comment author only if they have not muted the replier
     if (parentComment && parentComment.authorId !== session.user.id) {
       const muted = await isMutedBy(parentComment.authorId, session.user.id);
       if (!muted) {
@@ -156,13 +164,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // @mentions (also respects mutes inside notifyMentions)
-    await notifyMentions({
-      text: commentBody,
-      actorUsername,
-      actorId: session.user.id,
-      link,
-    });
+    if (commentBody) {
+      await notifyMentions({
+        text: commentBody,
+        actorUsername,
+        actorId: session.user.id,
+        link,
+      });
+    }
 
     return NextResponse.json({ id: comment.id });
   } catch (err) {

@@ -19,19 +19,18 @@ model User {
   showNsfw      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  accounts        Account[]
-  sessions        Session[]
-  posts           Post[]
-  comments        Comment[]
-  postVotes       PostVote[]
-  commentVotes    CommentVote[]
-  communities     Community[]
-  subscriptions   Subscription[]
-  notifications   Notification[]
-  savedPosts      SavedPost[]
-  mutes           Mute[]          @relation("UserMutes")
-  mutedBy         Mute[]          @relation("UserMutedBy")
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  comments      Comment[]
+  postVotes     PostVote[]
+  commentVotes  CommentVote[]
+  communities   Community[]
+  subscriptions Subscription[]
+  notifications Notification[]
+  savedPosts    SavedPost[]
+  mutes         Mute[]    @relation("UserMutes")
+  mutedBy       Mute[]    @relation("UserMutedBy")
 
   @@index([username])
   @@map("users")
@@ -76,15 +75,15 @@ model VerificationToken {
 }
 
 model Community {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  title       String
-  description String
-  rules       String?
-  nsfw        Boolean  @default(false)
-  creatorId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String         @unique
+  title         String
+  description   String
+  rules         String?
+  nsfw          Boolean        @default(false)
+  creatorId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   creator       User           @relation(fields: [creatorId], references: [id])
   posts         Post[]
   subscriptions Subscription[]
@@ -94,25 +93,25 @@ model Community {
 }
 
 model Post {
-  id               String   @id @default(cuid())
+  id               String      @id @default(cuid())
   title            String
   body             String?
   url              String?
   thumbnail        String?
-  score            Int      @default(0)
-  commentCount     Int      @default(0)
-  nsfw             Boolean  @default(false)
-  moderationStatus String   @default("approved")
+  score            Int         @default(0)
+  commentCount     Int         @default(0)
+  nsfw             Boolean     @default(false)
+  moderationStatus String      @default("approved")
   moderationReason String?
   communityId      String
   authorId         String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  community Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  votes     PostVote[]
-  savedBy   SavedPost[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  community        Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author           User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments         Comment[]
+  votes            PostVote[]
+  savedBy          SavedPost[]
 
   @@index([authorId])
   @@index([communityId, createdAt])
@@ -122,21 +121,22 @@ model Post {
 }
 
 model Comment {
-  id               String   @id @default(cuid())
+  id               String        @id @default(cuid())
   body             String
-  score            Int      @default(0)
-  moderationStatus String   @default("approved")
+  imageUrl         String?
+  score            Int           @default(0)
+  moderationStatus String        @default("approved")
   moderationReason String?
   postId           String
   authorId         String
   parentId         String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies Comment[] @relation("CommentReplies")
-  votes   CommentVote[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  post             Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author           User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent           Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies          Comment[]     @relation("CommentReplies")
+  votes            CommentVote[]
 
   @@index([authorId])
   @@index([parentId])
@@ -151,8 +151,8 @@ model PostVote {
   userId    String
   postId    String
   createdAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([postId])
@@ -165,8 +165,8 @@ model CommentVote {
   userId    String
   commentId String
   createdAt DateTime @default(now())
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
   @@index([commentId])
@@ -174,12 +174,12 @@ model CommentVote {
 }
 
 model Subscription {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   communityId String
-  createdAt   DateTime @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   @@unique([userId, communityId])
   @@index([communityId])
@@ -195,7 +195,7 @@ model Notification {
   read      Boolean  @default(false)
   userId    String
   createdAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
   @@map("notifications")
@@ -206,8 +206,8 @@ model SavedPost {
   userId    String
   postId    String
   createdAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId, createdAt])
@@ -220,8 +220,8 @@ model Mute {
   muterId   String
   mutedId   String
   createdAt DateTime @default(now())
-  muter User @relation("UserMutes", fields: [muterId], references: [id], onDelete: Cascade)
-  muted User @relation("UserMutedBy", fields: [mutedId], references: [id], onDelete: Cascade)
+  muter     User     @relation("UserMutes", fields: [muterId], references: [id], onDelete: Cascade)
+  muted     User     @relation("UserMutedBy", fields: [mutedId], references: [id], onDelete: Cascade)
 
   @@unique([muterId, mutedId])
   @@index([muterId])

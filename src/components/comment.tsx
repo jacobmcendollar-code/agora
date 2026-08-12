@@ -10,10 +10,12 @@ import { RemoveCommentButton } from "@/components/remove-comment-button";
 import { EditCommentButton } from "@/components/edit-comment-button";
 import { DeleteCommentButton } from "@/components/delete-comment-button";
 import { MarkdownBody } from "@/components/markdown-body";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 type CommentData = {
   id: string;
   body: string;
+  imageUrl?: string | null;
   score: number;
   createdAt: Date | string;
   authorId: string;
@@ -61,12 +63,10 @@ export function Comment({
 
   const isAuthor = session?.user?.id === comment.authorId;
   const isSoftDeleted = comment.moderationStatus === "author_deleted";
-
   const createdAtDate =
     typeof comment.createdAt === "string"
       ? new Date(comment.createdAt)
       : comment.createdAt;
-
   const replyCount = countReplies(comment);
   const isNested = depth > 0;
 
@@ -179,7 +179,18 @@ export function Comment({
             {isSoftDeleted ? (
               <p className="text-sm text-zinc-400">[deleted]</p>
             ) : (
-              <MarkdownBody text={comment.body} />
+              <>
+                {comment.body ? <MarkdownBody text={comment.body} /> : null}
+                {comment.imageUrl && (
+                  <div className={comment.body ? "mt-2" : ""}>
+                    <ImageLightbox
+                      src={comment.imageUrl}
+                      alt="Comment image"
+                      className="max-h-80 max-w-full rounded-md object-contain"
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             {!isSoftDeleted && (
