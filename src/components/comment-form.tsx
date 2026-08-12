@@ -26,6 +26,23 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+function ImageIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-[18px] w-[18px] fill-none stroke-current"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="M21 16l-5-5-9 9" />
+    </svg>
+  );
+}
+
 export function CommentForm({
   postId,
   communityName,
@@ -42,7 +59,6 @@ export function CommentForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [focused, setFocused] = useState(false);
 
   if (!session) {
     return (
@@ -95,6 +111,11 @@ export function CommentForm({
     }
   }
 
+  function clearImage() {
+    setImageUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim() && !imageUrl) return;
@@ -121,8 +142,7 @@ export function CommentForm({
         return;
       }
       setBody("");
-      setImageUrl(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      clearImage();
       toast(parentId ? "Reply posted" : "Comment posted");
       router.refresh();
       onSuccess?.();
@@ -141,63 +161,60 @@ export function CommentForm({
           {error}
         </div>
       )}
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        rows={3}
-        maxLength={10000}
-        placeholder={parentId ? "Write a reply..." : "What are your thoughts?"}
-        className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-      />
 
-      {imageUrl ? (
-        <div className="relative inline-block">
-          <img
-            src={imageUrl}
-            alt="Comment attachment"
-            className="max-h-40 rounded-md border object-contain dark:border-zinc-700"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setImageUrl(null);
-              if (fileInputRef.current) fileInputRef.current.value = "";
-            }}
-            className="absolute right-1 top-1 rounded bg-black/70 px-2 py-0.5 text-xs text-white hover:bg-black"
-          >
-            Remove
-          </button>
-        </div>
-      ) : (
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadFile(file);
-            }}
-            className="block w-full text-sm text-zinc-500 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white dark:file:bg-zinc-100 dark:file:text-zinc-900"
-          />
-          <p className="mt-1 text-xs text-zinc-500">
-            {uploading ? "Uploading…" : "Optional · one image, max 8MB"}
-          </p>
-        </div>
-      )}
+      <div className="relative overflow-hidden rounded-md border border-zinc-300 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-400/40 dark:border-zinc-700 dark:focus-within:border-zinc-500">
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={3}
+          maxLength={10000}
+          placeholder={parentId ? "Write a reply..." : "What are your thoughts?"}
+          className="w-full resize-y border-0 bg-transparent px-3 pb-2 pt-2.5 pr-10 text-sm outline-none dark:bg-transparent"
+        />
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p
-          className={`text-xs text-zinc-500 transition-opacity ${
-            focused || body ? "opacity-100" : "opacity-0"
-          }`}
+        {imageUrl && (
+          <div className="relative mb-9 ml-3 mr-3 inline-block max-w-[calc(100%-1.5rem)]">
+            <img
+              src={imageUrl}
+              alt="Comment attachment"
+              className="max-h-40 max-w-full rounded-md border border-zinc-300 object-contain dark:border-zinc-700"
+            />
+            <button
+              type="button"
+              onClick={clearImage}
+              className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/75 text-sm leading-none text-white hover:bg-black/90"
+              title="Remove image"
+              aria-label="Remove image"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) uploadFile(file);
+          }}
+        />
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          title={uploading ? "Uploading…" : "Add image"}
+          aria-label={uploading ? "Uploading…" : "Add image"}
         >
-          Supports <span className="font-semibold text-zinc-400">bold</span>,{" "}
-          <span className="italic text-zinc-400">italic</span>, lists, quotes,
-          and links
-        </p>
+          <ImageIcon />
+        </button>
+      </div>
+
+      <div className="flex justify-end">
         <button
           type="submit"
           disabled={loading || uploading || (!body.trim() && !imageUrl)}
