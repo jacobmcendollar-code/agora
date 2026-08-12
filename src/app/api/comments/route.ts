@@ -89,23 +89,26 @@ export async function POST(req: Request) {
       }
     }
 
-    const moderationText = commentBody || "[Image comment]";
-    const moderation = await moderateContent({
-      type: "comment",
-      title: "",
-      body: moderationText,
-      communityName: post.community.name,
-      communityDescription: post.community.description,
-      communityRules: post.community.rules,
-    });
-    if (!moderation.allowed) {
-      return NextResponse.json(
-        {
-          error: moderation.reason || "Comment rejected by moderator",
-          moderated: true,
-        },
-        { status: 403 }
-      );
+    // Text: run normal moderation.
+    // Image/GIF only: skip on-topic check (placeholder text was getting false rejects).
+    if (commentBody) {
+      const moderation = await moderateContent({
+        type: "comment",
+        title: "",
+        body: commentBody,
+        communityName: post.community.name,
+        communityDescription: post.community.description,
+        communityRules: post.community.rules,
+      });
+      if (!moderation.allowed) {
+        return NextResponse.json(
+          {
+            error: moderation.reason || "Comment rejected by moderator",
+            moderated: true,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const comment = await prisma.comment.create({
