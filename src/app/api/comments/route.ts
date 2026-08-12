@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { moderateContent } from "@/lib/moderation";
 import { notifyMentions } from "@/lib/mentions";
 
+const MEDIA_PER_HOUR = 20;
+
 const schema = z.object({
   postId: z.string().min(1),
   body: z.string().max(10000).optional().nullable(),
@@ -23,6 +25,17 @@ async function isMutedBy(muterId: string, mutedId: string) {
     select: { id: true },
   });
   return !!mute;
+}
+
+async function countRecentMediaComments(userId: string) {
+  const since = new Date(Date.now() - 60 * 60 * 1000);
+  return prisma.comment.count({
+    where: {
+      authorId: userId,
+      imageUrl: { not: null },
+      createdAt: { gte: since },
+    },
+  });
 }
 
 export async function POST(req: Request) {
@@ -62,6 +75,19 @@ export async function POST(req: Request) {
       );
     }
 
+    if (imageUrl) {
+      const mediaCount = await countRecentMediaComments(session.user.id);
+      if (mediaCount >= MEDIA_PER_HOUR) {
+        return NextResponse.json(
+          {
+            error:
+              "Too many images or GIFs this hour. You can still post text comments.",
+          },
+          { status: 429 }
+        );
+      }
+    }
+
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: {
@@ -89,8 +115,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Text: run normal moderation.
-    // Image/GIF only: skip on-topic check (placeholder text was getting false rejects).
     if (commentBody) {
       const moderation = await moderateContent({
         type: "comment",

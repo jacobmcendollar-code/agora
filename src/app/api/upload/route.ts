@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { UTApi } from "uploadthing/server";
 
 const utapi = new UTApi();
+const MEDIA_PER_HOUR = 20;
+
+async function countRecentMediaComments(userId: string) {
+  const since = new Date(Date.now() - 60 * 60 * 1000);
+  return prisma.comment.count({
+    where: {
+      authorId: userId,
+      imageUrl: { not: null },
+      createdAt: { gte: since },
+    },
+  });
+}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -11,11 +24,22 @@ export async function POST(req: Request) {
   }
 
   try {
+    const mediaCount = await countRecentMediaComments(session.user.id);
+    if (mediaCount >= MEDIA_PER_HOUR) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many images or GIFs this hour. You can still post text comments.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { fileName, fileType, fileData } = body as {
       fileName?: string;
       fileType?: string;
-      fileData?: string; // base64
+      fileData?: string;
     };
 
     if (!fileName || !fileType || !fileData) {
@@ -23,17 +47,21 @@ export async function POST(req: Request) {
     }
 
     if (!fileType.startsWith("image/")) {
-      return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+      return NextResponse.json(
+        { error: "File must be an image" },
+        { status: 400 }
+      );
     }
 
-    // Convert base64 to File
     const buffer = Buffer.from(fileData, "base64");
     if (buffer.length > 4 * 1024 * 1024) {
-      return NextResponse.json({ error: "Image must be under 4MB" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Image must be under 4MB" },
+        { status: 400 }
+      );
     }
 
     const file = new File([buffer], fileName, { type: fileType });
-
     const results = await utapi.uploadFiles([file]);
     const result = results[0];
 
@@ -51,7 +79,10 @@ export async function POST(req: Request) {
 
     const url = result.data.ufsUrl || result.data.url;
     if (!url) {
-      return NextResponse.json({ error: "No URL returned from upload" }, { status: 500 });
+      return NextResponse.json(
+        { error: "No URL returned from upload" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ url });
