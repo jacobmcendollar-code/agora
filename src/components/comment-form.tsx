@@ -77,23 +77,23 @@ export function CommentForm({
       toast("Only image files are allowed", "error");
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Image must be under 8MB");
-      toast("Image must be under 8MB", "error");
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Image must be under 4MB");
+      toast("Image must be under 4MB", "error");
       return;
     }
 
     setError(null);
     setUploading(true);
     try {
-      const data = await fileToBase64(file);
+      const fileData = await fileToBase64(file);
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          data,
+          fileName: file.name,
+          fileType: file.type,
+          fileData,
         }),
       });
       const json = await res.json();
