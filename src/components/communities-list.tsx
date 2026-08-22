@@ -30,7 +30,6 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
 
   const filtered = useMemo(() => {
     let list = [...communities];
-
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
@@ -40,7 +39,6 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
           c.description.toLowerCase().includes(q)
       );
     }
-
     if (sort === "az") {
       list.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sort === "active") {
@@ -51,13 +49,11 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
-
     return list;
   }, [communities, query, sort]);
 
   const joined = filtered.filter((c) => c.joined);
   const rest = isLoggedIn ? filtered.filter((c) => !c.joined) : filtered;
-
   const visibleJoined = joinedExpanded
     ? joined
     : joined.slice(0, JOINED_PREVIEW);
@@ -71,9 +67,9 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search communities..."
-          className="w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 sm:max-w-xs"
+          className="w-full rounded-xl border border-stone-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 sm:max-w-xs"
         />
-        <div className="flex gap-1 rounded-lg border p-1 dark:border-zinc-700">
+        <div className="flex gap-1 rounded-xl border border-stone-300 p-1 dark:border-zinc-700">
           {(
             [
               { key: "active", label: "Most active" },
@@ -85,9 +81,9 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
               key={option.key}
               type="button"
               onClick={() => setSort(option.key)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                 sort === option.key
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  ? "bg-emerald-600 text-white"
                   : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               }`}
             >
@@ -98,7 +94,7 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center text-zinc-500">
+        <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-zinc-500 dark:border-zinc-700">
           No communities match your search.
         </div>
       ) : (
@@ -108,7 +104,7 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                 Joined ({joined.length})
               </h2>
-              <div className="rounded-lg border bg-white dark:bg-zinc-900">
+              <div className="rounded-xl border border-stone-200/90 bg-white dark:border-zinc-800 dark:bg-[#161618]">
                 <div className="divide-y dark:divide-zinc-800">
                   {visibleJoined.map((community) => (
                     <div
@@ -165,7 +161,7 @@ export function CommunitiesList({ communities, isLoggedIn }: Props) {
                 Discover
               </h2>
             )}
-            <div className="rounded-lg border bg-white dark:bg-zinc-900">
+            <div className="rounded-xl border border-stone-200/90 bg-white dark:border-zinc-800 dark:bg-[#161618]">
               <div className="divide-y dark:divide-zinc-800">
                 {rest.map((community) => (
                   <div
