@@ -170,7 +170,7 @@ export function PostFeed({
   if (visiblePosts.length === 0) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       {visiblePosts.map((post) => {
         const youtubeId = getYouTubeId(post.url);
         const isX = isXLink(post.url);
@@ -181,7 +181,7 @@ export function PostFeed({
         return (
           <article
             key={post.id}
-            className="rounded-lg border bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:p-5"
+            className="rounded-xl border border-stone-200/90 bg-white p-4 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_4px_12px_rgba(28,25,23,0.04)] transition hover:shadow-[0_2px_4px_rgba(28,25,23,0.06),0_8px_20px_rgba(28,25,23,0.06)] dark:border-zinc-800 dark:bg-[#161618] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_4px_16px_rgba(0,0,0,0.25)] dark:hover:border-zinc-700 dark:hover:bg-[#1c1c1f] sm:p-5"
           >
             <div className="flex gap-3 sm:gap-4">
               <VoteButtons
@@ -195,28 +195,28 @@ export function PostFeed({
                   videoId={youtubeId}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                 />
               ) : post.thumbnail && isX && post.url ? (
                 <XLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                 />
               ) : post.thumbnail && isTikTok && post.url ? (
                 <TikTokLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                 />
               ) : post.thumbnail && isInstagram && post.url ? (
                 <InstagramLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                 />
               ) : post.thumbnail && post.url ? (
                 <a
@@ -228,7 +228,7 @@ export function PostFeed({
                   <img
                     src={post.thumbnail}
                     alt=""
-                    className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                    className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                   />
                 </a>
               ) : post.thumbnail ? (
@@ -236,7 +236,7 @@ export function PostFeed({
                   <ImageLightbox
                     src={post.thumbnail}
                     alt={post.title}
-                    className="h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
+                    className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                   />
                 </div>
               ) : null}
@@ -244,18 +244,19 @@ export function PostFeed({
               <div className="flex min-h-[5rem] min-w-0 flex-1 flex-col sm:min-h-[6rem]">
                 <div className="flex-1">
                   <Link href={sharePath}>
-                    <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
+                    <h2 className="text-lg font-semibold leading-snug text-stone-900 hover:underline dark:text-zinc-50 sm:text-xl">
                       {post.title}
                     </h2>
                   </Link>
                   {post.body && !isGenericBody(post.body) && (
-                    <p className="mt-2 line-clamp-2 text-base text-zinc-600 dark:text-zinc-400">
+                    <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-stone-500 dark:text-zinc-400">
                       {post.body}
                     </p>
                   )}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-3 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
+                {/* Meta row — unchanged layout */}
+                <div className="mt-3 flex items-center justify-between gap-3 border-t border-stone-100 pt-3 text-sm dark:border-zinc-800">
                   <div className="min-w-0 truncate">
                     {!hideCommunity ? (
                       <Link
@@ -268,7 +269,6 @@ export function PostFeed({
                       <span className="font-medium text-rose-500">NSFW</span>
                     ) : null}
                   </div>
-
                   <div className="flex shrink-0 items-center gap-3 text-zinc-600 dark:text-zinc-400">
                     <Link
                       href={`${sharePath}#comments`}
@@ -293,6 +293,7 @@ export function PostFeed({
           </article>
         );
       })}
+
       <div ref={sentinelRef} className="py-4 text-center text-sm text-zinc-500">
         {loading && "Loading more…"}
         {!hasMore && visiblePosts.length > 0 && "You’ve reached the end"}
