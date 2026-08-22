@@ -15,6 +15,9 @@ type Community = {
 
 type PostType = "text" | "link" | "image";
 
+const inputClass =
+  "w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:placeholder:text-zinc-500";
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -69,10 +72,7 @@ function SubmitForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Communities the user is allowed to see/post in
-  const visibleCommunities = communities.filter(
-    (c) => showNsfw || !c.nsfw
-  );
+  const visibleCommunities = communities.filter((c) => showNsfw || !c.nsfw);
 
   useEffect(() => {
     fetch("/api/communities")
@@ -81,7 +81,6 @@ function SubmitForm() {
         setCommunities(data);
         if (preselected) {
           const match = data.find((c) => c.name === preselected);
-          // Only preselect if user can see that community
           if (match && (showNsfw || !match.nsfw)) {
             setSelected(match.name);
             setSelectedTitle(match.title);
@@ -118,9 +117,11 @@ function SubmitForm() {
       setPreviewLoading(false);
       return;
     }
+
     const trimmedUrl = url.trim();
     const skipTitleSuggest = isXUrl(trimmedUrl);
     let cancelled = false;
+
     const timer = setTimeout(async () => {
       if (!skipTitleSuggest) setTitleLoading(true);
       setPreviewLoading(true);
@@ -149,6 +150,7 @@ function SubmitForm() {
         }
       }
     }, 600);
+
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -226,14 +228,11 @@ function SubmitForm() {
   function handleSearch(value: string) {
     setQuery(value);
     const trimmed = value.trim();
-
-    // Only suggest after at least one character
     if (trimmed.length < 1) {
       setFiltered([]);
       setShowDropdown(false);
       return;
     }
-
     const lower = trimmed.toLowerCase();
     const matches = visibleCommunities.filter(
       (c) =>
@@ -262,9 +261,7 @@ function SubmitForm() {
   }
 
   function handleCommunityKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!showDropdown || filtered.length === 0) {
-      return;
-    }
+    if (!showDropdown || filtered.length === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHighlightIndex((i) => (i + 1) % filtered.length);
@@ -351,7 +348,7 @@ function SubmitForm() {
         </p>
         <Link
           href="/login"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           Log in
         </Link>
@@ -373,20 +370,22 @@ function SubmitForm() {
           Posts are lightly checked for spam and off-topic content.
         </p>
       </div>
+
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-xl border bg-white p-5 shadow-sm dark:bg-zinc-900 sm:p-6"
+        className="space-y-5 rounded-xl border border-stone-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-[#161618] sm:p-6"
       >
         {error && (
-          <div className="rounded-md bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          <div className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
             {error}
           </div>
         )}
+
         <div className="relative" ref={communityBoxRef}>
           <label className="mb-1.5 block text-sm font-medium">Community</label>
           {selected ? (
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border bg-zinc-50 px-3 py-1.5 text-sm dark:bg-zinc-800">
+              <span className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-stone-50 px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                 {selectedTitle}
                 <button
                   type="button"
@@ -405,7 +404,6 @@ function SubmitForm() {
                 value={query}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => {
-                  // Do not open the full list on focus — wait for typing
                   if (query.trim().length >= 1 && filtered.length > 0) {
                     setShowDropdown(true);
                   }
@@ -416,11 +414,11 @@ function SubmitForm() {
                 role="combobox"
                 aria-expanded={showDropdown}
                 aria-autocomplete="list"
-                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+                className={inputClass}
               />
               {showDropdown && filtered.length > 0 && (
                 <div
-                  className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                  className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-stone-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
                   role="listbox"
                 >
                   {filtered.map((c, index) => (
@@ -433,8 +431,8 @@ function SubmitForm() {
                       onMouseEnter={() => setHighlightIndex(index)}
                       className={`block w-full px-3 py-2.5 text-left text-sm ${
                         index === highlightIndex
-                          ? "bg-zinc-100 dark:bg-zinc-800"
-                          : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                          ? "bg-stone-100 dark:bg-zinc-800"
+                          : "hover:bg-stone-50 dark:hover:bg-zinc-800"
                       }`}
                     >
                       {c.title}
@@ -450,17 +448,18 @@ function SubmitForm() {
             </>
           )}
         </div>
+
         <div>
           <label className="mb-1.5 block text-sm font-medium">Type</label>
-          <div className="flex gap-1 rounded-lg border p-1 dark:border-zinc-700">
+          <div className="flex gap-1 rounded-xl border border-stone-300 p-1 dark:border-zinc-700">
             {types.map((t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setPostType(t.key)}
-                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   postType === t.key
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    ? "bg-emerald-600 text-white"
                     : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
               >
@@ -469,6 +468,7 @@ function SubmitForm() {
             ))}
           </div>
         </div>
+
         <div>
           <div className="mb-1.5 flex items-center justify-between">
             <label htmlFor="title" className="text-sm font-medium">
@@ -484,12 +484,13 @@ function SubmitForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="A clear, descriptive title"
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+            className={inputClass}
           />
           {titleLoading && (
             <p className="mt-1 text-xs text-zinc-500">Fetching title…</p>
           )}
         </div>
+
         {postType === "link" && (
           <div>
             <label htmlFor="url" className="mb-1.5 block text-sm font-medium">
@@ -501,7 +502,7 @@ function SubmitForm() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+              className={inputClass}
             />
             <p className="mt-1 text-xs text-zinc-500">
               Add discussion in the comments after posting.
@@ -513,11 +514,12 @@ function SubmitForm() {
               <img
                 src={previewThumb}
                 alt="Link preview"
-                className="mt-3 max-h-48 w-full rounded-lg object-cover"
+                className="mt-3 max-h-48 w-full rounded-xl object-cover"
               />
             )}
           </div>
         )}
+
         {postType === "image" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium">Image</label>
@@ -526,7 +528,7 @@ function SubmitForm() {
                 <img
                   src={imageUrl}
                   alt="Upload preview"
-                  className="max-h-52 w-full rounded-lg object-cover"
+                  className="max-h-52 w-full rounded-xl object-cover"
                 />
                 <button
                   type="button"
@@ -537,14 +539,14 @@ function SubmitForm() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-700">
+              <div className="rounded-xl border border-dashed border-stone-300 px-4 py-8 text-center dark:border-zinc-700">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
                   disabled={uploading}
-                  className="block w-full text-sm text-zinc-600 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white dark:text-zinc-400 dark:file:bg-zinc-100 dark:file:text-zinc-900"
+                  className="block w-full text-sm text-zinc-600 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white dark:text-zinc-400"
                 />
                 <p className="mt-2 text-xs text-zinc-500">
                   {uploading
@@ -555,11 +557,11 @@ function SubmitForm() {
             )}
           </div>
         )}
+
         {(postType === "text" || postType === "image") && (
           <div>
             <label htmlFor="body" className="mb-1.5 block text-sm font-medium">
-              Text{" "}
-              <span className="font-normal text-zinc-400">(optional)</span>
+              Text <span className="font-normal text-zinc-400">(optional)</span>
             </label>
             <textarea
               id="body"
@@ -572,14 +574,15 @@ function SubmitForm() {
                   ? "Add more detail if you want..."
                   : "Add a caption if you want..."
               }
-              className="w-full resize-y rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+              className={`${inputClass} resize-y`}
             />
           </div>
         )}
+
         <button
           type="submit"
           disabled={loading || uploading || !selected || !title.trim()}
-          className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {loading ? "Posting…" : "Post"}
         </button>

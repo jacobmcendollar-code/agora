@@ -5,6 +5,9 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+const inputClass =
+  "w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:placeholder:text-zinc-500";
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,16 +59,16 @@ function LoginForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900"
+        className="space-y-4 rounded-xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618]"
       >
         {error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
             {error}
           </div>
         )}
 
         <div>
-          <label htmlFor="username" className="mb-1 block text-sm font-medium">
+          <label htmlFor="username" className="mb-1.5 block text-sm font-medium">
             Username
           </label>
           <input
@@ -74,12 +77,12 @@ function LoginForm() {
             type="text"
             required
             autoComplete="username"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
+            className={inputClass}
           />
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between">
+          <div className="mb-1.5 flex items-center justify-between">
             <label htmlFor="password" className="block text-sm font-medium">
               Password
             </label>
@@ -96,20 +99,20 @@ function LoginForm() {
             type="password"
             required
             autoComplete="current-password"
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
+            className={inputClass}
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-zinc-900 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {loading ? "Logging in…" : "Log in"}
         </button>
       </form>
 
-      <p className="text-center text-sm text-zinc-600">
+      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         No account?{" "}
         <Link href="/register" className="font-medium underline">
           Create one

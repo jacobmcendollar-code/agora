@@ -20,6 +20,9 @@ type GifResult = {
   title: string;
 };
 
+const inputClass =
+  "w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:placeholder:text-zinc-500";
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -75,7 +78,6 @@ export function CommentForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
   const [gifOpen, setGifOpen] = useState(false);
   const [gifQuery, setGifQuery] = useState("");
   const [gifResults, setGifResults] = useState<GifResult[]>([]);
@@ -89,7 +91,7 @@ export function CommentForm({
 
   if (!session) {
     return (
-      <div className="rounded-lg border border-dashed p-4 text-center text-sm text-zinc-500">
+      <div className="rounded-xl border border-dashed border-stone-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700">
         <Link href="/login" className="underline">
           Log in
         </Link>{" "}
@@ -147,7 +149,6 @@ export function CommentForm({
   function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
     const items = e.clipboardData?.items;
     if (!items) return;
-
     for (const item of items) {
       if (item.type.startsWith("image/")) {
         e.preventDefault();
@@ -161,13 +162,11 @@ export function CommentForm({
   function searchGifs(q: string) {
     setGifQuery(q);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-
     if (!q.trim()) {
       setGifResults([]);
       setGifLoading(false);
       return;
     }
-
     setGifLoading(true);
     searchTimeout.current = setTimeout(async () => {
       try {
@@ -200,7 +199,6 @@ export function CommentForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim() && !imageUrl) return;
-
     setError(null);
     setLoading(true);
     try {
@@ -239,12 +237,12 @@ export function CommentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
           {error}
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-md border border-zinc-300 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-400/40 dark:border-zinc-700 dark:focus-within:border-zinc-500">
+      <div className="relative overflow-hidden rounded-xl border border-stone-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/30 dark:border-zinc-700">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -260,7 +258,7 @@ export function CommentForm({
             <img
               src={imageUrl}
               alt="Comment attachment"
-              className="max-h-40 max-w-full rounded-md border border-zinc-300 object-contain dark:border-zinc-700"
+              className="max-h-40 max-w-full rounded-lg border border-stone-300 object-contain dark:border-zinc-700"
             />
             <button
               type="button"
@@ -290,7 +288,7 @@ export function CommentForm({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 disabled:opacity-50 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 hover:bg-stone-100 hover:text-zinc-800 disabled:opacity-50 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             title={uploading ? "Uploading…" : "Add image"}
             aria-label={uploading ? "Uploading…" : "Add image"}
           >
@@ -305,7 +303,7 @@ export function CommentForm({
                 setGifResults([]);
               }
             }}
-            className="flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="flex h-7 min-w-7 items-center justify-center rounded-lg px-1.5 text-zinc-500 hover:bg-stone-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             title="Add GIF"
             aria-label="Add GIF"
           >
@@ -315,14 +313,14 @@ export function CommentForm({
       </div>
 
       {gifOpen && (
-        <div className="rounded-md border border-zinc-300 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-950">
+        <div className="rounded-xl border border-stone-300 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-950">
           <input
             type="search"
             value={gifQuery}
             onChange={(e) => searchGifs(e.target.value)}
             placeholder="Search GIFs..."
             autoFocus
-            className="mb-2 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-700"
+            className={`mb-2 ${inputClass}`}
           />
           <div className="max-h-56 overflow-y-auto">
             {gifLoading && (
@@ -347,7 +345,7 @@ export function CommentForm({
                     key={gif.id}
                     type="button"
                     onClick={() => pickGif(gif)}
-                    className="overflow-hidden rounded-md border border-transparent hover:border-emerald-500 focus:border-emerald-500 focus:outline-none"
+                    className="overflow-hidden rounded-lg border border-transparent hover:border-emerald-500 focus:border-emerald-500 focus:outline-none"
                     title={gif.title || "GIF"}
                   >
                     <img
@@ -369,7 +367,7 @@ export function CommentForm({
         <button
           type="submit"
           disabled={loading || uploading || (!body.trim() && !imageUrl)}
-          className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {loading ? "Posting…" : parentId ? "Reply" : "Comment"}
         </button>
