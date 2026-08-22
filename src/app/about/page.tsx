@@ -10,10 +10,7 @@ export default function AboutPage() {
     <div className="mx-auto max-w-2xl py-10 sm:py-14">
       {/* Hero */}
       <header className="mb-12 border-b border-stone-200/80 pb-10 dark:border-zinc-800">
-        <p className="mb-3 text-sm font-medium tracking-wide text-emerald-600 dark:text-emerald-400">
-          Agora
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-4xl">
           About Agora
         </h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400 sm:text-lg">
@@ -24,9 +21,8 @@ export default function AboutPage() {
       </header>
 
       <div className="space-y-6">
-        {/* Free speech first */}
         <section className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618] sm:p-7">
-          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-xl">
             Free speech first
           </h2>
           <p className="mt-3 leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -36,9 +32,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Light moderation */}
         <section className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618] sm:p-7">
-          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-xl">
             Light moderation
           </h2>
           <p className="mt-3 leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -66,9 +61,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Community ranking */}
         <section className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618] sm:p-7">
-          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-xl">
             Community ranking, not personal clout
           </h2>
           <p className="mt-3 leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -79,9 +73,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* How to use it well */}
         <section className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618] sm:p-7">
-          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-xl">
             How to use it well
           </h2>
           <ul className="mt-4 space-y-2.5">
@@ -102,9 +95,8 @@ export default function AboutPage() {
           </ul>
         </section>
 
-        {/* Early version */}
         <section className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618] sm:p-7">
-          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+          <h2 className="text-lg font-semibold tracking-tight text-emerald-600 dark:text-emerald-400 sm:text-xl">
             This is an early version
           </h2>
           <p className="mt-3 leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -114,7 +106,6 @@ export default function AboutPage() {
         </section>
       </div>
 
-      {/* Footer actions */}
       <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-stone-200/80 pt-8 dark:border-zinc-800">
         <Link
           href="/communities"
