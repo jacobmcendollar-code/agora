@@ -227,25 +227,30 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:bg-zinc-900/80">
       <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-3 sm:px-4">
         <div className="flex items-center gap-3 sm:gap-5">
-          <Link href="/" className="flex shrink-0 items-center" aria-label="Agora home">
+          <Link
+            href="/"
+            className="flex shrink-0 cursor-pointer select-none items-center"
+            aria-label="Agora home"
+          >
             <Image
               src="/agora-logo.png"
               alt="Agora"
               width={120}
               height={44}
-              className="h-7 w-auto sm:h-8"
+              className="pointer-events-none h-7 w-auto select-none sm:h-8"
               priority
+              draggable={false}
             />
           </Link>
           <Link
             href="/communities"
-            className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            className="cursor-pointer text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
             Communities
           </Link>
           <Link
             href="/about"
-            className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 sm:inline"
+            className="hidden cursor-pointer text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 sm:inline"
           >
             About
           </Link>
