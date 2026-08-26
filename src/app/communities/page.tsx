@@ -45,17 +45,19 @@ export default async function CommunitiesPage() {
   }));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="mx-auto max-w-5xl space-y-8 px-3 py-8 sm:px-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Communities</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {communities.length} communities
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Communities
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Topic-based rooms. Light moderation. Free speech by default.
           </p>
         </div>
         <Link
           href="/communities/new"
-          className="shrink-0 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+          className="inline-flex shrink-0 items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           Create community
         </Link>
