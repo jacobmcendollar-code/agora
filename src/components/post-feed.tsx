@@ -78,6 +78,17 @@ function isGenericBody(body: string | null | undefined): boolean {
   );
 }
 
+
+function communityThumbLabel(title: string): { text: string; large: boolean } {
+  const trimmed = title.trim();
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (words.length === 1 && words[0].length <= 12) {
+    return { text: words[0], large: false };
+  }
+  const letter = (words[0]?.[0] || trimmed[0] || "?").toUpperCase();
+  return { text: letter, large: true };
+}
+
 function IconComments({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
@@ -239,7 +250,28 @@ export function PostFeed({
                     className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                   />
                 </div>
-              ) : null}
+              ) : (
+                <div
+                  className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-zinc-700 sm:h-24 sm:w-32"
+                  style={{ backgroundColor: "#1a1a1d" }}
+                  aria-hidden="true"
+                >
+                  {(() => {
+                    const label = communityThumbLabel(post.community.title);
+                    return (
+                      <span
+                        className={
+                          label.large
+                            ? "select-none whitespace-nowrap font-semibold leading-none text-emerald-500 text-[32px]"
+                            : "select-none whitespace-nowrap font-semibold leading-none text-emerald-500 text-[14px]"
+                        }
+                      >
+                        {label.text}
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
 
               <div className="flex min-h-[5rem] min-w-0 flex-1 flex-col sm:min-h-[6rem]">
                 <div className="flex-1">
