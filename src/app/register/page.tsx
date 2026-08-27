@@ -18,12 +18,13 @@ export default function RegisterPage() {
     const username = (form.get("username") as string).trim().toLowerCase();
     const email = (form.get("email") as string).trim().toLowerCase();
     const password = form.get("password") as string;
+    const promotionalEmails = form.get("promotionalEmails") === "on";
 
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, promotionalEmails }),
       });
 
       const data = await res.json();
@@ -48,7 +49,8 @@ export default function RegisterPage() {
         <h1 className="text-2xl font-bold">Create an account</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Pseudonymous by design. Your username is your public identity.
-          Email is only used for account recovery and is never shown.
+          Email is used for account recovery, and for optional product emails
+          if you opt in. It is never shown.
         </p>
       </div>
 
@@ -88,6 +90,9 @@ export default function RegisterPage() {
             required
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
+          <p className="mt-1 text-xs text-zinc-500">
+            Used for account recovery. Never shown on your profile.
+          </p>
         </div>
 
         <div>
@@ -103,6 +108,29 @@ export default function RegisterPage() {
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
         </div>
+
+        <label
+          htmlFor="promotionalEmails"
+          className="flex cursor-pointer items-start gap-3 rounded-md border border-zinc-200 p-3 dark:border-zinc-700"
+        >
+          <input
+            id="promotionalEmails"
+            name="promotionalEmails"
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span className="text-sm">
+            <span className="font-medium">Send me product emails</span>
+            <span className="mt-0.5 block text-xs text-zinc-500">
+              Occasional updates about Agora. Optional — leave unchecked if you
+              only want account-recovery email. You can change this later in{" "}
+              <Link href="/settings" className="underline" onClick={(e) => e.stopPropagation()}>
+                Settings
+              </Link>
+              .
+            </span>
+          </span>
+        </label>
 
         <button
           type="submit"

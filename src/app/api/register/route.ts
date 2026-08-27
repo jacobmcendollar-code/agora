@@ -11,6 +11,7 @@ const schema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   email: z.string().email(),
   password: z.string().min(8).max(128),
+  promotionalEmails: z.boolean().optional().default(false),
 });
 
 export async function POST(req: Request) {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { username, email, password } = parsed.data;
+    const { username, email, password, promotionalEmails } = parsed.data;
     const normalizedUsername = username.toLowerCase();
     const normalizedEmail = email.toLowerCase();
 
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
         username: normalizedUsername,
         email: normalizedEmail,
         passwordHash,
+        promotionalEmails: Boolean(promotionalEmails),
       },
     });
 
