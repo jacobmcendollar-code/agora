@@ -94,10 +94,13 @@ export function VoteButtons({
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          fill="currentColor"
+          fill={userVote === 1 ? "currentColor" : "none"}
+          stroke={userVote === 1 ? "none" : "currentColor"}
+          strokeWidth={userVote === 1 ? undefined : 1.7}
+          strokeLinejoin="miter"
           className={iconSize}
         >
-          <path d="M12 4l8 10H4L12 4z" />
+          <path d="M12 2.8L19.6 12.2h-4.35V21.2H8.75V12.2H4.4z" />
         </svg>
       </button>
 
@@ -127,10 +130,13 @@ export function VoteButtons({
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          fill="currentColor"
+          fill={userVote === -1 ? "currentColor" : "none"}
+          stroke={userVote === -1 ? "none" : "currentColor"}
+          strokeWidth={userVote === -1 ? undefined : 1.7}
+          strokeLinejoin="miter"
           className={iconSize}
         >
-          <path d="M12 20l-8-10h16L12 20z" />
+          <path d="M12 21.2l7.6-9.4h-4.35V2.8H8.75v9h-4.35z" />
         </svg>
       </button>
     </div>
