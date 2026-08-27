@@ -22,6 +22,7 @@ export default async function AdminUsersPage() {
       username: true,
       banned: true,
       createdAt: true,
+      promotionalEmails: true,
       _count: {
         select: {
           posts: true,
@@ -47,6 +48,7 @@ export default async function AdminUsersPage() {
               <th className="px-4 py-3 font-medium">Username</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Joined</th>
+              <th className="px-4 py-3 font-medium">Opted in</th>
               <th className="px-4 py-3 font-medium">Posts</th>
               <th className="px-4 py-3 font-medium">Comments</th>
               <th className="px-4 py-3 font-medium">Actions</th>
@@ -75,6 +77,9 @@ export default async function AdminUsersPage() {
                 </td>
                 <td className="px-4 py-3 text-zinc-500">
                   {user.createdAt.toLocaleDateString()} · {timeAgo(user.createdAt)}
+                </td>
+                <td className="px-4 py-3 text-zinc-500">
+                  {user.promotionalEmails ? "Yes" : "No"}
                 </td>
                 <td className="px-4 py-3 text-zinc-500">{user._count.posts}</td>
                 <td className="px-4 py-3 text-zinc-500">{user._count.comments}</td>
