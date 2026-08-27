@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Privacy Policy</h1>
         <p className="mt-2 text-sm text-zinc-500">
-          Last updated: August 5, 2026
+          Last updated: August 27, 2026
         </p>
       </div>
 
@@ -37,7 +37,8 @@ export default function PrivacyPage() {
             </strong>{" "}
             When you register, we store a username, email address, and a hashed
             password (we do not store your password in plain text). You may also
-            add an optional profile image and short about text.
+            add an optional profile image and short about text. Email is private
+            and is never shown on your profile.
           </p>
           <p>
             <strong className="text-zinc-900 dark:text-zinc-100">
@@ -50,8 +51,9 @@ export default function PrivacyPage() {
             <strong className="text-zinc-900 dark:text-zinc-100">
               Preferences.
             </strong>{" "}
-            Some settings (for example theme or NSFW visibility) may be stored
-            in your account or in your browser.
+            Some settings (for example theme, NSFW visibility, or whether you
+            opted in to product emails) may be stored in your account or in your
+            browser.
           </p>
           <p>
             <strong className="text-zinc-900 dark:text-zinc-100">
@@ -69,7 +71,15 @@ export default function PrivacyPage() {
           <ul className="list-disc space-y-2 pl-5">
             <li>To provide and maintain your account and the Agora service</li>
             <li>To show posts, comments, communities, and notifications</li>
-            <li>To send account emails such as password reset messages</li>
+            <li>
+              To send account emails such as password reset messages. Your email
+              is used for account recovery, and for optional product emails only
+              if you opt in (at signup, in{" "}
+              <Link href="/settings" className="text-emerald-500 hover:underline">
+                Settings
+              </Link>
+              , or via a signed opt-in link).
+            </li>
             <li>
               To apply light automated moderation (spam, off-topic, and illegal
               content checks)
@@ -103,7 +113,10 @@ export default function PrivacyPage() {
             <li>Hosting and application infrastructure</li>
             <li>Database hosting</li>
             <li>Image upload / media storage</li>
-            <li>Email delivery for account messages</li>
+            <li>
+              Email delivery for account messages, and for product emails only if
+              you have opted in
+            </li>
             <li>Automated moderation (AI API)</li>
           </ul>
           <p>
@@ -167,6 +180,13 @@ export default function PrivacyPage() {
           </h2>
           <ul className="list-disc space-y-2 pl-5">
             <li>Update profile information when those controls are available</li>
+            <li>
+              Opt in or out of product emails in{" "}
+              <Link href="/settings" className="text-emerald-500 hover:underline">
+                Settings
+              </Link>{" "}
+              (logged in), or via a signed opt-in / opt-out link
+            </li>
             <li>Delete or soft-delete your own posts/comments under site rules</li>
             <li>Contact us to request account help or deletion</li>
             <li>Stop using the service and stop submitting content at any time</li>
