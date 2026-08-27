@@ -194,12 +194,15 @@ export function PostFeed({
             key={post.id}
             className="rounded-xl border border-stone-200/90 bg-white p-4 shadow-[0_1px_2px_rgba(28,25,23,0.04),0_4px_12px_rgba(28,25,23,0.04)] transition hover:shadow-[0_2px_4px_rgba(28,25,23,0.06),0_8px_20px_rgba(28,25,23,0.06)] dark:border-zinc-800 dark:bg-[#161618] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_4px_16px_rgba(0,0,0,0.25)] dark:hover:border-zinc-700 dark:hover:bg-[#1c1c1f] sm:p-5"
           >
-            <div className="flex gap-3 sm:gap-4">
-              <VoteButtons
-                targetType="post"
-                targetId={post.id}
-                initialScore={post.score}
-              />
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="shrink-0 self-start">
+                <VoteButtons
+                  targetType="post"
+                  targetId={post.id}
+                  initialScore={post.score}
+                />
+              </div>
+              <div className="shrink-0 self-start">
 
               {post.thumbnail && youtubeId ? (
                 <YouTubeLightbox
@@ -273,10 +276,15 @@ export function PostFeed({
                 </div>
               )}
 
+              </div>
+
               <div className="flex min-h-[5rem] min-w-0 flex-1 flex-col sm:min-h-[6rem]">
                 <div className="flex-1">
-                  <Link href={sharePath}>
-                    <h2 className="text-lg font-semibold leading-snug text-stone-900 hover:underline dark:text-zinc-50 sm:text-xl">
+                  <Link
+                    href={sharePath}
+                    className="text-stone-900 no-underline visited:text-stone-900 visited:no-underline dark:text-zinc-50 dark:visited:text-zinc-50"
+                  >
+                    <h2 className="text-lg font-semibold leading-snug hover:underline sm:text-xl">
                       {post.title}
                     </h2>
                   </Link>
