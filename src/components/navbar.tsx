@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -63,9 +64,18 @@ export function Navbar() {
         <div className="flex shrink-0 items-center gap-3 sm:gap-5">
           <Link
             href="/"
-            className="text-lg font-bold tracking-tight text-emerald-500 sm:text-xl"
+            className="flex shrink-0 cursor-pointer select-none items-center"
+            aria-label="Agora home"
           >
-            Agora
+            <Image
+              src="/agora-logo.png"
+              alt="Agora"
+              width={120}
+              height={44}
+              className="pointer-events-none h-7 w-auto select-none sm:h-8"
+              priority
+              draggable={false}
+            />
           </Link>
           <Link
             href="/communities"
