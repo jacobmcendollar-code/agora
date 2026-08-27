@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
 
 const schema = z.object({
   promotionalEmails: z.boolean(),
@@ -15,6 +16,7 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
+    await ensurePromotionalEmailsColumn();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
@@ -33,4 +35,3 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
