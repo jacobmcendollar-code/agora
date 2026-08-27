@@ -136,12 +136,15 @@ export async function POST(req: Request) {
     const linkUrl = typeof url === "string" ? url.trim() : "";
     if (linkUrl) {
       const existing = await prisma.post.findFirst({
-        where: { url: linkUrl },
+        where: {
+          url: linkUrl,
+          createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
         select: {
           id: true,
           community: { select: { name: true } },
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
       });
       if (existing) {
         return NextResponse.json(
