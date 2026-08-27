@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PromotionalEmailsToggle } from "@/components/promotional-emails-toggle";
+import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ export default async function SettingsPage() {
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  await ensurePromotionalEmailsColumn();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -66,4 +69,3 @@ export default async function SettingsPage() {
     </div>
   );
 }
-

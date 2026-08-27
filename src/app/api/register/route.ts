@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
 
 const schema = z.object({
   username: z
@@ -17,6 +18,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    await ensurePromotionalEmailsColumn();
     const parsed = schema.safeParse(body);
 
     if (!parsed.success) {

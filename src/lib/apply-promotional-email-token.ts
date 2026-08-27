@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { verifyPromotionalEmailToken } from "@/lib/promotional-email-token";
+import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
 
 export async function applyPromotionalEmailToken(
   token: string | undefined,
   value: boolean
 ): Promise<"ok" | "invalid"> {
   if (!token) return "invalid";
+  await ensurePromotionalEmailsColumn();
 
   let payload: { userId: string; exp: number } | null = null;
   try {
@@ -26,4 +28,3 @@ export async function applyPromotionalEmailToken(
     return "invalid";
   }
 }
-
