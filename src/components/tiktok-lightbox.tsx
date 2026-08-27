@@ -99,26 +99,32 @@ export function TikTokLightbox({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex flex-col items-center p-4"
           style={{
             backgroundColor: `rgba(0,0,0,${Math.max(0.4, 0.9 - dragY / 400)})`,
+            paddingTop: "max(1rem, env(safe-area-inset-top))",
           }}
           onClick={close}
         >
           <div
-            className="relative w-full max-w-md"
-            style={{ transform: `translateY(${dragY}px)` }}
+            className="flex w-full max-w-md shrink-0 justify-end"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={close}
-              className="absolute -top-10 right-0 rounded-md bg-black/50 px-3 py-1.5 text-sm text-white hover:bg-black/70"
+              className="rounded-md bg-black/50 px-3 py-2 text-sm text-white hover:bg-black/70"
             >
               Close
             </button>
-            <div className="max-h-[90vh] overflow-auto">
-              <TikTokEmbed url={url} />
+          </div>
+          <div
+            className="relative mt-3 flex min-h-0 w-full max-w-md flex-1 items-start justify-center overflow-hidden"
+            style={{ transform: `translateY(${dragY}px)` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="max-h-full w-full overflow-hidden">
+              <TikTokEmbed url={url} compact />
             </div>
           </div>
         </div>
