@@ -4,9 +4,10 @@ import { useEffect } from "react";
 
 type Props = {
   url: string;
+  compact?: boolean;
 };
 
-export function TikTokEmbed({ url }: Props) {
+export function TikTokEmbed({ url, compact = false }: Props) {
   useEffect(() => {
     // Load TikTok embed script if it isn't already present
     if (!document.querySelector('script[src="https://www.tiktok.com/embed.js"]')) {
@@ -35,12 +36,15 @@ export function TikTokEmbed({ url }: Props) {
   }, [url]);
 
   return (
-    <div className="mt-4">
+    <div className={compact ? "" : "mt-4"}>
       <blockquote
         className="tiktok-embed"
         cite={url}
         data-video-id={extractTikTokId(url) || undefined}
-        style={{ maxWidth: "605px", minWidth: "325px" }}
+        style={{
+          maxWidth: "605px",
+          minWidth: compact ? "100%" : "325px",
+        }}
       >
         <a href={url}>View on TikTok</a>
       </blockquote>
