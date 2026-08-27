@@ -133,6 +133,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Community not found" }, { status: 404 });
     }
 
+    const linkUrl = typeof url === "string" ? url.trim() : "";
+    if (linkUrl) {
+      const existing = await prisma.post.findFirst({
+        where: { url: linkUrl },
+        select: {
+          id: true,
+          community: { select: { name: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      });
+      if (existing) {
+        return NextResponse.json(
+          {
+            error: "This link was already posted.",
+            existingPostId: existing.id,
+            communityName: existing.community.name,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const contentForModeration =
       [title, postBody, url].filter(Boolean).join("\n") || "[Image post]";
 
@@ -157,13 +179,13 @@ export async function POST(req: Request) {
     }
 
     let thumbnail: string | null = imageUrl || null;
-    if (!thumbnail && url) {
-      thumbnail = await fetchThumbnail(url);
+    if (!thumbnail && linkUrl) {
+      thumbnail = await fetchThumbnail(linkUrl);
     }
 
     let finalBody: string | null = null;
-    if (url) {
-      finalBody = await fetchLinkDescription(url);
+    if (linkUrl) {
+      finalBody = await fetchLinkDescription(linkUrl);
     } else {
       finalBody = postBody?.trim() || null;
     }
@@ -173,7 +195,7 @@ export async function POST(req: Request) {
       data: {
         title,
         body: finalBody,
-        url: url || null,
+        url: linkUrl || null,
         thumbnail,
         nsfw: community.nsfw,
         communityId: community.id,
