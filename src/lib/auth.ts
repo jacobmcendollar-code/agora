@@ -5,12 +5,19 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "./prisma";
 
+// Canonical host is www. AUTH_URL in Vercel is still the apex, which makes
+// next-auth advertise https://agor4.com callbacks. Apex 308s to www and
+// turns the credentials POST into a 405 on /login.
+process.env.AUTH_URL = "https://www.agor4.com";
+process.env.NEXTAUTH_URL = "https://www.agor4.com";
+
 const loginSchema = z.object({
   username: z.string().min(3).max(32),
   password: z.string().min(8),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: {
@@ -31,6 +38,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const { username, password } = parsed.data;
         const user = await prisma.user.findUnique({
           where: { username: username.toLowerCase() },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            passwordHash: true,
+            image: true,
+            showNsfw: true,
+          },
         });
 
         if (!user || !user.passwordHash) return null;
