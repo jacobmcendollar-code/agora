@@ -17,6 +17,7 @@ model User {
   bio           String?
   banned        Boolean   @default(false)
   showNsfw      Boolean   @default(false)
+  promotionalEmails Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
