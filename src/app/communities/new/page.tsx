@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -28,14 +28,15 @@ export default function NewCommunityPage() {
 
   const slug = useMemo(() => slugify(title), [title]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const form = new FormData(e.currentTarget);
-    const communityTitle = (form.get("title") as string).trim();
-    const description = (form.get("description") as string).trim();
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const communityTitle = String(formData.get("title") || "").trim();
+    const description = String(formData.get("description") || "").trim();
 
     try {
       const res = await fetch("/api/communities", {
@@ -59,7 +60,7 @@ export default function NewCommunityPage() {
       setError("Something went wrong");
       setLoading(false);
     }
-  };
+  }
 
   if (status === "loading") {
     return <div className="py-12 text-center text-zinc-500">Loading…</div>;
@@ -86,7 +87,7 @@ export default function NewCommunityPage() {
         </p>
       </div>
       <form
-        onSubmit={handleSubmit}
+        onSubmit={onSubmit}
         className="space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-zinc-900"
       >
         {error && (
@@ -146,4 +147,70 @@ export default function NewCommunityPage() {
               />
               <span>
                 <span className="block text-sm font-medium">Any type</span>
-                <span 
+                <span className="block text-xs text-zinc-500">
+                  Links, photos, and discussion.
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
+              <input
+                type="radio"
+                name="postFormat"
+                checked={postFormat === "media"}
+                onChange={() => setPostFormat("media")}
+                className="mt-1 accent-emerald-600"
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  Links and images only
+                </span>
+                <span className="block text-xs text-zinc-500">
+                  No text posts. Good for news, photos, and videos.
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
+              <input
+                type="radio"
+                name="postFormat"
+                checked={postFormat === "discussion"}
+                onChange={() => setPostFormat("discussion")}
+                className="mt-1 accent-emerald-600"
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  Discussion only
+                </span>
+                <span className="block text-xs text-zinc-500">
+                  Text posts only. No links or images.
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={nsfw}
+            onChange={(e) => setNsfw(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-zinc-300"
+          />
+          <span>
+            <span className="font-medium">This community is for adults only</span>
+            <span className="mt-0.5 block text-xs text-zinc-500">
+              Adult content is allowed here. The community stays hidden from
+              users who have not opted in to adult content.
+            </span>
+          </span>
+        </label>
+        <button
+          type="submit"
+          disabled={loading || !slug}
+          className="w-full rounded-md bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {loading ? "Creating…" : "Create community"}
+        </button>
+      </form>
+    </div>
+  );
+}
