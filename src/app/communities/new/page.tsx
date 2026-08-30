@@ -77,6 +77,13 @@ export default function NewCommunityPage() {
     );
   }
 
+  const cardClass = (value: PostFormat) =>
+    `cursor-pointer rounded-lg border px-2 py-3 text-center transition ${
+      postFormat === value
+        ? "border-emerald-500 bg-emerald-500/10"
+        : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500"
+    }`;
+
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div>
@@ -136,56 +143,37 @@ export default function NewCommunityPage() {
         </div>
         <div>
           <p className="mb-2 text-sm font-medium">Posts</p>
-          <div className="space-y-2">
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
-              <input
-                type="radio"
-                name="postFormat"
-                checked={postFormat === "any"}
-                onChange={() => setPostFormat("any")}
-                className="mt-1 accent-emerald-600"
-              />
-              <span>
-                <span className="block text-sm font-medium">Any type</span>
-                <span className="block text-xs text-zinc-500">
-                  Links, photos, and discussion.
-                </span>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setPostFormat("any")}
+              className={cardClass("any")}
+            >
+              <span className="block text-sm font-medium">Any</span>
+              <span className="mt-1 block text-[11px] leading-snug text-zinc-500">
+                Links, photos, and discussion
               </span>
-            </label>
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
-              <input
-                type="radio"
-                name="postFormat"
-                checked={postFormat === "media"}
-                onChange={() => setPostFormat("media")}
-                className="mt-1 accent-emerald-600"
-              />
-              <span>
-                <span className="block text-sm font-medium">
-                  Links and images only
-                </span>
-                <span className="block text-xs text-zinc-500">
-                  No text posts. Good for news, photos, and videos.
-                </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostFormat("media")}
+              className={cardClass("media")}
+            >
+              <span className="block text-sm font-medium">Media</span>
+              <span className="mt-1 block text-[11px] leading-snug text-zinc-500">
+                Links and images only
               </span>
-            </label>
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
-              <input
-                type="radio"
-                name="postFormat"
-                checked={postFormat === "discussion"}
-                onChange={() => setPostFormat("discussion")}
-                className="mt-1 accent-emerald-600"
-              />
-              <span>
-                <span className="block text-sm font-medium">
-                  Discussion only
-                </span>
-                <span className="block text-xs text-zinc-500">
-                  Text posts only. No links or images.
-                </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostFormat("discussion")}
+              className={cardClass("discussion")}
+            >
+              <span className="block text-sm font-medium">Discussion</span>
+              <span className="mt-1 block text-[11px] leading-snug text-zinc-500">
+                Text posts only
               </span>
-            </label>
+            </button>
           </div>
         </div>
         <label className="flex items-start gap-2 text-sm">
