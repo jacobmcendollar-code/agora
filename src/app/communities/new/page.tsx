@@ -36,7 +36,6 @@ export default function NewCommunityPage() {
     const form = new FormData(e.currentTarget);
     const communityTitle = (form.get("title") as string).trim();
     const description = (form.get("description") as string).trim();
-    const rules = (form.get("rules") as string).trim() || null;
 
     try {
       const res = await fetch("/api/communities", {
@@ -45,7 +44,6 @@ export default function NewCommunityPage() {
         body: JSON.stringify({
           title: communityTitle,
           description,
-          rules,
           nsfw,
           postFormat,
         }),
@@ -84,8 +82,7 @@ export default function NewCommunityPage() {
         <h1 className="text-2xl font-bold">Create a community</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Communities are topic-based. The AI moderator uses the description
-          (and optional guidance) to keep posts roughly on-topic and free of
-          spam.
+          to keep posts roughly on-topic and free of spam.
         </p>
       </div>
       <form
@@ -149,83 +146,4 @@ export default function NewCommunityPage() {
               />
               <span>
                 <span className="block text-sm font-medium">Any type</span>
-                <span className="block text-xs text-zinc-500">
-                  Links, images, and discussion.
-                </span>
-              </span>
-            </label>
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
-              <input
-                type="radio"
-                name="postFormat"
-                checked={postFormat === "media"}
-                onChange={() => setPostFormat("media")}
-                className="mt-1 accent-emerald-600"
-              />
-              <span>
-                <span className="block text-sm font-medium">
-                  Links and images only
-                </span>
-                <span className="block text-xs text-zinc-500">
-                  No text posts. Good for news, photos, and videos.
-                </span>
-              </span>
-            </label>
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
-              <input
-                type="radio"
-                name="postFormat"
-                checked={postFormat === "discussion"}
-                onChange={() => setPostFormat("discussion")}
-                className="mt-1 accent-emerald-600"
-              />
-              <span>
-                <span className="block text-sm font-medium">
-                  Discussion only
-                </span>
-                <span className="block text-xs text-zinc-500">
-                  Text posts only. No links or images.
-                </span>
-              </span>
-            </label>
-          </div>
-        </div>
-        <div>
-          <label htmlFor="rules" className="mb-1 block text-sm font-medium">
-            Extra AI guidance (optional)
-          </label>
-          <textarea
-            id="rules"
-            name="rules"
-            rows={2}
-            maxLength={500}
-            placeholder="e.g. No product promotion. Memes are fine."
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
-          />
-        </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={nsfw}
-            onChange={(e) => setNsfw(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-zinc-300"
-          />
-          <span>
-            <span className="font-medium">This community is for adults only</span>
-            <span className="mt-0.5 block text-xs text-zinc-500">
-              Adult content is allowed here. The community stays hidden from
-              users who have not opted in to adult content.
-            </span>
-          </span>
-        </label>
-        <button
-          type="submit"
-          disabled={loading || !slug}
-          className="w-full rounded-md bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-        >
-          {loading ? "Creating…" : "Create community"}
-        </button>
-      </form>
-    </div>
-  );
-}
+                <span 
