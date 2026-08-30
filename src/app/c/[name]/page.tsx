@@ -97,7 +97,16 @@ export default async function CommunityPage({ params, searchParams }: Props) {
       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl">{community.title}</h1>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-xl font-bold sm:text-2xl">
+                {community.title}
+              </h1>
+              {community.postFormat === "discussion" && (
+                <span className="rounded-full border border-zinc-300 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:border-zinc-600 dark:text-zinc-300">
+                  Discussion
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
               {community.description}
             </p>

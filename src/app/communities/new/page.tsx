@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
+type PostFormat = "any" | "media" | "discussion";
+
 function slugify(title: string): string {
   return title
     .toLowerCase()
@@ -22,25 +24,11 @@ export default function NewCommunityPage() {
   const [loading, setLoading] = useState(false);
   const [nsfw, setNsfw] = useState(false);
   const [title, setTitle] = useState("");
+  const [postFormat, setPostFormat] = useState<PostFormat>("any");
 
   const slug = useMemo(() => slugify(title), [title]);
 
-  if (status === "loading") {
-    return <div className="py-12 text-center text-zinc-500">Loading…</div>;
-  }
-
-  if (!session) {
-    return (
-      <div className="py-12 text-center">
-        <p className="mb-4">You need an account to create a community.</p>
-        <Link href="/login" className="underline">
-          Log in
-        </Link>
-      </div>
-    );
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -59,6 +47,7 @@ export default function NewCommunityPage() {
           description,
           rules,
           nsfw,
+          postFormat,
         }),
       });
       const data = await res.json();
@@ -72,6 +61,21 @@ export default function NewCommunityPage() {
       setError("Something went wrong");
       setLoading(false);
     }
+  };
+
+  if (status === "loading") {
+    return <div className="py-12 text-center text-zinc-500">Loading…</div>;
+  }
+
+  if (!session) {
+    return (
+      <div className="py-12 text-center">
+        <p className="mb-4">You need an account to create a community.</p>
+        <Link href="/login" className="underline">
+          Log in
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -131,6 +135,60 @@ export default function NewCommunityPage() {
             placeholder="A place to discuss technology, gadgets, software, and the future."
             className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-950"
           />
+        </div>
+        <div>
+          <p className="mb-2 text-sm font-medium">Posts</p>
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
+              <input
+                type="radio"
+                name="postFormat"
+                checked={postFormat === "any"}
+                onChange={() => setPostFormat("any")}
+                className="mt-1 accent-emerald-600"
+              />
+              <span>
+                <span className="block text-sm font-medium">Any type</span>
+                <span className="block text-xs text-zinc-500">
+                  Links, images, and discussion.
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
+              <input
+                type="radio"
+                name="postFormat"
+                checked={postFormat === "media"}
+                onChange={() => setPostFormat("media")}
+                className="mt-1 accent-emerald-600"
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  Links and images only
+                </span>
+                <span className="block text-xs text-zinc-500">
+                  No text posts. Good for news, photos, and videos.
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 dark:border-zinc-700">
+              <input
+                type="radio"
+                name="postFormat"
+                checked={postFormat === "discussion"}
+                onChange={() => setPostFormat("discussion")}
+                className="mt-1 accent-emerald-600"
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  Discussion only
+                </span>
+                <span className="block text-xs text-zinc-500">
+                  Text posts only. No links or images.
+                </span>
+              </span>
+            </label>
+          </div>
         </div>
         <div>
           <label htmlFor="rules" className="mb-1 block text-sm font-medium">

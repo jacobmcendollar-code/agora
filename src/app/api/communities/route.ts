@@ -22,6 +22,7 @@ export async function GET() {
         title: true,
         description: true,
         nsfw: true,
+        postFormat: true,
       },
     });
     return NextResponse.json(communities);
@@ -36,6 +37,7 @@ const createSchema = z.object({
   description: z.string().min(1).max(500),
   rules: z.string().max(500).optional().nullable(),
   nsfw: z.boolean().optional().default(false),
+  postFormat: z.enum(["any", "media", "discussion"]).optional().default("any"),
 });
 
 export async function POST(req: Request) {
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { title, description, rules, nsfw } = parsed.data;
+    const { title, description, rules, nsfw, postFormat } = parsed.data;
     const name = slugify(title);
 
     if (name.length < 2) {
@@ -79,6 +81,7 @@ export async function POST(req: Request) {
         description,
         rules: rules || null,
         nsfw: nsfw || false,
+        postFormat,
         creatorId: session.user.id,
       },
     });

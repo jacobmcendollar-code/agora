@@ -7,10 +7,13 @@ import Link from "next/link";
 import { useToast } from "@/components/toast-provider";
 import { useNsfw } from "@/components/nsfw-provider";
 
+type PostFormat = "any" | "media" | "discussion";
+
 type Community = {
   name: string;
   title: string;
   nsfw?: boolean;
+  postFormat?: PostFormat;
 };
 
 type PostType = "text" | "link" | "image";
@@ -40,6 +43,12 @@ function isXUrl(value: string): boolean {
   } catch {
     return value.includes("x.com") || value.includes("twitter.com");
   }
+}
+
+function allowedTypes(format: PostFormat | undefined): PostType[] {
+  if (format === "discussion") return ["text"];
+  if (format === "media") return ["link", "image"];
+  return ["link", "image", "text"];
 }
 
 function SubmitForm() {
@@ -73,6 +82,9 @@ function SubmitForm() {
   const [loading, setLoading] = useState(false);
 
   const visibleCommunities = communities.filter((c) => showNsfw || !c.nsfw);
+  const selectedCommunity = communities.find((c) => c.name === selected);
+  const format = selectedCommunity?.postFormat || "any";
+  const typesAllowed = allowedTypes(selected ? format : "any");
 
   useEffect(() => {
     fetch("/api/communities")
@@ -90,6 +102,12 @@ function SubmitForm() {
       })
       .catch(() => {});
   }, [preselected, showNsfw]);
+
+  useEffect(() => {
+    if (!typesAllowed.includes(postType)) {
+      setPostType(typesAllowed[0]);
+    }
+  }, [selected, format, postType, typesAllowed]);
 
   useEffect(() => {
     function handlePointerDown(e: MouseEvent | TouchEvent) {
@@ -292,6 +310,11 @@ function SubmitForm() {
       toast("Please select a community", "error");
       return;
     }
+    if (!typesAllowed.includes(postType)) {
+      setError("This community does not allow that post type");
+      toast("This community does not allow that post type", "error");
+      return;
+    }
     if (!title.trim()) {
       setError("Please enter a title");
       toast("Please enter a title", "error");
@@ -356,11 +379,12 @@ function SubmitForm() {
     );
   }
 
-  const types: { key: PostType; label: string }[] = [
+  const typeLabels: { key: PostType; label: string }[] = [
     { key: "link", label: "Link" },
     { key: "image", label: "Image" },
     { key: "text", label: "Text" },
   ];
+  const types = typeLabels.filter((t) => typesAllowed.includes(t.key));
 
   return (
     <div className="mx-auto max-w-xl">

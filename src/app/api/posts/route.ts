@@ -134,6 +134,23 @@ export async function POST(req: Request) {
     }
 
     const linkUrl = typeof url === "string" ? url.trim() : "";
+    const hasLink = !!linkUrl;
+    const hasImage = !!imageUrl;
+    const format = community.postFormat || "any";
+
+    if (format === "discussion" && (hasLink || hasImage)) {
+      return NextResponse.json(
+        { error: "This community is discussion only" },
+        { status: 400 }
+      );
+    }
+    if (format === "media" && !hasLink && !hasImage) {
+      return NextResponse.json(
+        { error: "This community only accepts links and images" },
+        { status: 400 }
+      );
+    }
+
     if (linkUrl) {
       const existing = await prisma.post.findFirst({
         where: {
@@ -193,7 +210,6 @@ export async function POST(req: Request) {
       finalBody = postBody?.trim() || null;
     }
 
-    // Adult status comes only from the community
     const post = await prisma.post.create({
       data: {
         title,
