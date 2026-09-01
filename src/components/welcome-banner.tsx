@@ -33,7 +33,7 @@ export function WelcomeBanner() {
         <div className="text-sm text-zinc-800 dark:text-zinc-200">
           <p className="font-medium">Welcome to Agora</p>
           <p className="mt-0.5 text-zinc-600 dark:text-zinc-400">
-            Free Speech Communities
+            Speak Freely
           </p>
           <div className="mt-2 flex flex-wrap gap-3">
             <Link

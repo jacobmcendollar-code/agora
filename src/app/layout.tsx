@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Agora | Free Speech Communities",
+    default: "Agora | Speak Freely",
     template: "Agora | %s",
   },
   description: "Create communities. Speak freely. Minimal AI moderation.",
