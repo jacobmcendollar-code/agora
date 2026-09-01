@@ -5,11 +5,22 @@ import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Analytics } from "@vercel/analytics/react";
+import {
+  OG_DESCRIPTION,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_TYPE,
+  OG_IMAGE_URL,
+  OG_IMAGE_WIDTH,
+  OG_TITLE,
+  SITE_ORIGIN,
+  TWITTER_CARD,
+  TWITTER_SITE,
+} from "@/lib/social-crawler";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.agor4.com"),
+  metadataBase: new URL(SITE_ORIGIN),
   title: {
     default: "Agora | Speak Freely",
     template: "Agora | %s",
@@ -17,22 +28,24 @@ export const metadata: Metadata = {
   description: "Create communities. Speak freely. Minimal AI moderation.",
   openGraph: {
     type: "website",
-    title: "Agora | Speak Freely",
-    description: "Topic communities with minimal interference",
-    url: "https://www.agor4.com",
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+    url: SITE_ORIGIN,
     images: [
       {
-        url: "https://www.agor4.com/agora-og-card.png",
-        width: 1200,
-        height: 630,
+        url: OG_IMAGE_URL,
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
+        type: OG_IMAGE_TYPE,
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Agora | Speak Freely",
-    description: "Topic communities with minimal interference",
-    images: ["https://www.agor4.com/agora-og-card.png"],
+    card: TWITTER_CARD,
+    site: TWITTER_SITE,
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+    images: [OG_IMAGE_URL],
   },
   icons: {
     icon: "/icon.png",
