@@ -79,6 +79,8 @@ export function ImageLightbox({ src, alt = "", className }: Props) {
         <img
           src={src}
           alt={alt}
+          loading="lazy"
+          decoding="async"
           className={
             className ||
             "max-h-80 w-full rounded-lg object-cover transition hover:opacity-95"

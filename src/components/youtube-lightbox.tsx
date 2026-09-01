@@ -85,6 +85,8 @@ export function YouTubeLightbox({
         <img
           src={thumbnail}
           alt={title}
+          loading="lazy"
+          decoding="async"
           className={
             className || "h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
           }
