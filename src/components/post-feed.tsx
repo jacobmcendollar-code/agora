@@ -242,6 +242,8 @@ export function PostFeed({
                   <img
                     src={post.thumbnail}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
                   />
                 </a>

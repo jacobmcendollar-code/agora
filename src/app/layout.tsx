@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   },
   description: "Create communities. Speak freely. Minimal AI moderation.",
   openGraph: {
+    type: "website",
     title: "Agora | Speak Freely",
     description: "Topic communities with minimal interference",
     url: "https://www.agor4.com",

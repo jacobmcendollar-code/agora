@@ -84,7 +84,13 @@ export function InstagramLightbox({
         className="shrink-0"
         aria-label={`Open Instagram post: ${title}`}
       >
-        <img src={thumbnail} alt="" className={className} />
+        <img
+          src={thumbnail}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className={className}
+        />
       </button>
 
       {open && (
