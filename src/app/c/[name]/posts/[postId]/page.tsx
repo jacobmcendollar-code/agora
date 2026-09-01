@@ -10,7 +10,11 @@ import { VoteButtons } from "@/components/vote-buttons";
 import { Comment } from "@/components/comment";
 import { CommentSortTabs } from "@/components/comment-sort-tabs";
 import { RemovePostButton } from "@/components/remove-post-button";
-import { EditPostButton } from "@/components/edit-post-button";
+import {
+  PostEditProvider,
+  EditablePostContent,
+  EditPostButton,
+} from "@/components/edit-post-button";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { SaveButton } from "@/components/save-button";
 import { ShareButton } from "@/components/share-button";
@@ -246,91 +250,97 @@ export default async function PostPage({ params, searchParams }: Props) {
             initialScore={post.score}
           />
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold leading-tight">{post.title}</h1>
+            <PostEditProvider
+              postId={post.id}
+              initialTitle={post.title}
+              initialBody={
+                post.body ? decodeBasicEntities(post.body) : null
+              }
+              createdAt={post.createdAt.toISOString()}
+              canEdit={isAuthor && !isSoftDeleted}
+              canEditBody={!post.url && !post.thumbnail}
+            >
+              <EditablePostContent>
+                {youtubeId ? (
+                  <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${youtubeId}`}
+                      title={post.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full"
+                    />
+                  </div>
+                ) : null}
 
-            {youtubeId ? (
-              <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg">
-                <iframe
-                  src={`https://www.youtube.com/embed/${youtubeId}`}
-                  title={post.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="h-full w-full"
-                />
-              </div>
-            ) : null}
+                {isX && post.url && <XEmbed url={post.url} />}
+                {isTikTok && post.url && <TikTokEmbed url={post.url} />}
+                {isReddit && post.url && <RedditEmbed url={post.url} />}
+                {isInstagram && post.url && <InstagramEmbed url={post.url} />}
 
-            {isX && post.url && <XEmbed url={post.url} />}
-            {isTikTok && post.url && <TikTokEmbed url={post.url} />}
-            {isReddit && post.url && <RedditEmbed url={post.url} />}
-            {isInstagram && post.url && <InstagramEmbed url={post.url} />}
+                {isPlainLink && post.url && (
+                  <div className="mt-4">
+                    <LinkPreviewCard
+                      url={post.url}
+                      title={post.title}
+                      thumbnail={post.thumbnail}
+                      showDescription={!showBody}
+                    />
+                  </div>
+                )}
 
-            {isPlainLink && post.url && (
-              <div className="mt-4">
-                <LinkPreviewCard
-                  url={post.url}
-                  title={post.title}
-                  thumbnail={post.thumbnail}
-                  showDescription={!showBody}
-                />
-              </div>
-            )}
+                {!isPlainLink && post.thumbnail && !hasRichEmbed && (
+                  <div className="mt-4">
+                    <ImageLightbox src={post.thumbnail} alt={post.title} />
+                  </div>
+                )}
 
-            {!isPlainLink && post.thumbnail && !hasRichEmbed && (
-              <div className="mt-4">
-                <ImageLightbox src={post.thumbnail} alt={post.title} />
-              </div>
-            )}
+                {bodyText && (post.url || post.thumbnail) ? (
+                  <div className="mt-4 text-zinc-800 dark:text-zinc-200">
+                    <MarkdownBody text={bodyText} className="text-base" />
+                  </div>
+                ) : null}
+              </EditablePostContent>
 
-            {bodyText && (
-              <div className="mt-4 text-zinc-800 dark:text-zinc-200">
-                <MarkdownBody text={bodyText} className="text-base" />
-              </div>
-            )}
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-zinc-500">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <Link
-                  href={`/c/${post.community.name}`}
-                  className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
-                >
-                  {post.community.title}
-                </Link>
-                <SaveButton postId={post.id} />
-                <ShareButton url={sharePath} title={post.title} />
-                {isSoftDeleted ? (
-                  <span className="font-medium text-zinc-400">[deleted]</span>
-                ) : (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-zinc-500">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Link
-                    href={`/u/${post.author.username}`}
-                    className="font-medium text-emerald-500 hover:underline"
+                    href={`/c/${post.community.name}`}
+                    className="font-medium text-zinc-700 hover:underline dark:text-zinc-300"
                   >
-                    {post.author.username}
+                    {post.community.title}
                   </Link>
-                )}
-                <time>{timeAgo(post.createdAt)}</time>
-                {isAuthor && !isSoftDeleted && (
-                  <>
-                    <EditPostButton
-                      postId={post.id}
-                      initialTitle={post.title}
-                      initialBody={showBody ? post.body : null}
-                      createdAt={post.createdAt.toISOString()}
-                    />
-                    <DeletePostButton
-                      postId={post.id}
-                      communityName={post.community.name}
-                      createdAt={post.createdAt.toISOString()}
-                    />
-                  </>
+                  <SaveButton postId={post.id} />
+                  <ShareButton url={sharePath} title={post.title} />
+                  {isSoftDeleted ? (
+                    <span className="font-medium text-zinc-400">[deleted]</span>
+                  ) : (
+                    <Link
+                      href={`/u/${post.author.username}`}
+                      className="font-medium text-emerald-500 hover:underline"
+                    >
+                      {post.author.username}
+                    </Link>
+                  )}
+                  <time>{timeAgo(post.createdAt)}</time>
+                  {isAuthor && !isSoftDeleted && (
+                    <>
+                      <EditPostButton />
+                      <DeletePostButton
+                        postId={post.id}
+                        communityName={post.community.name}
+                        createdAt={post.createdAt.toISOString()}
+                      />
+                    </>
+                  )}
+                </div>
+                {showAdmin && !isSoftDeleted && (
+                  <div className="ml-auto">
+                    <RemovePostButton postId={post.id} />
+                  </div>
                 )}
               </div>
-              {showAdmin && !isSoftDeleted && (
-                <div className="ml-auto">
-                  <RemovePostButton postId={post.id} />
-                </div>
-              )}
-            </div>
+            </PostEditProvider>
           </div>
         </div>
       </article>
