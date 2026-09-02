@@ -155,6 +155,7 @@ export async function POST(req: Request) {
       const existing = await prisma.post.findFirst({
         where: {
           url: linkUrl,
+          communityId: community.id,
           createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
         },
         select: {

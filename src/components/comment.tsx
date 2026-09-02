@@ -7,9 +7,13 @@ import { timeAgo } from "@/lib/utils";
 import { VoteButtons } from "@/components/vote-buttons";
 import { CommentForm } from "@/components/comment-form";
 import { RemoveCommentButton } from "@/components/remove-comment-button";
-import { EditCommentButton } from "@/components/edit-comment-button";
+import {
+  CommentEditProvider,
+  CommentReplySlot,
+  EditableCommentContent,
+  EditCommentButton,
+} from "@/components/edit-comment-button";
 import { DeleteCommentButton } from "@/components/delete-comment-button";
-import { MarkdownBody } from "@/components/markdown-body";
 import { ImageLightbox } from "@/components/image-lightbox";
 
 type CommentData = {
@@ -114,106 +118,107 @@ export function Comment({
           : ""
       }
     >
-      <div
-        className={`rounded-lg border p-4 ${
-          isNested
-            ? "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
-            : "bg-white dark:bg-zinc-900"
-        }`}
+      <CommentEditProvider
+        commentId={comment.id}
+        initialBody={comment.body}
+        createdAt={createdAtDate.toISOString()}
+        canEdit={isAuthor && !isSoftDeleted}
       >
-        <div className="flex gap-3">
-          <VoteButtons
-            targetType="comment"
-            targetId={comment.id}
-            initialScore={comment.score}
-            size="sm"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
-                {isSoftDeleted ? (
-                  <span className="font-medium text-zinc-400">[deleted]</span>
-                ) : (
-                  <Link
-                    href={`/u/${comment.author.username}`}
-                    className="font-medium text-emerald-500 hover:underline"
-                  >
-                    {comment.author.username}
-                  </Link>
-                )}
-                <span>•</span>
-                <time>{timeAgo(createdAtDate)}</time>
-                {isAuthor && !isSoftDeleted && (
-                  <>
-                    <span>•</span>
-                    <EditCommentButton
-                      commentId={comment.id}
-                      initialBody={comment.body}
-                      createdAt={createdAtDate.toISOString()}
-                    />
-                    <span>•</span>
-                    <DeleteCommentButton
-                      commentId={comment.id}
-                      createdAt={createdAtDate.toISOString()}
-                    />
-                  </>
-                )}
-                {showRemove && !isSoftDeleted && (
-                  <>
-                    <span>•</span>
-                    <RemoveCommentButton commentId={comment.id} />
-                  </>
-                )}
+        <div
+          className={`rounded-lg border p-4 ${
+            isNested
+              ? "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
+              : "bg-white dark:bg-zinc-900"
+          }`}
+        >
+          <div className="flex gap-3">
+            <VoteButtons
+              targetType="comment"
+              targetId={comment.id}
+              initialScore={comment.score}
+              size="sm"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
+                  {isSoftDeleted ? (
+                    <span className="font-medium text-zinc-400">[deleted]</span>
+                  ) : (
+                    <Link
+                      href={`/u/${comment.author.username}`}
+                      className="font-medium text-emerald-500 hover:underline"
+                    >
+                      {comment.author.username}
+                    </Link>
+                  )}
+                  <span>•</span>
+                  <time>{timeAgo(createdAtDate)}</time>
+                  {isAuthor && !isSoftDeleted && (
+                    <>
+                      <EditCommentButton />
+                      <span>•</span>
+                      <DeleteCommentButton
+                        commentId={comment.id}
+                        createdAt={createdAtDate.toISOString()}
+                      />
+                    </>
+                  )}
+                  {showRemove && !isSoftDeleted && (
+                    <>
+                      <span>•</span>
+                      <RemoveCommentButton commentId={comment.id} />
+                    </>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(true)}
+                  className="ml-auto shrink-0 text-xs font-medium text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  aria-label="Collapse comment"
+                  title="Collapse comment and replies"
+                >
+                  Collapse
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setCollapsed(true)}
-                className="ml-auto shrink-0 text-xs font-medium text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label="Collapse comment"
-                title="Collapse comment and replies"
-              >
-                Collapse
-              </button>
-            </div>
 
-            {isSoftDeleted ? (
-              <p className="text-sm text-zinc-400">[deleted]</p>
-            ) : (
-              <>
-                {comment.body ? <MarkdownBody text={comment.body} /> : null}
-                {comment.imageUrl && (
-                  <div className={comment.body ? "mt-2" : ""}>
+              {isSoftDeleted ? (
+                <p className="text-sm text-zinc-400">[deleted]</p>
+              ) : (
+                <EditableCommentContent>
+                  {comment.imageUrl ? (
                     <ImageLightbox
                       src={comment.imageUrl}
                       alt="Comment image"
                       className="max-h-80 max-w-full rounded-md object-contain"
                     />
+                  ) : null}
+                </EditableCommentContent>
+              )}
+
+              <CommentReplySlot>
+                {!isSoftDeleted && (
+                  <button
+                    onClick={() => setShowReplyForm(!showReplyForm)}
+                    className="mt-2 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                  >
+                    {showReplyForm ? "Cancel" : "Reply"}
+                  </button>
+                )}
+                {showReplyForm && (
+                  <div className="mt-3">
+                    <CommentForm
+                      postId={postId}
+                      communityName={communityName}
+                      parentId={comment.id}
+                      onSuccess={() => setShowReplyForm(false)}
+                    />
                   </div>
                 )}
-              </>
-            )}
-
-            {!isSoftDeleted && (
-              <button
-                onClick={() => setShowReplyForm(!showReplyForm)}
-                className="mt-2 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
-              >
-                {showReplyForm ? "Cancel" : "Reply"}
-              </button>
-            )}
-            {showReplyForm && (
-              <div className="mt-3">
-                <CommentForm
-                  postId={postId}
-                  communityName={communityName}
-                  parentId={comment.id}
-                  onSuccess={() => setShowReplyForm(false)}
-                />
-              </div>
-            )}
+              </CommentReplySlot>
+            </div>
           </div>
         </div>
-      </div>
+      </CommentEditProvider>
 
       {comment.replies.length > 0 && (
         <div className="mt-3 space-y-3">
