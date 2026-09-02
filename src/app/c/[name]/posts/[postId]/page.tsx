@@ -284,6 +284,7 @@ export default async function PostPage({ params, searchParams }: Props) {
                       url={post.url}
                       title={post.title}
                       thumbnail={post.thumbnail}
+                      communityTitle={post.community.title}
                       showDescription={!showBody}
                     />
                   </div>
@@ -291,7 +292,11 @@ export default async function PostPage({ params, searchParams }: Props) {
 
                 {!isPlainLink && post.thumbnail && !hasRichEmbed && (
                   <div className="mt-4">
-                    <ImageLightbox src={post.thumbnail} alt={post.title} />
+                    <ImageLightbox
+                      src={post.thumbnail}
+                      alt=""
+                      communityTitle={post.community.title}
+                    />
                   </div>
                 )}
 

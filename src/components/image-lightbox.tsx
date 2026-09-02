@@ -1,16 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CommunityLetterFallback } from "@/components/thumb-image";
+
+const DEFAULT_IMG_CLASSNAME =
+  "max-h-80 w-full rounded-lg object-cover transition hover:opacity-95";
+
+const DEFAULT_FALLBACK_CLASSNAME =
+  "flex h-80 w-full items-center justify-center overflow-hidden rounded-lg ring-1 ring-zinc-700";
 
 type Props = {
   src: string;
   alt?: string;
   className?: string;
+  fallbackClassName?: string;
+  communityTitle?: string;
 };
 
-export function ImageLightbox({ src, alt = "", className }: Props) {
+export function ImageLightbox({
+  src,
+  alt = "",
+  className,
+  fallbackClassName,
+  communityTitle = "",
+}: Props) {
   const [open, setOpen] = useState(false);
   const [dragY, setDragY] = useState(0);
+  const [status, setStatus] = useState({ src, failed: !src });
+
+  if (status.src !== src) {
+    setStatus({ src, failed: !src });
+  }
+
+  const failed = status.failed;
 
   useEffect(() => {
     if (!open) return;
@@ -69,6 +91,21 @@ export function ImageLightbox({ src, alt = "", className }: Props) {
     setDragY(0);
   }
 
+  const resolvedFallback =
+    fallbackClassName ??
+    (className
+      ? `flex items-center justify-center overflow-hidden ring-1 ring-zinc-700 ${className}`
+      : DEFAULT_FALLBACK_CLASSNAME);
+
+  if (failed) {
+    return (
+      <CommunityLetterFallback
+        communityTitle={communityTitle}
+        className={resolvedFallback}
+      />
+    );
+  }
+
   return (
     <>
       <button
@@ -78,13 +115,19 @@ export function ImageLightbox({ src, alt = "", className }: Props) {
       >
         <img
           src={src}
-          alt={alt}
+          alt=""
           loading="lazy"
           decoding="async"
-          className={
-            className ||
-            "max-h-80 w-full rounded-lg object-cover transition hover:opacity-95"
-          }
+          className={className || DEFAULT_IMG_CLASSNAME}
+          ref={(el) => {
+            if (el && el.complete && el.naturalWidth === 0) {
+              setStatus({ src, failed: true });
+            }
+          }}
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+            setStatus({ src, failed: true });
+          }}
         />
       </button>
 

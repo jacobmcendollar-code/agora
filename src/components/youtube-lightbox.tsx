@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  FEED_THUMB_FALLBACK_CLASSNAME,
+  FEED_THUMB_IMG_CLASSNAME,
+  ThumbImage,
+} from "@/components/thumb-image";
 
 type Props = {
   videoId: string;
   thumbnail: string;
   title?: string;
+  communityTitle?: string;
   className?: string;
 };
 
@@ -13,6 +19,7 @@ export function YouTubeLightbox({
   videoId,
   thumbnail,
   title = "",
+  communityTitle = "",
   className,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -82,14 +89,12 @@ export function YouTubeLightbox({
         onClick={() => setOpen(true)}
         className="relative block shrink-0 cursor-pointer text-left"
       >
-        <img
+        <ThumbImage
           src={thumbnail}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          className={
-            className || "h-20 w-20 rounded-lg object-cover sm:h-24 sm:w-32"
-          }
+          communityTitle={communityTitle}
+          alt=""
+          className={className || FEED_THUMB_IMG_CLASSNAME}
+          fallbackClassName={FEED_THUMB_FALLBACK_CLASSNAME}
         />
         <span className="absolute inset-0 flex items-center justify-center">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white">
