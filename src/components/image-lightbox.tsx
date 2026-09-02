@@ -26,7 +26,13 @@ export function ImageLightbox({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [dragY, setDragY] = useState(0);
-  const [failed, setFailed] = useState(!src);
+  const [status, setStatus] = useState({ src, failed: !src });
+
+  if (status.src !== src) {
+    setStatus({ src, failed: !src });
+  }
+
+  const failed = status.failed;
 
   useEffect(() => {
     if (!open) return;
@@ -80,10 +86,6 @@ export function ImageLightbox({
     };
   }, [open]);
 
-  useEffect(() => {
-    setFailed(!src);
-  }, [src]);
-
   function close() {
     setOpen(false);
     setDragY(0);
@@ -117,7 +119,15 @@ export function ImageLightbox({
           loading="lazy"
           decoding="async"
           className={className || DEFAULT_IMG_CLASSNAME}
-          onError={() => setFailed(true)}
+          ref={(el) => {
+            if (el && el.complete && el.naturalWidth === 0) {
+              setStatus({ src, failed: true });
+            }
+          }}
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+            setStatus({ src, failed: true });
+          }}
         />
       </button>
 

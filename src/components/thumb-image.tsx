@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const FEED_THUMB_IMG_CLASSNAME =
   "h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32";
@@ -62,14 +62,14 @@ export function ThumbImage({
   fallbackClassName = FEED_THUMB_FALLBACK_CLASSNAME,
   alt = "",
 }: ThumbImageProps) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const resolvedSrc = src || null;
+  const resolvedSrc = src || "";
+  const [status, setStatus] = useState({ src: resolvedSrc, failed: !resolvedSrc });
 
-  useEffect(() => {
-    setFailedSrc(null);
-  }, [resolvedSrc]);
+  if (status.src !== resolvedSrc) {
+    setStatus({ src: resolvedSrc, failed: !resolvedSrc });
+  }
 
-  if (!resolvedSrc || failedSrc === resolvedSrc) {
+  if (!resolvedSrc || status.failed) {
     return (
       <CommunityLetterFallback
         communityTitle={communityTitle}
@@ -80,14 +80,20 @@ export function ThumbImage({
 
   return (
     <img
+      key={resolvedSrc}
       src={resolvedSrc}
       alt={alt}
       loading="lazy"
       decoding="async"
       className={className}
+      ref={(el) => {
+        if (el && el.complete && el.naturalWidth === 0) {
+          setStatus({ src: resolvedSrc, failed: true });
+        }
+      }}
       onError={(event) => {
         event.currentTarget.style.display = "none";
-        setFailedSrc(resolvedSrc);
+        setStatus({ src: resolvedSrc, failed: true });
       }}
     />
   );
