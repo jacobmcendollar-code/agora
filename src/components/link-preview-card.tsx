@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ThumbImage } from "@/components/thumb-image";
 
 type Props = {
   url: string;
   title?: string | null;
   thumbnail?: string | null;
+  communityTitle?: string;
   showDescription?: boolean;
 };
 
@@ -41,6 +43,7 @@ export function LinkPreviewCard({
   url,
   title,
   thumbnail,
+  communityTitle = "",
   showDescription = true,
 }: Props) {
   const [preview, setPreview] = useState<Preview>({
@@ -91,15 +94,17 @@ export function LinkPreviewCard({
       rel="noopener noreferrer"
       className="block overflow-hidden rounded-xl border bg-white transition hover:border-zinc-300 dark:bg-zinc-900 dark:hover:border-zinc-700"
     >
-      {preview.thumbnail && (
+      {preview.thumbnail ? (
         <div className="aspect-[1.91/1] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-          <img
+          <ThumbImage
             src={preview.thumbnail}
+            communityTitle={communityTitle}
             alt=""
             className="h-full w-full object-cover"
+            fallbackClassName="flex h-full w-full items-center justify-center ring-1 ring-zinc-700"
           />
         </div>
-      )}
+      ) : null}
 
       <div className="space-y-2 p-4">
         <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">

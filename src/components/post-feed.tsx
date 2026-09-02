@@ -11,6 +11,12 @@ import { TikTokLightbox } from "@/components/tiktok-lightbox";
 import { InstagramLightbox } from "@/components/instagram-lightbox";
 import { SaveButton } from "@/components/save-button";
 import { ShareButton } from "@/components/share-button";
+import {
+  CommunityLetterFallback,
+  FEED_THUMB_FALLBACK_CLASSNAME,
+  FEED_THUMB_IMG_CLASSNAME,
+  ThumbImage,
+} from "@/components/thumb-image";
 
 type Post = {
   id: string;
@@ -78,16 +84,6 @@ function isGenericBody(body: string | null | undefined): boolean {
   );
 }
 
-
-function communityThumbLabel(title: string): { text: string; large: boolean } {
-  const trimmed = title.trim();
-  const words = trimmed.split(/\s+/).filter(Boolean);
-  if (words.length === 1 && words[0].length <= 12) {
-    return { text: words[0], large: false };
-  }
-  const letter = (words[0]?.[0] || trimmed[0] || "?").toUpperCase();
-  return { text: letter, large: true };
-}
 
 function IconComments({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -209,28 +205,32 @@ export function PostFeed({
                   videoId={youtubeId}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
+                  communityTitle={post.community.title}
+                  className={FEED_THUMB_IMG_CLASSNAME}
                 />
               ) : post.thumbnail && isX && post.url ? (
                 <XLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
+                  communityTitle={post.community.title}
+                  className={FEED_THUMB_IMG_CLASSNAME}
                 />
               ) : post.thumbnail && isTikTok && post.url ? (
                 <TikTokLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
+                  communityTitle={post.community.title}
+                  className={FEED_THUMB_IMG_CLASSNAME}
                 />
               ) : post.thumbnail && isInstagram && post.url ? (
                 <InstagramLightbox
                   url={post.url}
                   thumbnail={post.thumbnail}
                   title={post.title}
-                  className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
+                  communityTitle={post.community.title}
+                  className={FEED_THUMB_IMG_CLASSNAME}
                 />
               ) : post.thumbnail && post.url ? (
                 <a
@@ -239,43 +239,26 @@ export function PostFeed({
                   rel="noopener noreferrer"
                   className="shrink-0"
                 >
-                  <img
+                  <ThumbImage
                     src={post.thumbnail}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
+                    communityTitle={post.community.title}
+                    className={FEED_THUMB_IMG_CLASSNAME}
                   />
                 </a>
               ) : post.thumbnail ? (
                 <div className="shrink-0">
                   <ImageLightbox
                     src={post.thumbnail}
-                    alt={post.title}
-                    className="h-20 w-20 rounded-lg object-cover ring-1 ring-stone-200 dark:ring-zinc-700 sm:h-24 sm:w-32"
+                    alt=""
+                    communityTitle={post.community.title}
+                    className={FEED_THUMB_IMG_CLASSNAME}
+                    fallbackClassName={FEED_THUMB_FALLBACK_CLASSNAME}
                   />
                 </div>
               ) : (
-                <div
-                  className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-zinc-700 sm:h-24 sm:w-32"
-                  style={{ backgroundColor: "#1a1a1d" }}
-                  aria-hidden="true"
-                >
-                  {(() => {
-                    const label = communityThumbLabel(post.community.title);
-                    return (
-                      <span
-                        className={
-                          label.large
-                            ? "select-none whitespace-nowrap font-semibold leading-none text-emerald-500 text-[32px]"
-                            : "select-none whitespace-nowrap font-semibold leading-none text-emerald-500 text-[14px]"
-                        }
-                      >
-                        {label.text}
-                      </span>
-                    );
-                  })()}
-                </div>
+                <CommunityLetterFallback
+                  communityTitle={post.community.title}
+                />
               )}
 
               </div>

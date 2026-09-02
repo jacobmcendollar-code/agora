@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { InstagramEmbed } from "@/components/instagram-embed";
+import {
+  FEED_THUMB_FALLBACK_CLASSNAME,
+  ThumbImage,
+} from "@/components/thumb-image";
 
 type Props = {
   url: string;
   thumbnail: string;
   title: string;
+  communityTitle?: string;
   className?: string;
 };
 
@@ -14,6 +19,7 @@ export function InstagramLightbox({
   url,
   thumbnail,
   title,
+  communityTitle = "",
   className,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -84,12 +90,12 @@ export function InstagramLightbox({
         className="shrink-0"
         aria-label={`Open Instagram post: ${title}`}
       >
-        <img
+        <ThumbImage
           src={thumbnail}
+          communityTitle={communityTitle}
           alt=""
-          loading="lazy"
-          decoding="async"
           className={className}
+          fallbackClassName={FEED_THUMB_FALLBACK_CLASSNAME}
         />
       </button>
 
