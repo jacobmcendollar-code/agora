@@ -69,6 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id!;
         token.username = user.name as string;
         token.showNsfw = Boolean(user.showNsfw);
+        token.picture = user.image ?? null;
       }
 
       // After toggle: session.update({ showNsfw }) refreshes the token
@@ -83,6 +84,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.showNsfw = Boolean(token.showNsfw);
+        if (!session.user.image) {
+          const fromToken =
+            typeof token.picture === "string" ? token.picture : null;
+          if (fromToken) {
+            session.user.image = fromToken;
+          } else {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { image: true },
+            });
+            session.user.image = dbUser?.image ?? null;
+          }
+        }
       }
       return session;
     },
