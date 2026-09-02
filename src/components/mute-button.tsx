@@ -65,7 +65,7 @@ export function MuteButton({ userId, username, initialMuted }: Props) {
       className={`rounded-md px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
         muted
           ? "border border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950"
-          : "bg-emerald-600 text-white hover:bg-emerald-700"
+          : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
       }`}
     >
       {loading ? "…" : muted ? "Unmute" : "Mute"}
