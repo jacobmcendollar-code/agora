@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { JoinedCommunities } from "@/components/joined-communities";
-import { NsfwToggle } from "@/components/nsfw-toggle";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileActivityTabs } from "@/components/profile-activity-tabs";
 import { MuteButton } from "@/components/mute-button";
@@ -169,13 +168,6 @@ export default async function UserProfilePage({ params }: Props) {
           <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
             {isOwnProfile ? (
               <>
-                <NsfwToggle />
-                <Link
-                  href="/settings"
-                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-center text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                >
-                  Settings
-                </Link>
                 <ProfileEditor
                   initialBio={user.bio}
                   initialImage={user.image}

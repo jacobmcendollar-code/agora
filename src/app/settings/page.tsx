@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PromotionalEmailsToggle } from "@/components/promotional-emails-toggle";
+import { NsfwToggle } from "@/components/nsfw-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +68,17 @@ export default async function SettingsPage() {
         </Link>{" "}
         for how email is used.
       </p>
+
+      <div className="space-y-4 rounded-xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618]">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm font-medium">Theme</p>
+          <ThemeToggle />
+        </div>
+
+        <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <NsfwToggle />
+        </div>
+      </div>
     </div>
   );
 }
