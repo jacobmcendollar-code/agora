@@ -351,9 +351,17 @@ export function Navbar() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-3 px-3 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-800/80"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
-                      {initial}
-                    </div>
+                    {session.user.image ? (
+                      <img
+                        src={session.user.image}
+                        alt=""
+                        className="h-8 w-8 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
+                        {initial}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         {session.user.username}
