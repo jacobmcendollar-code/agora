@@ -256,7 +256,7 @@ export function Navbar() {
         {/* Center: Search (desktop) */}
         <div
           ref={desktopSearchRef}
-          className="absolute left-1/2 hidden w-48 -translate-x-1/2 sm:block lg:w-64"
+          className="absolute left-1/2 hidden w-80 -translate-x-1/2 sm:block lg:w-96"
         >
           <form onSubmit={handleSearch}>
             <input
