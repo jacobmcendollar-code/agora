@@ -12,7 +12,8 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { createPost, fetchCommunities, fetchLinkPreview, uploadImage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 import type { Community, PostFormat } from "@/lib/types";
 import { ScreenScroll } from "@/components/Screen";
 
@@ -27,6 +28,8 @@ function allowedTypes(format: PostFormat | undefined): PostType[] {
 export default function SubmitScreen() {
   const { user, ready } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const params = useLocalSearchParams<{ community?: string }>();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [query, setQuery] = useState("");
@@ -332,7 +335,8 @@ export default function SubmitScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg, gap: 12 },
   need: { color: colors.muted, fontSize: 15 },
   heading: { color: colors.text, fontSize: 24, fontWeight: "700" },
@@ -409,11 +413,12 @@ const styles = StyleSheet.create({
   primaryText: { color: colors.white, fontWeight: "700", fontSize: 15 },
   disabled: { opacity: 0.5 },
   errorBox: {
-    backgroundColor: "#3f1d1d",
+    backgroundColor: colors.dangerBg,
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
   },
-  errorText: { color: "#fecaca", fontSize: 13 },
+  errorText: { color: colors.dangerText, fontSize: 13 },
   link: { color: colors.emerald, marginTop: 8, fontWeight: "600" },
-});
+  });
+}

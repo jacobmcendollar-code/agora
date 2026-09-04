@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { colors, space } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import { space, type Palette } from "@/lib/theme";
 import { communityThumbLabel } from "@/lib/thumbs";
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export function CommunityLetterFallback({ communityTitle }: { communityTitle: string }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const label = communityThumbLabel(communityTitle);
   return (
     <View style={styles.fallback} accessibilityElementsHidden>
@@ -23,6 +26,8 @@ export function CommunityLetterFallback({ communityTitle }: { communityTitle: st
 }
 
 export function Thumb({ src, communityTitle }: Props) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [failed, setFailed] = useState(!src);
 
   if (!src || failed) {
@@ -39,7 +44,8 @@ export function Thumb({ src, communityTitle }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   img: {
     width: space.thumb,
     height: space.thumb,
@@ -70,4 +76,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     paddingHorizontal: 4,
   },
-});
+  });
+}

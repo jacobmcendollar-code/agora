@@ -29,8 +29,8 @@ import {
   isXLink,
   openExternal,
 } from "@/lib/media";
-import { usePreferences } from "@/lib/preferences";
-import { colors } from "@/lib/theme";
+import { usePreferences, useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 import { timeAgo } from "@/lib/time";
 import type { CommentNode, Community, FeedPost } from "@/lib/types";
 
@@ -38,10 +38,12 @@ function CommentBlock({
   comment,
   postId,
   onReply,
+  styles,
 }: {
   comment: CommentNode;
   postId: string;
   onReply: (id: string) => void;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <View style={styles.comment}>
@@ -68,7 +70,7 @@ function CommentBlock({
       </View>
       {comment.replies?.map((reply) => (
         <View key={reply.id} style={styles.replyBlock}>
-          <CommentBlock comment={reply} postId={postId} onReply={onReply} />
+          <CommentBlock comment={reply} postId={postId} onReply={onReply} styles={styles} />
         </View>
       ))}
     </View>
@@ -80,6 +82,8 @@ export default function PostDetailScreen() {
   const { user } = useAuth();
   const { openSocialInNativeApp } = usePreferences();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const cached = id ? peekCachedPost(id) : undefined;
   const [post, setPost] = useState<FeedPost | undefined>(cached);
   const [comments, setComments] = useState<CommentNode[]>([]);
@@ -268,14 +272,15 @@ export default function PostDetailScreen() {
         </Text>
       ) : (
         tree.map((c) => (
-          <CommentBlock key={c.id} comment={c} postId={post.id} onReply={setReplyTo} />
+          <CommentBlock key={c.id} comment={c} postId={post.id} onReply={setReplyTo} styles={styles} />
         ))
       )}
     </ScreenScroll>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   card: {
     backgroundColor: colors.card,
@@ -345,4 +350,5 @@ const styles = StyleSheet.create({
   commentImg: { width: "100%", height: 160, borderRadius: 10, marginTop: 8 },
   reply: { color: colors.muted, marginTop: 6, fontSize: 12, fontWeight: "600" },
   replyBlock: { marginLeft: 22, marginTop: 4 },
-});
+  });
+}

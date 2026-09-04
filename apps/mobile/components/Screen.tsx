@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useChrome } from "@/lib/chrome";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
 
 export function ScreenScroll({
   children,
@@ -15,6 +15,7 @@ export function ScreenScroll({
   includeTabs?: boolean;
 }) {
   const chrome = useChrome();
+  const colors = useThemeColors();
   return (
     <ScrollView
       onScroll={chrome.onScroll}
@@ -42,11 +43,14 @@ export function ScreenScroll({
 
 export function ScreenFill({ children }: { children: ReactNode }) {
   const chrome = useChrome();
+  const colors = useThemeColors();
   return (
-    <View style={[styles.fill, { paddingTop: chrome.headerHeight }]}>{children}</View>
+    <View style={[styles.fill, { paddingTop: chrome.headerHeight, backgroundColor: colors.bg }]}>
+      {children}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.bg },
+  fill: { flex: 1 },
 });

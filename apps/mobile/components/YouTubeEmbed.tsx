@@ -1,11 +1,12 @@
 import { StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
 
 export function YouTubeEmbed({ videoId, title }: { videoId: string; title: string }) {
+  const colors = useThemeColors();
   const src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?playsinline=1&rel=0`;
   return (
-    <View style={styles.frame}>
+    <View style={[styles.frame, { backgroundColor: colors.field }]}>
       <WebView
         source={{ uri: src }}
         style={styles.web}
@@ -25,7 +26,6 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: colors.field,
   },
   web: {
     flex: 1,

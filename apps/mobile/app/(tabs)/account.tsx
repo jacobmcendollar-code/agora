@@ -4,16 +4,21 @@ import { IconChevron } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
 import { Username } from "@/components/Username";
 import { useAuth } from "@/lib/auth";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 
 function Row({
   label,
   onPress,
   danger,
+  colors,
+  styles,
 }: {
   label: string;
   onPress: () => void;
   danger?: boolean;
+  colors: Palette;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <Pressable onPress={onPress} style={styles.row}>
@@ -26,6 +31,8 @@ function Row({
 export default function AccountScreen() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const initial = user?.username?.[0]?.toUpperCase() || "?";
 
   return (
@@ -57,11 +64,13 @@ export default function AccountScreen() {
       <View style={styles.card}>
         {user ? (
           <>
-            <Row label="Settings" onPress={() => router.push("/settings")} />
-            <Row label="About Agora" onPress={() => router.push("/about")} />
+            <Row label="Settings" onPress={() => router.push("/settings")} colors={colors} styles={styles} />
+            <Row label="About Agora" onPress={() => router.push("/about")} colors={colors} styles={styles} />
             <Row
               label="Log out"
               danger
+              colors={colors}
+              styles={styles}
               onPress={async () => {
                 await signOut();
               }}
@@ -69,9 +78,9 @@ export default function AccountScreen() {
           </>
         ) : (
           <>
-            <Row label="Log in" onPress={() => router.push("/login")} />
-            <Row label="Create an account" onPress={() => router.push("/register")} />
-            <Row label="About Agora" onPress={() => router.push("/about")} />
+            <Row label="Log in" onPress={() => router.push("/login")} colors={colors} styles={styles} />
+            <Row label="Create an account" onPress={() => router.push("/register")} colors={colors} styles={styles} />
+            <Row label="About Agora" onPress={() => router.push("/about")} colors={colors} styles={styles} />
           </>
         )}
       </View>
@@ -79,7 +88,8 @@ export default function AccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   heading: { color: colors.text, fontSize: 24, fontWeight: "700", marginBottom: 16 },
   profile: {
     flexDirection: "row",
@@ -121,4 +131,5 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   rowLabel: { color: colors.text, fontSize: 16, fontWeight: "500" },
-});
+  });
+}

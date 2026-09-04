@@ -6,12 +6,15 @@ import { Username } from "@/components/Username";
 import { fetchMutes, muteUser, type MutedUser } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fetchPublicProfile, type PublicProfile } from "@/lib/profile";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 
 export default function UserProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const { user } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -203,15 +206,16 @@ export default function UserProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   hero: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 14,
-    backgroundColor: "#052e24",
+    backgroundColor: colors.hero,
     borderWidth: 1,
-    borderColor: "#064e3b",
+    borderColor: colors.heroBorder,
     borderRadius: 14,
     padding: 14,
   },
@@ -282,4 +286,5 @@ const styles = StyleSheet.create({
   },
   postTitle: { color: colors.text, fontSize: 16, fontWeight: "600", lineHeight: 22 },
   postMeta: { color: colors.muted, marginTop: 6, fontSize: 13, fontWeight: "600" },
-});
+  });
+}

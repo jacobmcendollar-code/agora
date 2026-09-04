@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { ScreenScroll } from "@/components/Screen";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 
 const BLOCKS = [
   {
@@ -26,6 +27,8 @@ const BLOCKS = [
 ];
 
 export default function AboutScreen() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <ScreenScroll includeTabs={false}>
       <Text style={styles.heading}>About Agora</Text>
@@ -42,7 +45,8 @@ export default function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   heading: { color: colors.emerald, fontSize: 28, fontWeight: "800", marginBottom: 10 },
   lede: { color: colors.muted, fontSize: 16, lineHeight: 23, marginBottom: 18 },
   card: {
@@ -55,4 +59,5 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: colors.emerald, fontSize: 17, fontWeight: "700" },
   cardBody: { color: colors.muted, marginTop: 8, lineHeight: 22, fontSize: 15 },
-});
+  });
+}

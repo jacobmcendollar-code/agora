@@ -12,7 +12,8 @@ import Animated from "react-native-reanimated";
 import { fetchCommunities, fetchFeed } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 import type { Community, FeedPost } from "@/lib/types";
 import { FeedCard } from "./FeedCard";
 import { SortChips, type SortKey } from "./SortChips";
@@ -36,8 +37,11 @@ export function FeedList({
 }: Props) {
   const { user } = useAuth();
   const chrome = useChrome();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const listRef = useRef<FlatList<FeedPost>>(null);
-  const [sort, setSort] = useState<SortKey>("trending");
+  const showMyFeed = Boolean(user) && !community;
+  const [sort, setSort] = useState<SortKey>(() => (user && !community ? "my" : "trending"));
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [page, setPage] = useState(1);
   const [nextPage, setNextPage] = useState<number | null>(2);
@@ -53,7 +57,7 @@ export function FeedList({
       const data = await fetchFeed({
         sort,
         page: next,
-        scope: "all",
+        scope: sort === "my" ? "joined" : "all",
         community,
       });
       setPosts((prev) => {
@@ -67,6 +71,10 @@ export function FeedList({
     },
     [community, showNsfw, sort]
   );
+
+  useEffect(() => {
+    if (sort === "my" && !showMyFeed) setSort("trending");
+  }, [showMyFeed, sort]);
 
   useEffect(() => {
     fetchCommunities()
@@ -162,7 +170,7 @@ export function FeedList({
       ListHeaderComponent={
         <View>
           {header}
-          <SortChips value={sort} onChange={setSort} />
+          <SortChips value={sort} onChange={setSort} showMyFeed={showMyFeed} />
         </View>
       }
       ListEmptyComponent={
@@ -186,17 +194,19 @@ export function FeedList({
   );
 }
 
-const styles = StyleSheet.create({
-  empty: {
-    marginTop: 32,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 28,
-    alignItems: "center",
-  },
-  emptyTitle: { color: colors.text, fontSize: 17, fontWeight: "600" },
-  emptyBody: { color: colors.muted, marginTop: 8, textAlign: "center", lineHeight: 20 },
-  end: { color: colors.faint, textAlign: "center", paddingVertical: 16, fontSize: 13 },
-});
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
+    empty: {
+      marginTop: 32,
+      borderWidth: 1,
+      borderStyle: "dashed",
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 28,
+      alignItems: "center",
+    },
+    emptyTitle: { color: colors.text, fontSize: 17, fontWeight: "600" },
+    emptyBody: { color: colors.muted, marginTop: 8, textAlign: "center", lineHeight: 20 },
+    end: { color: colors.faint, textAlign: "center", paddingVertical: 16, fontSize: 13 },
+  });
+}
