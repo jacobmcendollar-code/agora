@@ -15,13 +15,12 @@ function getAuthSecret(): string | undefined {
   return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 }
 
-/** Auth.js v5 cookie name — also the JWT encode salt. */
-function sessionCookieName(): string {
-  const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL || "";
-  const secure =
-    process.env.NODE_ENV === "production" || authUrl.startsWith("https://");
-  return secure ? "__Secure-authjs.session-token" : "authjs.session-token";
-}
+/**
+ * Auth.js v5 cookie name — also the JWT encode salt.
+ * `src/lib/auth.ts` forces AUTH_URL to https://www.agor4.com, so `auth()`
+ * always reads `__Secure-authjs.session-token`.
+ */
+const SESSION_COOKIE_NAME = "__Secure-authjs.session-token";
 
 export async function POST(req: Request) {
   try {
@@ -65,7 +64,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
 
-    const cookieName = sessionCookieName();
+    const cookieName = SESSION_COOKIE_NAME;
     const sessionToken = await encode({
       token: {
         sub: user.id,
