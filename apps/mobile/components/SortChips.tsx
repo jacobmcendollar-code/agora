@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/lib/theme";
 
 export type SortKey = "trending" | "recent" | "top";
@@ -18,20 +18,20 @@ export function SortChips({
 }) {
   return (
     <View style={styles.wrap}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <View style={styles.row}>
         {OPTIONS.map((opt) => {
           const active = value === opt.key;
           return (
             <Pressable
               key={opt.key}
               onPress={() => onChange(opt.key)}
-              style={[styles.chip, active && styles.chipActive]}
+              style={[styles.tab, active && styles.tabActive]}
             >
               <Text style={[styles.label, active && styles.labelActive]}>{opt.label}</Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -42,25 +42,21 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   row: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+    flexDirection: "row",
+    paddingHorizontal: 4,
   },
-  chip: {
+  tab: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: colors.field,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
   },
-  chipActive: {
-    backgroundColor: "#064e3b",
-    borderColor: colors.emerald,
+  tabActive: {
+    borderBottomColor: colors.emerald,
   },
   label: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
   },
   labelActive: {

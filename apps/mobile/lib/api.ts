@@ -175,12 +175,48 @@ export async function setShowNsfw(showNsfw: boolean) {
   });
 }
 
+export async function fetchSaved(postId: string) {
+  const data = await apiJson<{ saved?: boolean }>(`/api/posts/${postId}/save`);
+  return Boolean(data.saved);
+}
+
+export async function toggleSaved(postId: string) {
+  return apiJson<{ saved: boolean }>(`/api/posts/${postId}/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export function postShareUrl(post: { id: string; community?: { name?: string } }) {
+  const community = post.community?.name;
+  if (community) return `${API_URL}/c/${community}/posts/${post.id}`;
+  return `${API_URL}/post/${post.id}`;
+}
+
+export function postSnippet(body: string | null | undefined, max = 120) {
+  if (!body) return null;
+  const trimmed = body.replace(/\s+/g, " ").trim();
+  if (!trimmed) return null;
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
+}
+
+export type MutedUser = {
+  userId: string;
+  username: string;
+  image?: string | null;
+};
+
 export async function muteUser(userId: string, action: "mute" | "unmute") {
   return apiJson<{ muted: boolean }>("/api/mute", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, action }),
   });
+}
+
+export async function fetchMutes(): Promise<MutedUser[]> {
+  const data = await apiJson<{ mutes?: MutedUser[] }>("/api/mute");
+  return data.mutes || [];
 }
 
 export async function fetchLinkPreview(url: string) {

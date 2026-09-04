@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedView, useChrome } from "@/lib/chrome";
@@ -42,9 +42,7 @@ export function AgoraHeader() {
           resizeMode="contain"
           accessibilityLabel="Agora"
         />
-        <View style={styles.side}>
-          <Text style={styles.tag}>Speak Freely</Text>
-        </View>
+        <View style={styles.side} />
       </View>
     </AnimatedView>
   );
@@ -75,12 +73,5 @@ const styles = StyleSheet.create({
   back: {
     padding: 4,
     marginLeft: -4,
-  },
-  tag: {
-    marginLeft: "auto",
-    color: colors.faint,
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.2,
   },
 });

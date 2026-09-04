@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { DeviceEventEmitter, Image, Pressable, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   IconAccount,
@@ -7,7 +7,8 @@ import {
   IconHome,
   IconSubmit,
 } from "@/components/Icons";
-import { AnimatedView, useChrome } from "@/lib/chrome";
+import { useAuth } from "@/lib/auth";
+import { AnimatedView, HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
 import { colors, space } from "@/lib/theme";
 
 type TabDef = {
@@ -34,6 +35,7 @@ function HiddenTabBar({
 }) {
   const insets = useSafeAreaInsets();
   const { tabBarStyle } = useChrome();
+  const { user } = useAuth();
 
   return (
     <AnimatedView
@@ -62,7 +64,11 @@ function HiddenTabBar({
             accessibilityState={{ selected: active }}
             accessibilityLabel={tab.label}
           >
-            <tab.Icon color={color} size={22} />
+            {tab.name === "account" && user?.image ? (
+              <Image source={{ uri: user.image }} style={styles.avatar} />
+            ) : (
+              <tab.Icon color={color} size={22} />
+            )}
             <Text style={[styles.label, { color }]}>{tab.label}</Text>
           </Pressable>
         );
@@ -83,7 +89,15 @@ export default function TabLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: "Home" }}
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            if (navigation.isFocused()) DeviceEventEmitter.emit(HOME_TAB_REPRESS);
+          },
+        })}
+      />
       <Tabs.Screen name="communities" options={{ title: "Communities" }} />
       <Tabs.Screen name="submit" options={{ title: "Submit" }} />
       <Tabs.Screen name="account" options={{ title: "Account" }} />
@@ -112,5 +126,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "600",
+  },
+  avatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
   },
 });

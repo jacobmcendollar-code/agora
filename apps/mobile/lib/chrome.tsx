@@ -88,3 +88,5 @@ export function useChrome() {
 }
 
 export const AnimatedView = Animated.View;
+
+export const HOME_TAB_REPRESS = "agora.homeTabRepress";

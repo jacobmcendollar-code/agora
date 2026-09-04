@@ -96,10 +96,6 @@ export default function SettingsScreen() {
           onChange={setOpenSocialInNativeApp}
         />
       </View>
-
-      <Text style={styles.note}>
-        Email recovery and promotional-email preferences stay on the site. This app does not invent extra account fields.
-      </Text>
     </ScreenScroll>
   );
 }
@@ -124,5 +120,4 @@ const styles = StyleSheet.create({
   },
   title: { color: colors.text, fontSize: 15, fontWeight: "600" },
   sub: { color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 17 },
-  note: { color: colors.faint, fontSize: 12, marginTop: 16, lineHeight: 18 },
 });

@@ -44,6 +44,7 @@ function Gate() {
           >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="post/[id]" />
+            <Stack.Screen name="u/[username]" />
             <Stack.Screen name="community/[name]" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
