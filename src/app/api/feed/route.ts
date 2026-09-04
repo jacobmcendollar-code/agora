@@ -53,7 +53,7 @@ export async function GET(req: Request) {
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { username: true } },
-      community: { select: { name: true, title: true } },
+      community: { select: { name: true, title: true, postFormat: true } },
       _count: { select: { comments: true } },
     },
   });
