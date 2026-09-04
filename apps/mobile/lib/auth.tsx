@@ -4,12 +4,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { apiFetch, apiJson } from "./api";
 import { API_URL } from "./config";
-import { clearCookies, ingestCookies, loadCookies } from "./cookies";
+import {
+  clearCookies,
+  hasSession,
+  loadCookies,
+  onSessionCleared,
+  saveSession,
+} from "./cookies";
 import type { AuthSession, SessionUser } from "./types";
 
 type AuthContextValue = {
@@ -30,6 +37,13 @@ const AuthContext = createContext<AuthContextValue>({
   updateUser: () => {},
 });
 
+type MobileLoginResponse = {
+  sessionToken?: string;
+  cookieName?: string;
+  user?: Record<string, unknown>;
+  error?: string;
+};
+
 function normalizeUser(raw: Record<string, unknown> | undefined | null): SessionUser | null {
   if (!raw) return null;
   const username = String(raw.username || raw.name || "").trim();
@@ -44,28 +58,57 @@ function normalizeUser(raw: Record<string, unknown> | undefined | null): Session
   };
 }
 
-async function getCsrfToken(): Promise<string> {
-  const res = await apiFetch("/api/auth/csrf");
-  const data = (await res.json()) as { csrfToken?: string };
-  if (!data.csrfToken) throw new Error("Could not start login");
-  return data.csrfToken;
+function isNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return (
+    msg.includes("network request failed") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("network error") ||
+    msg.includes("internet connection")
+  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [ready, setReady] = useState(false);
+  const userRef = useRef<SessionUser | null>(null);
+  userRef.current = user;
 
   const refresh = useCallback(async () => {
     await loadCookies();
-    const res = await apiFetch("/api/auth/session");
-    const data = (await res.json().catch(() => null)) as AuthSession | SessionUser | null;
-    const next = normalizeUser(
-      data && typeof data === "object" && "user" in data
-        ? (data.user as Record<string, unknown>)
-        : (data as Record<string, unknown> | null)
-    );
-    setUser(next);
-    return next;
+    if (!hasSession()) {
+      setUser(null);
+      return null;
+    }
+    try {
+      const res = await apiFetch("/api/auth/session");
+      if (res.status === 401) {
+        await clearCookies();
+        setUser(null);
+        return null;
+      }
+      const data = (await res.json().catch(() => null)) as AuthSession | SessionUser | null;
+      const next = normalizeUser(
+        data && typeof data === "object" && "user" in data
+          ? (data.user as Record<string, unknown>)
+          : (data as Record<string, unknown> | null)
+      );
+      if (!next) {
+        await clearCookies();
+        setUser(null);
+        return null;
+      }
+      setUser(next);
+      return next;
+    } catch (err) {
+      if (isNetworkError(err)) {
+        return userRef.current;
+      }
+      setUser(null);
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -74,66 +117,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setReady(true));
   }, [refresh]);
 
-  const signIn = useCallback(
-    async (username: string, password: string) => {
-      const csrfToken = await getCsrfToken();
-      const body = new URLSearchParams({
-        csrfToken,
-        username: username.trim().toLowerCase(),
-        password,
-        callbackUrl: `${API_URL}/`,
-        json: "true",
-        redirect: "false",
-      });
-      const res = await apiFetch("/api/auth/callback/credentials", {
+  useEffect(() => onSessionCleared(() => setUser(null)), []);
+
+  const signIn = useCallback(async (username: string, password: string) => {
+    let res: Response;
+    try {
+      res = await fetch(`${API_URL}/api/mobile/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
           Accept: "application/json",
-          "X-Auth-Return-Redirect": "1",
-          Origin: API_URL,
-          Referer: `${API_URL}/login`,
         },
-        body: body.toString(),
+        body: JSON.stringify({
+          username: username.trim().toLowerCase(),
+          password,
+        }),
       });
-      ingestCookies(res);
-      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-      const redirected = data.url || "";
-      if (redirected.includes("error=CredentialsSignin") || data.error === "CredentialsSignin") {
-        throw new Error("Invalid username or password");
-      }
-      const sessionUser = await refresh();
-      if (!sessionUser) {
-        // TODO(auth): Cookie/session jar against /api/auth/* did not yield a
-        // session after credentials POST. Do NOT add a mobile Bearer endpoint
-        // without a CoS/Jacob ping — Auth.js JWT cookies are the intended path.
-        throw new Error(
-          "Signed in on the server, but this build could not keep the session cookie. Try again, or use the site."
-        );
-      }
-    },
-    [refresh]
-  );
+    } catch {
+      throw new Error("Could not reach Agora. Check your connection.");
+    }
+
+    const data = (await res.json().catch(() => ({}))) as MobileLoginResponse;
+    if (res.status === 401) {
+      throw new Error(data.error || "Invalid username or password");
+    }
+    if (!res.ok) {
+      throw new Error(data.error || `Could not sign in (${res.status})`);
+    }
+    if (!data.sessionToken || !data.cookieName) {
+      throw new Error("Could not start login");
+    }
+
+    await saveSession(data.sessionToken, data.cookieName);
+    const next = normalizeUser(data.user);
+    if (next) {
+      setUser(next);
+      return;
+    }
+
+    const sessionUser = await refresh();
+    if (!sessionUser) {
+      await clearCookies();
+      throw new Error("Signed in, but the session could not be loaded. Try again.");
+    }
+  }, [refresh]);
 
   const signOut = useCallback(async () => {
     try {
-      const csrfToken = await getCsrfToken();
-      const body = new URLSearchParams({
-        csrfToken,
-        callbackUrl: `${API_URL}/`,
-        json: "true",
-      });
-      await apiFetch("/api/auth/signout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "X-Auth-Return-Redirect": "1",
-          Origin: API_URL,
-        },
-        body: body.toString(),
-      });
+      await apiFetch("/api/mobile/logout", { method: "POST" });
     } catch {
-      // still clear local jar
+      // JWT cannot be revoked; still clear the local token.
     }
     await clearCookies();
     setUser(null);
