@@ -1,5 +1,5 @@
 import { API_URL } from "./config";
-import { clearCookies, cookieHeader, loadCookies } from "./cookies";
+import { cookieHeader, loadCookies } from "./cookies";
 import type {
   CommentNode,
   Community,
@@ -27,14 +27,10 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   if (cookies) headers.set("Cookie", cookies);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (!headers.has("Origin")) headers.set("Origin", API_URL);
-  const res = await fetch(`${API_URL}${path}`, {
+  return fetch(`${API_URL}${path}`, {
     ...init,
     headers,
   });
-  if (res.status === 401 && cookies && !path.startsWith("/api/mobile/login")) {
-    await clearCookies();
-  }
-  return res;
 }
 
 export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {

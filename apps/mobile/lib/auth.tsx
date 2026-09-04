@@ -89,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         return null;
       }
+      if (!res.ok) {
+        return userRef.current;
+      }
       const data = (await res.json().catch(() => null)) as AuthSession | SessionUser | null;
       const next = normalizeUser(
         data && typeof data === "object" && "user" in data
@@ -103,17 +106,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(next);
       return next;
     } catch (err) {
-      if (isNetworkError(err)) {
+      if (isNetworkError(err) || userRef.current) {
         return userRef.current;
       }
-      setUser(null);
       return null;
     }
   }, []);
 
   useEffect(() => {
     refresh()
-      .catch(() => setUser(null))
+      .catch(() => {})
       .finally(() => setReady(true));
   }, [refresh]);
 
