@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenScroll } from "@/components/Screen";
+import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import {
@@ -18,7 +19,6 @@ import {
   createComment,
   fetchCommunities,
   fetchPostDetail,
-  muteUser,
   peekCachedPost,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -53,9 +53,10 @@ function CommentBlock({
           size="sm"
         />
         <View style={{ flex: 1 }}>
-          <Text style={styles.commentMeta}>
-            {comment.author.username} · {timeAgo(comment.createdAt)}
-          </Text>
+          <View style={styles.commentMetaRow}>
+            <Username username={comment.author.username} style={styles.commentMeta} />
+            <Text style={styles.commentMeta}> · {timeAgo(comment.createdAt)}</Text>
+          </View>
           <Text style={styles.commentBody}>{comment.body}</Text>
           {comment.imageUrl ? (
             <Image source={{ uri: comment.imageUrl }} style={styles.commentImg} />
@@ -146,29 +147,6 @@ export default function PostDetailScreen() {
     }
   }
 
-  async function onMute() {
-    const authorId = post?.author.id || post?.authorId;
-    if (!authorId || !user) {
-      router.push("/login");
-      return;
-    }
-    Alert.alert("Mute this user?", `Hide posts and comments from ${post?.author.username}.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Mute",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await muteUser(authorId, "mute");
-            Alert.alert("Muted", `${post?.author.username} is muted on your account.`);
-          } catch (err) {
-            Alert.alert("Could not mute", err instanceof Error ? err.message : "Try again");
-          }
-        },
-      },
-    ]);
-  }
-
   if (loading && !post) {
     return (
       <View style={styles.center}>
@@ -233,13 +211,8 @@ export default function PostDetailScreen() {
               <Pressable onPress={() => router.push(`/community/${post.community.name}`)}>
                 <Text style={styles.community}>{post.community.title}</Text>
               </Pressable>
-              <Text style={styles.meta}>{post.author.username}</Text>
+              <Username username={post.author.username} style={styles.meta} />
               <Text style={styles.meta}>{timeAgo(post.createdAt)}</Text>
-              {user && user.username !== post.author.username && post.author.username !== "[deleted]" ? (
-                <Pressable onPress={onMute}>
-                  <Text style={styles.mute}>Mute</Text>
-                </Pressable>
-              ) : null}
             </View>
           </View>
         </View>
@@ -336,7 +309,6 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14, alignItems: "center" },
   community: { color: colors.text, fontWeight: "700", fontSize: 13 },
   meta: { color: colors.muted, fontSize: 13 },
-  mute: { color: colors.faint, fontSize: 13, fontWeight: "600" },
   commentBox: {
     marginTop: 18,
     backgroundColor: colors.card,
@@ -367,7 +339,8 @@ const styles = StyleSheet.create({
   count: { marginLeft: "auto", color: colors.faint, fontSize: 12 },
   empty: { color: colors.muted, marginTop: 12 },
   comment: { marginTop: 14 },
-  commentMeta: { color: colors.faint, fontSize: 12, marginBottom: 4 },
+  commentMetaRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginBottom: 4 },
+  commentMeta: { color: colors.faint, fontSize: 12 },
   commentBody: { color: colors.text, fontSize: 15, lineHeight: 21 },
   commentImg: { width: "100%", height: 160, borderRadius: 10, marginTop: 8 },
   reply: { color: colors.muted, marginTop: 6, fontSize: 12, fontWeight: "600" },

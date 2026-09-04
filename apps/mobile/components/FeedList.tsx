@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   RefreshControl,
   StyleSheet,
   Text,
   View,
+  type FlatList,
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { fetchCommunities, fetchFeed } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useChrome } from "@/lib/chrome";
+import { HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
 import { colors } from "@/lib/theme";
 import type { Community, FeedPost } from "@/lib/types";
 import { FeedCard } from "./FeedCard";
@@ -21,6 +23,7 @@ type Props = {
   header?: ReactNode;
   emptyTitle?: string;
   emptyBody?: string;
+  homeRetap?: boolean;
 };
 
 export function FeedList({
@@ -29,9 +32,11 @@ export function FeedList({
   header,
   emptyTitle = "No posts yet",
   emptyBody = "Join some communities or start the first conversation.",
+  homeRetap,
 }: Props) {
   const { user } = useAuth();
   const chrome = useChrome();
+  const listRef = useRef<FlatList<FeedPost>>(null);
   const [sort, setSort] = useState<SortKey>("trending");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [page, setPage] = useState(1);
@@ -90,14 +95,24 @@ export function FeedList({
     };
   }, [load]);
 
-  async function onRefresh() {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await load(1, true);
     } finally {
       setRefreshing(false);
     }
-  }
+  }, [load]);
+
+  useEffect(() => {
+    if (!homeRetap) return;
+    const sub = DeviceEventEmitter.addListener(HOME_TAB_REPRESS, () => {
+      chrome.reveal();
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      onRefresh();
+    });
+    return () => sub.remove();
+  }, [chrome, homeRetap, onRefresh]);
 
   async function onEnd() {
     if (loading || loadingMore || !nextPage) return;
@@ -122,6 +137,7 @@ export function FeedList({
 
   return (
     <Animated.FlatList
+      ref={listRef}
       data={visible}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => <FeedCard post={item} hideCommunity={hideCommunity} />}

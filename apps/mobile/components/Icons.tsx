@@ -1,4 +1,4 @@
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle, Path, Rect } from "react-native-svg";
 
 type IconProps = { color: string; size?: number };
 
@@ -18,14 +18,9 @@ export function IconHome({ color, size = 24 }: IconProps) {
 export function IconCommunities({ color, size = 24 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="8" cy="9" r="2.4" stroke={color} strokeWidth={1.8} />
-      <Circle cx="16" cy="9" r="2.4" stroke={color} strokeWidth={1.8} />
-      <Path
-        d="M4.5 18c.6-2.4 2.4-3.6 4.8-3.6h.4M14.3 14.4h.4c2.4 0 4.2 1.2 4.8 3.6"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-      />
+      <Circle cx="12" cy="7" r="2.15" stroke={color} strokeWidth={1.8} />
+      <Circle cx="7.1" cy="16.1" r="2.15" stroke={color} strokeWidth={1.8} />
+      <Circle cx="16.9" cy="16.1" r="2.15" stroke={color} strokeWidth={1.8} />
     </Svg>
   );
 }
@@ -33,8 +28,9 @@ export function IconCommunities({ color, size = 24 }: IconProps) {
 export function IconSubmit({ color, size = 24 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="4.1" y="4.1" width="15.8" height="15.8" rx="3.4" stroke={color} strokeWidth={1.8} />
       <Path
-        d="M12 5v14M5 12h14"
+        d="M12 8.2v7.6M8.2 12h7.6"
         stroke={color}
         strokeWidth={1.8}
         strokeLinecap="round"
@@ -76,6 +72,34 @@ export function IconBack({ color, size = 22 }: IconProps) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
         d="M15 6 9 12l6 6"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function IconBookmark({ color, size = 16, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : "none"}>
+      <Path
+        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function IconShare({ color, size = 16 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"

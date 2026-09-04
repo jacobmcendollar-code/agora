@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { IconChevron } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
+import { Username } from "@/components/Username";
 import { useAuth } from "@/lib/auth";
 import { colors } from "@/lib/theme";
 
@@ -41,8 +42,7 @@ export default function AccountScreen() {
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{user.username}</Text>
-            <Text style={styles.hint}>Same account as agor4.com</Text>
+            <Username username={user.username} style={styles.name} />
           </View>
         </View>
       ) : (
