@@ -30,21 +30,15 @@ Scan the QR code with Expo Go (or press `i` for the iOS simulator on a Mac). The
 
 ## Auth
 
-Server session strategy is Auth.js JWT **cookies**. The app keeps a cookie jar (SecureStore) and calls:
+React Native cannot keep Auth.js HttpOnly cookies, so the app does **not** use the CSRF → credentials cookie-jar flow.
 
-1. `GET /api/auth/csrf`
-2. `POST /api/auth/callback/credentials` with `X-Auth-Return-Redirect: 1`
-3. `GET /api/auth/session`
-4. `POST /api/auth/signout`
+1. `POST /api/mobile/login` with `{ username, password }` (same accounts as the site)
+2. Persist `sessionToken` + `cookieName` in SecureStore
+3. Send `Cookie: ${cookieName}=${sessionToken}` on API calls (`__Secure-authjs.session-token` in production)
+4. `GET /api/auth/session` to restore the user; 401 clears the stored token
+5. `POST /api/mobile/logout` then clear SecureStore (JWT cannot be revoked server-side)
 
-No Bearer token endpoint was added. **Do not add one without a CoS / Jacob ping.**
-
-```
-TODO(auth): If the cookie jar cannot retain `__Secure-authjs.session-token` /
-`__Host-authjs.csrf-token` on device (React Native fetch + Set-Cookie),
-votes/submit will 401. Fix is a first-party mobile session endpoint — ask
-Jacob / CoS before changing server auth.
-```
+Existing `auth()` accepts the JWT when it arrives as the Auth.js session cookie. No Bearer middleware.
 
 ## Screens
 

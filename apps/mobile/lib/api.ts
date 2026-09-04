@@ -1,5 +1,5 @@
 import { API_URL } from "./config";
-import { cookieHeader, ingestCookies, loadCookies } from "./cookies";
+import { clearCookies, cookieHeader, loadCookies } from "./cookies";
 import type {
   CommentNode,
   Community,
@@ -31,7 +31,9 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     ...init,
     headers,
   });
-  ingestCookies(res);
+  if (res.status === 401 && cookies && !path.startsWith("/api/mobile/login")) {
+    await clearCookies();
+  }
   return res;
 }
 
