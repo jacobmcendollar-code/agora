@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { fetchMyVote, vote } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
 import { useRouter } from "expo-router";
 
 type Props = {
@@ -45,6 +45,7 @@ function Spear({
 export function VoteSpears({ targetType, targetId, initialScore, size = "md" }: Props) {
   const { user } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
   const [score, setScore] = useState(initialScore);
   const [userVote, setUserVote] = useState<1 | -1 | 0>(0);
   const [loading, setLoading] = useState(false);

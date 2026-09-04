@@ -11,8 +11,8 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { getYouTubeId, isGenericBody, isTikTokLink, isXLink, openExternal } from "@/lib/media";
-import { usePreferences } from "@/lib/preferences";
-import { colors } from "@/lib/theme";
+import { usePreferences, useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 import type { FeedPost } from "@/lib/types";
 import { IconBookmark, IconComments, IconShare } from "./Icons";
 import { Thumb } from "./Thumb";
@@ -28,6 +28,8 @@ export function FeedCard({
   const router = useRouter();
   const { user } = useAuth();
   const { openSocialInNativeApp } = usePreferences();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const comments = commentCount(post);
   const discussion = post.community?.postFormat === "discussion";
   const youtubeId = getYouTubeId(post.url);
@@ -156,7 +158,8 @@ export function FeedCard({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -234,4 +237,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-});
+  });
+}

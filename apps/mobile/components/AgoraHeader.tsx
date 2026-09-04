@@ -2,7 +2,8 @@ import { Image, Pressable, StyleSheet, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimatedView, useChrome } from "@/lib/chrome";
-import { colors, logoHeight, logoWidth, space } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import { logoHeight, logoWidth, space, type Palette } from "@/lib/theme";
 import { IconBack } from "./Icons";
 
 const TAB_ROOTS = new Set(["/", "/communities", "/submit", "/account"]);
@@ -12,6 +13,8 @@ export function AgoraHeader() {
   const { headerStyle } = useChrome();
   const pathname = usePathname();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const showBack = !TAB_ROOTS.has(pathname);
 
   return (
@@ -48,30 +51,32 @@ export function AgoraHeader() {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
-    backgroundColor: colors.bg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  bar: {
-    height: space.headerBody,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-  },
-  side: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  back: {
-    padding: 4,
-    marginLeft: -4,
-  },
-});
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
+    wrap: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 20,
+      backgroundColor: colors.bg,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    bar: {
+      height: space.headerBody,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+    },
+    side: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    back: {
+      padding: 4,
+      marginLeft: -4,
+    },
+  });
+}

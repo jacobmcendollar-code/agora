@@ -3,11 +3,14 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenScroll } from "@/components/Screen";
 import { registerAccount, useAuth } from "@/lib/auth";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 
 export default function RegisterScreen() {
   const { signIn } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,7 +82,8 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   heading: { color: colors.text, fontSize: 24, fontWeight: "700" },
   sub: { color: colors.muted, marginTop: 6, marginBottom: 18 },
   card: {
@@ -108,6 +112,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryText: { color: colors.white, fontWeight: "700" },
-  errorBox: { backgroundColor: "#3f1d1d", borderRadius: 10, padding: 10, marginBottom: 8 },
-  errorText: { color: "#fecaca", fontSize: 13 },
-});
+  errorBox: { backgroundColor: colors.dangerBg, borderRadius: 10, padding: 10, marginBottom: 8 },
+  errorText: { color: colors.dangerText, fontSize: 13 },
+  });
+}

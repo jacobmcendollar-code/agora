@@ -4,13 +4,16 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { FeedList } from "@/components/FeedList";
 import { fetchCommunities, resolveCommunityId, subscribe } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 import type { Community } from "@/lib/types";
 
 export default function CommunityScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const { user } = useAuth();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [community, setCommunity] = useState<Community | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -86,45 +89,47 @@ export default function CommunityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: "#052e24",
-    borderWidth: 1,
-    borderColor: "#064e3b",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-  },
-  titleRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
-  title: { color: colors.text, fontSize: 22, fontWeight: "800" },
-  pill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  pillText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
-  desc: { color: colors.muted, marginTop: 8, lineHeight: 20 },
-  actions: { flexDirection: "row", gap: 8, marginTop: 14 },
-  join: {
-    backgroundColor: colors.emeraldDark,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  joined: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  joinText: { color: colors.white, fontWeight: "700" },
-  joinedText: { color: colors.muted },
-  postBtn: {
-    backgroundColor: colors.emeraldDark,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  postBtnText: { color: colors.white, fontWeight: "700" },
-});
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
+    hero: {
+      backgroundColor: colors.hero,
+      borderWidth: 1,
+      borderColor: colors.heroBorder,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 8,
+    },
+    titleRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
+    title: { color: colors.text, fontSize: 22, fontWeight: "800" },
+    pill: {
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    pillText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
+    desc: { color: colors.muted, marginTop: 8, lineHeight: 20 },
+    actions: { flexDirection: "row", gap: 8, marginTop: 14 },
+    join: {
+      backgroundColor: colors.emeraldDark,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+    },
+    joined: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    joinText: { color: colors.white, fontWeight: "700" },
+    joinedText: { color: colors.muted },
+    postBtn: {
+      backgroundColor: colors.emeraldDark,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+    },
+    postBtnText: { color: colors.white, fontWeight: "700" },
+  });
+}

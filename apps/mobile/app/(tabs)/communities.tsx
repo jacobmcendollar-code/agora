@@ -12,13 +12,16 @@ import Animated from "react-native-reanimated";
 import { fetchCommunities, resolveCommunityId, subscribe } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useChrome } from "@/lib/chrome";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 import type { Community } from "@/lib/types";
 
 export default function CommunitiesScreen() {
   const { user } = useAuth();
   const chrome = useChrome();
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"discover" | "joined">("discover");
@@ -162,7 +165,8 @@ export default function CommunitiesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   heading: { color: colors.text, fontSize: 24, fontWeight: "700" },
   sub: { color: colors.muted, fontSize: 13, marginTop: -4 },
   search: {
@@ -206,4 +210,5 @@ const styles = StyleSheet.create({
   joinText: { color: colors.white, fontSize: 13, fontWeight: "600" },
   joinedText: { color: colors.muted },
   empty: { color: colors.muted, textAlign: "center", marginTop: 24 },
-});
+  });
+}

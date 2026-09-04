@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { paletteFor, type Palette } from "./theme";
 
 const KEY = "agora.prefs.v1";
 
@@ -78,4 +79,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
 export function usePreferences() {
   return useContext(PrefsContext);
+}
+
+export function useThemeColors(): Palette {
+  const { theme } = usePreferences();
+  return paletteFor(theme);
 }

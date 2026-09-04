@@ -1,8 +1,11 @@
 import { Link, Stack } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors } from "@/lib/preferences";
+import type { Palette } from "@/lib/theme";
 
 export default function NotFoundScreen() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <>
       <Stack.Screen options={{ title: "Not found", headerShown: false }} />
@@ -16,15 +19,17 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-    padding: 20,
-  },
-  title: { fontSize: 18, fontWeight: "700", color: colors.text },
-  link: { marginTop: 16 },
-  linkText: { color: colors.emerald, fontWeight: "600" },
-});
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.bg,
+      padding: 20,
+    },
+    title: { fontSize: 18, fontWeight: "700", color: colors.text },
+    link: { marginTop: 16 },
+    linkText: { color: colors.emerald, fontWeight: "600" },
+  });
+}
