@@ -10,6 +10,77 @@ const schema = z.object({
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  const { id } = await params;
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, username: true } },
+        community: {
+          select: { id: true, name: true, title: true, postFormat: true, nsfw: true },
+        },
+        _count: { select: { comments: true } },
+      },
+    });
+
+    if (!post || post.moderationStatus === "removed") {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    let mutedIds: string[] = [];
+    if (session?.user?.id) {
+      const mutes = await prisma.mute.findMany({
+        where: { muterId: session.user.id },
+        select: { mutedId: true },
+      });
+      mutedIds = mutes.map((m) => m.mutedId);
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: {
+        postId: post.id,
+        moderationStatus: { in: ["approved", "author_deleted"] },
+        ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
+      },
+      orderBy: { createdAt: "asc" },
+      include: {
+        author: { select: { id: true, username: true } },
+      },
+    });
+
+    const isSoftDeleted = post.moderationStatus === "author_deleted";
+
+    return NextResponse.json({
+      post: {
+        ...post,
+        author: {
+          id: post.author.id,
+          username: isSoftDeleted ? "[deleted]" : post.author.username,
+        },
+      },
+      comments: comments.map((c) => ({
+        ...c,
+        author: {
+          id: c.author.id,
+          username:
+            c.moderationStatus === "author_deleted"
+              ? "[deleted]"
+              : c.author.username,
+        },
+      })),
+    });
+  } catch (err) {
+    console.error("[posts GET]", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

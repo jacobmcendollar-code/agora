@@ -106,7 +106,10 @@ src/
     ranking.ts          # hot score etc.
     prisma.ts
 prisma/schema.prisma
+apps/mobile/            # Expo iPhone app (self-contained; not part of the Vercel web build)
 ```
+
+The iPhone app lives in [`apps/mobile`](apps/mobile). Run it with `cd apps/mobile && npx expo start` against `EXPO_PUBLIC_API_URL=https://www.agor4.com`. See that README for EAS / TestFlight.
 
 ## Next Steps You Might Want
 

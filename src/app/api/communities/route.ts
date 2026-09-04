@@ -15,17 +15,43 @@ function slugify(title: string): string {
 
 export async function GET() {
   try {
+    const session = await auth();
     const communities = await prisma.community.findMany({
       orderBy: { title: "asc" },
       select: {
+        id: true,
         name: true,
         title: true,
         description: true,
         nsfw: true,
         postFormat: true,
+        createdAt: true,
+        _count: { select: { posts: true } },
       },
     });
-    return NextResponse.json(communities);
+
+    let joinedIds = new Set<string>();
+    if (session?.user?.id) {
+      const subs = await prisma.subscription.findMany({
+        where: { userId: session.user.id },
+        select: { communityId: true },
+      });
+      joinedIds = new Set(subs.map((s) => s.communityId));
+    }
+
+    return NextResponse.json(
+      communities.map((c) => ({
+        id: c.id,
+        name: c.name,
+        title: c.title,
+        description: c.description,
+        nsfw: c.nsfw,
+        postFormat: c.postFormat,
+        createdAt: c.createdAt.toISOString(),
+        postCount: c._count.posts,
+        joined: joinedIds.has(c.id),
+      }))
+    );
   } catch (err) {
     console.error("[communities GET]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
