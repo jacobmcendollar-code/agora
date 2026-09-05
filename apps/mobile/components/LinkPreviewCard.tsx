@@ -88,18 +88,18 @@ function makeStyles(colors: Palette) {
       width: "100%",
       aspectRatio: 16 / 9,
       backgroundColor: colors.cardHover,
+      overflow: "hidden",
     },
     image: {
       width: "100%",
-      height: "100%",
+      aspectRatio: 16 / 9,
     },
     fallback: {
-      flex: 1,
+      width: "100%",
+      aspectRatio: 16 / 9,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.field,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
     },
     fallbackText: {
       color: colors.emerald,
