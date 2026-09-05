@@ -48,7 +48,10 @@ function Gate() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="post/[id]" />
             <Stack.Screen name="u/[username]" />
-            <Stack.Screen name="account" />
+            <Stack.Screen
+              name="account"
+              options={{ animation: "slide_from_left", gestureDirection: "horizontal" }}
+            />
             <Stack.Screen name="notifications" />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />

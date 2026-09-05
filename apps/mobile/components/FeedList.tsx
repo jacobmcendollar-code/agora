@@ -116,8 +116,11 @@ export function FeedList({
     if (!homeRetap) return;
     const sub = DeviceEventEmitter.addListener(HOME_TAB_REPRESS, () => {
       chrome.reveal();
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
-      onRefresh();
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToOffset({ offset: 0, animated: false });
+        onRefresh();
+      });
     });
     return () => sub.remove();
   }, [chrome, homeRetap, onRefresh]);
