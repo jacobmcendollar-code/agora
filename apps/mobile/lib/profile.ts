@@ -7,6 +7,16 @@ export type ProfilePost = {
   communityTitle: string;
 };
 
+export type ProfileComment = {
+  id: string;
+  body: string;
+  createdAt: string | null;
+  postId: string;
+  postTitle: string;
+  communityName: string;
+  communityTitle: string;
+};
+
 export type PublicProfile = {
   username: string;
   id: string | null;
@@ -14,6 +24,7 @@ export type PublicProfile = {
   bio: string | null;
   joined: string | null;
   posts: ProfilePost[];
+  comments: ProfileComment[];
 };
 
 function unescapeFlight(html: string) {
@@ -21,8 +32,20 @@ function unescapeFlight(html: string) {
     .replace(/\\u0026/g, "&")
     .replace(/\\u003c/g, "<")
     .replace(/\\u003e/g, ">")
-    .replace(/\\"/g, '"')
-    .replace(/\\n/g, "\n");
+    .replace(/\\"/g, '"');
+}
+
+function decodeFlightPayload(html: string): string {
+  const chunks: string[] = [];
+  const re = /self\.__next_f\.push\(\[\d+,("[\s\S]*?")\]\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    try {
+      chunks.push(JSON.parse(m[1]) as string);
+    } catch {
+    }
+  }
+  return chunks.length ? chunks.join("\n") : unescapeFlight(html);
 }
 
 function extractJsonArray(source: string, key: string): unknown[] | null {
@@ -104,6 +127,34 @@ function postsFromFlight(raw: unknown[]): ProfilePost[] {
   return posts;
 }
 
+function commentsFromFlight(raw: unknown[]): ProfileComment[] {
+  const comments: ProfileComment[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as Record<string, unknown>;
+    const id = typeof rec.id === "string" ? rec.id : "";
+    const rawBody = typeof rec.body === "string" ? rec.body : "";
+    const imageUrl = typeof rec.imageUrl === "string" ? rec.imageUrl : "";
+    const post = rec.post as
+      | { id?: string; title?: string; community?: { name?: string; title?: string } }
+      | undefined;
+    if (!id || !post?.id || (!rawBody && !imageUrl)) continue;
+    const body = decodeHtml(rawBody) || (imageUrl ? "[image]" : "");
+    const createdAt =
+      typeof rec.createdAt === "string" ? rec.createdAt.replace(/^\$D/, "") : null;
+    comments.push({
+      id,
+      body,
+      createdAt,
+      postId: post.id,
+      postTitle: decodeHtml(post.title || ""),
+      communityName: post.community?.name || "",
+      communityTitle: post.community?.title || post.community?.name || "",
+    });
+  }
+  return comments;
+}
+
 function extractUserId(flight: string, html: string, posts: unknown[] | null): string | null {
   const fromMute = flight.match(/"userId":"(cm[a-z0-9]+)"/);
   if (fromMute) return fromMute[1];
@@ -135,9 +186,11 @@ export function parsePublicProfile(html: string, fallbackUsername: string): Publ
   const bioMatch = html.match(/whitespace-pre-wrap break-words[^>]*>([\s\S]*?)<\/p>/);
   const bio = bioMatch ? decodeHtml(bioMatch[1].replace(/<[^>]+>/g, "")).trim() : null;
 
-  const flight = unescapeFlight(html);
+  const flight = decodeFlightPayload(html);
   const flightPosts = extractJsonArray(flight, "posts");
   const posts = flightPosts ? postsFromFlight(flightPosts) : postsFromHtml(html);
+  const flightComments = extractJsonArray(flight, "comments");
+  const comments = flightComments ? commentsFromFlight(flightComments) : [];
 
   return {
     username,
@@ -146,6 +199,7 @@ export function parsePublicProfile(html: string, fallbackUsername: string): Publ
     bio: bio || null,
     joined: joined && !joined.startsWith("communities") ? joined : null,
     posts,
+    comments,
   };
 }
 

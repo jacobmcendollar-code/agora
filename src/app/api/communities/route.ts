@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { listCommunities } from "@/lib/communities";
+import { readMobileSession } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 
 function slugify(title: string): string {
@@ -16,42 +18,7 @@ function slugify(title: string): string {
 export async function GET() {
   try {
     const session = await auth();
-    const communities = await prisma.community.findMany({
-      orderBy: { title: "asc" },
-      select: {
-        id: true,
-        name: true,
-        title: true,
-        description: true,
-        nsfw: true,
-        postFormat: true,
-        createdAt: true,
-        _count: { select: { posts: true } },
-      },
-    });
-
-    let joinedIds = new Set<string>();
-    if (session?.user?.id) {
-      const subs = await prisma.subscription.findMany({
-        where: { userId: session.user.id },
-        select: { communityId: true },
-      });
-      joinedIds = new Set(subs.map((s) => s.communityId));
-    }
-
-    return NextResponse.json(
-      communities.map((c) => ({
-        id: c.id,
-        name: c.name,
-        title: c.title,
-        description: c.description,
-        nsfw: c.nsfw,
-        postFormat: c.postFormat,
-        createdAt: c.createdAt.toISOString(),
-        postCount: c._count.posts,
-        joined: joinedIds.has(c.id),
-      }))
-    );
+    return NextResponse.json(await listCommunities(session?.user?.id ?? null));
   } catch (err) {
     console.error("[communities GET]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -68,7 +35,8 @@ const createSchema = z.object({
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  const userId = session?.user?.id ?? (await readMobileSession(req))?.userId;
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -108,13 +76,13 @@ export async function POST(req: Request) {
         rules: rules || null,
         nsfw: nsfw || false,
         postFormat,
-        creatorId: session.user.id,
+        creatorId: userId,
       },
     });
 
     await prisma.subscription.create({
       data: {
-        userId: session.user.id,
+        userId,
         communityId: community.id,
       },
     });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -7,8 +7,9 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
+import { CreateCommunityModal } from "@/components/CreateCommunityModal";
 import { fetchCommunities, resolveCommunityId, subscribe } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useChrome } from "@/lib/chrome";
@@ -27,6 +28,7 @@ export default function CommunitiesScreen() {
   const [tab, setTab] = useState<"discover" | "joined">("discover");
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const showNsfw = Boolean(user?.showNsfw);
 
@@ -35,11 +37,13 @@ export default function CommunitiesScreen() {
     setCommunities(data.filter((c) => showNsfw || !c.nsfw));
   }, [showNsfw]);
 
-  useEffect(() => {
-    load()
-      .catch(() => setCommunities([]))
-      .finally(() => setLoading(false));
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load()
+        .catch(() => setCommunities([]))
+        .finally(() => setLoading(false));
+    }, [load])
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -72,7 +76,6 @@ export default function CommunitiesScreen() {
         prev.map((c) => (c.name === community.name ? { ...c, id, joined: data.joined } : c))
       );
     } catch {
-      // keep previous state
     } finally {
       setBusyId(null);
     }
@@ -97,6 +100,12 @@ export default function CommunitiesScreen() {
             <Text style={styles.sub}>
               Topic-based rooms. Light moderation. Free speech by default.
             </Text>
+            <Pressable
+              onPress={() => (user ? setCreating(true) : router.push("/login"))}
+              style={styles.createBtn}
+            >
+              <Text style={styles.createBtnText}>Create Community</Text>
+            </Pressable>
             <TextInput
               value={query}
               onChangeText={setQuery}
@@ -161,6 +170,16 @@ export default function CommunitiesScreen() {
           )
         }
       />
+      <CreateCommunityModal
+        visible={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(name) => {
+          setCreating(false);
+          setTab("joined");
+          load().catch(() => {});
+          router.push(`/community/${name}`);
+        }}
+      />
     </View>
   );
 }
@@ -169,6 +188,13 @@ function makeStyles(colors: Palette) {
   return StyleSheet.create({
   heading: { color: colors.text, fontSize: 24, fontWeight: "700" },
   sub: { color: colors.muted, fontSize: 13, marginTop: -4 },
+  createBtn: {
+    backgroundColor: colors.emeraldDark,
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  createBtnText: { color: colors.white, fontSize: 15, fontWeight: "700" },
   search: {
     backgroundColor: colors.field,
     borderColor: colors.border,

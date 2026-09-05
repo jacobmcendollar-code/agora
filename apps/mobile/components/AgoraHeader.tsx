@@ -68,45 +68,20 @@ export function AgoraHeader() {
               <IconBack color={colors.text} />
             </Pressable>
           ) : null}
-        </View>
-        <Image
-          source={require("../assets/agora-logo.png")}
-          style={{ height: logoHeight, width: logoWidth }}
-          resizeMode="contain"
-          accessibilityLabel="Agora"
-        />
-        <View style={[styles.side, styles.sideRight]}>
           {user ? (
-            <>
-              <Pressable
-                onPress={() => router.push("/notifications")}
-                hitSlop={8}
-                accessibilityLabel={
-                  unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
-                }
-                style={styles.bellBtn}
-              >
-                <IconBell color={colors.text} size={22} />
-                {unread > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
-                  </View>
-                ) : null}
-              </Pressable>
-              <Pressable
-                onPress={() => router.push("/account")}
-                accessibilityLabel="Account"
-                style={styles.avatarHit}
-              >
-                {user.image ? (
-                  <Image source={{ uri: user.image }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarFallback}>
-                    <Text style={styles.avatarLetter}>{initial}</Text>
-                  </View>
-                )}
-              </Pressable>
-            </>
+            <Pressable
+              onPress={() => router.push("/account")}
+              accessibilityLabel="Account"
+              style={styles.avatarHit}
+            >
+              {user.image ? (
+                <Image source={{ uri: user.image }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarLetter}>{initial}</Text>
+                </View>
+              )}
+            </Pressable>
           ) : (
             <Pressable
               onPress={() => router.push("/login")}
@@ -116,6 +91,31 @@ export function AgoraHeader() {
               <Text style={styles.loginText}>Log in</Text>
             </Pressable>
           )}
+        </View>
+        <Image
+          source={require("../assets/agora-logo.png")}
+          style={{ height: logoHeight, width: logoWidth }}
+          resizeMode="contain"
+          accessibilityLabel="Agora"
+        />
+        <View style={[styles.side, styles.sideRight]}>
+          {user ? (
+            <Pressable
+              onPress={() => router.push("/notifications")}
+              hitSlop={8}
+              accessibilityLabel={
+                unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
+              }
+              style={styles.bellBtn}
+            >
+              <IconBell color={colors.text} size={22} />
+              {unread > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </AnimatedView>
@@ -144,6 +144,7 @@ function makeStyles(colors: Palette) {
       flex: 1,
       flexDirection: "row",
       alignItems: "center",
+      gap: 6,
     },
     sideRight: {
       justifyContent: "flex-end",

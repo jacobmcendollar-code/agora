@@ -88,9 +88,22 @@ export async function fetchFeed(opts: {
 }
 
 export async function fetchCommunities(): Promise<Community[]> {
-  const data = await apiJson<Community[] | { error?: string }>("/api/communities");
+  const data = await apiJson<Community[] | { error?: string }>("/api/mobile/communities");
   if (!Array.isArray(data)) return [];
-  return data;
+  return data.map((c) => ({ ...c, joined: Boolean(c.joined) }));
+}
+
+export async function createCommunity(payload: {
+  title: string;
+  description: string;
+  nsfw?: boolean;
+  postFormat?: Community["postFormat"];
+}) {
+  return apiJson<{ name: string }>("/api/communities", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function resolveCommunityId(

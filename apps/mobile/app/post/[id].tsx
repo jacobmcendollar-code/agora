@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { CommentThread } from "@/components/CommentThread";
 import { ScreenScroll } from "@/components/Screen";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
@@ -33,49 +34,6 @@ import { usePreferences, useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import { timeAgo } from "@/lib/time";
 import type { CommentNode, Community, FeedPost } from "@/lib/types";
-
-function CommentBlock({
-  comment,
-  postId,
-  onReply,
-  styles,
-}: {
-  comment: CommentNode;
-  postId: string;
-  onReply: (id: string) => void;
-  styles: ReturnType<typeof makeStyles>;
-}) {
-  return (
-    <View style={styles.comment}>
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <VoteSpears
-          targetType="comment"
-          targetId={comment.id}
-          initialScore={comment.score}
-          size="sm"
-        />
-        <View style={{ flex: 1 }}>
-          <View style={styles.commentMetaRow}>
-            <Username username={comment.author.username} style={styles.commentMeta} />
-            <Text style={styles.commentMeta}> · {timeAgo(comment.createdAt)}</Text>
-          </View>
-          <Text style={styles.commentBody}>{comment.body}</Text>
-          {comment.imageUrl ? (
-            <Image source={{ uri: comment.imageUrl }} style={styles.commentImg} />
-          ) : null}
-          <Pressable onPress={() => onReply(comment.id)} hitSlop={6}>
-            <Text style={styles.reply}>Reply</Text>
-          </Pressable>
-        </View>
-      </View>
-      {comment.replies?.map((reply) => (
-        <View key={reply.id} style={styles.replyBlock}>
-          <CommentBlock comment={reply} postId={postId} onReply={onReply} styles={styles} />
-        </View>
-      ))}
-    </View>
-  );
-}
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -271,9 +229,11 @@ export default function PostDetailScreen() {
             : "No comments yet"}
         </Text>
       ) : (
-        tree.map((c) => (
-          <CommentBlock key={c.id} comment={c} postId={post.id} onReply={setReplyTo} styles={styles} />
-        ))
+        <View style={styles.threadList}>
+          {tree.map((c) => (
+            <CommentThread key={c.id} comment={c} onReply={setReplyTo} />
+          ))}
+        </View>
       )}
     </ScreenScroll>
   );
@@ -343,12 +303,6 @@ function makeStyles(colors: Palette) {
   sortActive: { color: colors.text },
   count: { marginLeft: "auto", color: colors.faint, fontSize: 12 },
   empty: { color: colors.muted, marginTop: 12 },
-  comment: { marginTop: 14 },
-  commentMetaRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginBottom: 4 },
-  commentMeta: { color: colors.faint, fontSize: 12 },
-  commentBody: { color: colors.text, fontSize: 15, lineHeight: 21 },
-  commentImg: { width: "100%", height: 160, borderRadius: 10, marginTop: 8 },
-  reply: { color: colors.muted, marginTop: 6, fontSize: 12, fontWeight: "600" },
-  replyBlock: { marginLeft: 22, marginTop: 4 },
+  threadList: { marginTop: 8, gap: 10 },
   });
 }
