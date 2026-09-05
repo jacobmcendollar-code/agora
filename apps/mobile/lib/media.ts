@@ -31,6 +31,20 @@ export function isTikTokLink(url: string | null | undefined): boolean {
   return url.includes("tiktok.com");
 }
 
+export function displayHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "").toUpperCase();
+  } catch {
+    return url.replace(/^https?:\/\//i, "").replace(/^www\./i, "").toUpperCase();
+  }
+}
+
+export function linkOpenLabel(url: string): string {
+  if (isTikTokLink(url)) return "Open TikTok";
+  if (isXLink(url)) return "Open X";
+  return "Read original →";
+}
+
 export function isGenericBody(body: string | null | undefined): boolean {
   if (!body) return true;
   const lower = body.toLowerCase();
