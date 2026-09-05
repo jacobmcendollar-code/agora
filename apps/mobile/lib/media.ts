@@ -54,38 +54,43 @@ export function isGenericBody(body: string | null | undefined): boolean {
   );
 }
 
-function nativeUrlFor(url: string): string | null {
+/** Custom schemes that open the exact X status or TikTok video. Empty if we should use https. */
+function nativeUrlsFor(url: string): string[] {
   try {
     const u = new URL(url);
-    if (isXLink(url)) {
-      const path = `${u.pathname}${u.search}`;
-      return `twitter://post?url=${encodeURIComponent(url)}`.replace(
-        "twitter://post?url=",
-        `twitter:/${path}`
-      );
+    const host = u.hostname.replace(/^www\./i, "").toLowerCase();
+
+    if (host === "x.com" || host === "twitter.com" || host.endsWith(".x.com") || host.endsWith(".twitter.com")) {
+      const id = u.pathname.match(/\/status(?:es)?\/(\d+)/)?.[1];
+      // X still registers twitter://. twitter://status?id= is the status deep link;
+      // twitter://user/status/ID (old builder) only launched the app.
+      return id ? [`twitter://status?id=${id}`] : [];
     }
-    if (isTikTokLink(url)) {
-      return `tiktok:/${u.pathname}${u.search}`;
+
+    if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+      const id = u.pathname.match(/\/(?:video|photo|v)\/(\d+)/)?.[1];
+      if (!id) return [];
+      // snssdk1233 is TikTok's iOS scheme; aweme/detail/{id} opens that video.
+      // tiktok://video?id= is the public-scheme equivalent if snssdk isn't queryable.
+      return [`snssdk1233://aweme/detail/${id}`, `tiktok://video?id=${id}`];
     }
   } catch {
-    return null;
+    return [];
   }
-  return null;
+  return [];
 }
 
 export async function openExternal(url: string, openSocialInNativeApp: boolean) {
   const social = isXLink(url) || isTikTokLink(url);
   if (social && openSocialInNativeApp) {
-    const native = nativeUrlFor(url);
-    if (native) {
+    for (const native of nativeUrlsFor(url)) {
       try {
-        const can = await Linking.canOpenURL(native);
-        if (can) {
+        if (await Linking.canOpenURL(native)) {
           await Linking.openURL(native);
           return;
         }
       } catch {
-        // fall through
+        // try the next scheme, then https
       }
     }
     try {
