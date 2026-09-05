@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -26,7 +27,7 @@ export async function POST(
     const existing = await prisma.savedPost.findUnique({
       where: {
         userId_postId: {
-          userId: session.user.id,
+          userId,
           postId,
         },
       },
@@ -41,7 +42,7 @@ export async function POST(
 
     await prisma.savedPost.create({
       data: {
-        userId: session.user.id,
+        userId,
         postId,
       },
     });
@@ -54,12 +55,12 @@ export async function POST(
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ saved: false });
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
+    return NextResponse.json({ saved: false }, { headers: PRIVATE_NO_STORE_HEADERS });
   }
 
   const { id: postId } = await params;
@@ -68,14 +69,17 @@ export async function GET(
     const existing = await prisma.savedPost.findUnique({
       where: {
         userId_postId: {
-          userId: session.user.id,
+          userId,
           postId,
         },
       },
     });
 
-    return NextResponse.json({ saved: !!existing });
+    return NextResponse.json(
+      { saved: !!existing },
+      { headers: PRIVATE_NO_STORE_HEADERS }
+    );
   } catch {
-    return NextResponse.json({ saved: false });
+    return NextResponse.json({ saved: false }, { headers: PRIVATE_NO_STORE_HEADERS });
   }
 }

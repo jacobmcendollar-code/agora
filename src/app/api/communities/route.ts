@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { listCommunities } from "@/lib/communities";
-import { readMobileSession } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 function slugify(title: string): string {
   return title
@@ -34,8 +34,7 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const session = await auth();
-  const userId = session?.user?.id ?? (await readMobileSession(req))?.userId;
+  const userId = await userIdFromRequest(req);
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
     try {
-      const res = await apiFetch("/api/auth/session");
+      const res = await apiFetch("/api/mobile/session");
       if (res.status === 401) {
         await clearCookies();
         setUser(null);

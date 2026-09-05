@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
 
   if (q.length < 1) {
-    return NextResponse.json({ communities: [], posts: [] });
+    return NextResponse.json(
+      { communities: [], posts: [] },
+      { headers: PRIVATE_NO_STORE_HEADERS }
+    );
   }
 
   // Default: hide adult content unless the logged-in account has opted in
   let allowAdult = false;
-  const session = await auth();
-  if (session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (userId) {
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { showNsfw: true },
     });
     allowAdult = Boolean(user?.showNsfw);
@@ -58,5 +62,5 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  return NextResponse.json({ communities, posts });
+  return NextResponse.json({ communities, posts }, { headers: PRIVATE_NO_STORE_HEADERS });
 }

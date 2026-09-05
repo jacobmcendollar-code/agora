@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 const schema = z.object({
   title: z.string().min(1).max(300).optional(),
@@ -11,10 +12,10 @@ const schema = z.object({
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
+  const userId = await userIdFromRequest(req);
   const { id } = await params;
 
   try {
@@ -34,9 +35,9 @@ export async function GET(
     }
 
     let mutedIds: string[] = [];
-    if (session?.user?.id) {
+    if (userId) {
       const mutes = await prisma.mute.findMany({
-        where: { muterId: session.user.id },
+        where: { muterId: userId },
         select: { mutedId: true },
       });
       mutedIds = mutes.map((m) => m.mutedId);
@@ -56,25 +57,28 @@ export async function GET(
 
     const isSoftDeleted = post.moderationStatus === "author_deleted";
 
-    return NextResponse.json({
-      post: {
-        ...post,
-        author: {
-          id: post.author.id,
-          username: isSoftDeleted ? "[deleted]" : post.author.username,
+    return NextResponse.json(
+      {
+        post: {
+          ...post,
+          author: {
+            id: post.author.id,
+            username: isSoftDeleted ? "[deleted]" : post.author.username,
+          },
         },
+        comments: comments.map((c) => ({
+          ...c,
+          author: {
+            id: c.author.id,
+            username:
+              c.moderationStatus === "author_deleted"
+                ? "[deleted]"
+                : c.author.username,
+          },
+        })),
       },
-      comments: comments.map((c) => ({
-        ...c,
-        author: {
-          id: c.author.id,
-          username:
-            c.moderationStatus === "author_deleted"
-              ? "[deleted]"
-              : c.author.username,
-        },
-      })),
-    });
+      { headers: PRIVATE_NO_STORE_HEADERS }
+    );
   } catch (err) {
     console.error("[posts GET]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -85,8 +89,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -98,7 +102,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    if (post.authorId !== session.user.id) {
+    if (post.authorId !== userId) {
       return NextResponse.json({ error: "Not allowed" }, { status: 403 });
     }
 

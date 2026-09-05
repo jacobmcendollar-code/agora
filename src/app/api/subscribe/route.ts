@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { readMobileSession } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 const schema = z.object({
   communityId: z.string().min(1),
@@ -10,8 +9,7 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
-  const session = await auth();
-  const userId = session?.user?.id ?? (await readMobileSession(req))?.userId;
+  const userId = await userIdFromRequest(req);
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

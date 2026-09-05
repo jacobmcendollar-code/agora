@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 import { UTApi } from "uploadthing/server";
 
 const utapi = new UTApi();
@@ -18,13 +18,13 @@ async function countRecentMediaComments(userId: string) {
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const mediaCount = await countRecentMediaComments(session.user.id);
+    const mediaCount = await countRecentMediaComments(userId);
     if (mediaCount >= MEDIA_PER_HOUR) {
       return NextResponse.json(
         {

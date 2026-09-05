@@ -2,6 +2,10 @@ import { decode } from "@auth/core/jwt";
 
 export const MOBILE_SESSION_COOKIE = "__Secure-authjs.session-token";
 
+export const PRIVATE_NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-store",
+} as const;
+
 export function getAuthSecret(): string | undefined {
   return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 }
@@ -27,11 +31,26 @@ export function readSessionTokenFromCookieHeader(header: string | null): string 
   return null;
 }
 
-export async function readMobileSession(req: Request): Promise<{ userId: string } | null> {
+export function readBearerToken(header: string | null): string | null {
+  if (!header) return null;
+  const match = /^Bearer\s+(\S+)/i.exec(header.trim());
+  return match?.[1] || null;
+}
+
+/** RN fetch strips Cookie; Bearer is the primary mobile session transport. */
+export function readSessionTokenFromRequest(req: Request): string | null {
+  const bearer = readBearerToken(req.headers.get("authorization"));
+  if (bearer) return bearer;
+  const agora = req.headers.get("x-agora-session")?.trim();
+  if (agora) return agora;
+  return readSessionTokenFromCookieHeader(req.headers.get("cookie"));
+}
+
+export async function decodeMobileSessionToken(
+  token: string
+): Promise<{ userId: string } | null> {
   const secret = getAuthSecret();
   if (!secret) return null;
-  const token = readSessionTokenFromCookieHeader(req.headers.get("cookie"));
-  if (!token) return null;
   try {
     const payload = await decode({
       token,
@@ -46,4 +65,14 @@ export async function readMobileSession(req: Request): Promise<{ userId: string 
   } catch {
     return null;
   }
+}
+
+export async function readMobileSession(req: Request): Promise<{ userId: string } | null> {
+  const token = readSessionTokenFromRequest(req);
+  if (!token) return null;
+  return decodeMobileSessionToken(token);
+}
+
+export async function resolveMobileUserId(req: Request): Promise<string | null> {
+  return (await readMobileSession(req))?.userId ?? null;
 }

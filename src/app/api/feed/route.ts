@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { hotScore } from "@/lib/ranking";
+import { userIdFromRequest } from "@/lib/request-user";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -11,12 +12,12 @@ export async function GET(req: Request) {
   const scope = searchParams.get("scope") || "all"; // "joined" | "all"
   const limit = 15;
 
-  const session = await auth();
+  const userId = await userIdFromRequest(req);
 
   let mutedIds: string[] = [];
-  if (session?.user?.id) {
+  if (userId) {
     const mutes = await prisma.mute.findMany({
-      where: { muterId: session.user.id },
+      where: { muterId: userId },
       select: { mutedId: true },
     });
     mutedIds = mutes.map((m) => m.mutedId);
@@ -33,9 +34,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ posts: [], nextPage: null });
     }
     communityIds = [community.id];
-  } else if (scope === "joined" && session?.user?.id) {
+  } else if (scope === "joined" && userId) {
     const subscriptions = await prisma.subscription.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { communityId: true },
     });
     if (subscriptions.length > 0) {
@@ -84,8 +85,11 @@ export async function GET(req: Request) {
   const pagePosts = ranked.slice(start, start + limit);
   const hasMore = start + limit < ranked.length;
 
-  return NextResponse.json({
-    posts: pagePosts,
-    nextPage: hasMore ? page + 1 : null,
-  });
+  return NextResponse.json(
+    {
+      posts: pagePosts,
+      nextPage: hasMore ? page + 1 : null,
+    },
+    { headers: PRIVATE_NO_STORE_HEADERS }
+  );
 }
