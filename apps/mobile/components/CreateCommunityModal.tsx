@@ -99,11 +99,17 @@ export function CreateCommunityModal({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.top}>
-          <Pressable onPress={close} hitSlop={8} disabled={busy}>
-            <Text style={styles.cancel}>Cancel</Text>
-          </Pressable>
-          <Text style={styles.heading}>Create Community</Text>
-          <View style={{ width: 56 }} />
+          <View style={styles.side}>
+            <Pressable onPress={close} hitSlop={8} disabled={busy}>
+              <Text style={styles.cancel} numberOfLines={1}>
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={styles.heading} numberOfLines={1}>
+            Create Community
+          </Text>
+          <View style={styles.side} />
         </View>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {error ? (
@@ -180,15 +186,27 @@ function makeStyles(colors: Palette) {
     top: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
       paddingHorizontal: 16,
       paddingTop: 16,
       paddingBottom: 12,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
-    cancel: { color: colors.muted, fontSize: 16, fontWeight: "600", width: 56 },
-    heading: { color: colors.text, fontSize: 17, fontWeight: "700" },
+    side: {
+      flex: 1,
+      flexShrink: 0,
+      minWidth: 88,
+      justifyContent: "center",
+    },
+    cancel: { color: colors.muted, fontSize: 16, fontWeight: "600" },
+    heading: {
+      flexShrink: 1,
+      paddingHorizontal: 8,
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: "700",
+      textAlign: "center",
+    },
     body: { padding: 16, gap: 10, paddingBottom: 40 },
     label: { color: colors.text, fontSize: 14, fontWeight: "600", marginTop: 6 },
     input: {
