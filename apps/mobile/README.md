@@ -52,7 +52,7 @@ Bottom tabs (icons only): **Home · Communities · Search · New Post**. Account
 - Votes: `POST /api/vote` with spear icons.
 - Settings: Show NSFW via `POST /api/user/show-nsfw`; TikTok/X “open in native app” is a **local** preference (AsyncStorage). Theme toggle is local only.
 
-YouTube plays in an in-app WebView embed. TikTok and X open the in-app browser by default.
+YouTube plays in an in-app WebView iframe whose document origin / Referer is `https://www.agor4.com` (avoids Error 153). A Watch on YouTube control always opens the watch URL in the in-app browser. TikTok and X open the in-app browser by default.
 
 ## EAS / TestFlight (blocked on Apple)
 
