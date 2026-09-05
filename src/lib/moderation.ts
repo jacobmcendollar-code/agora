@@ -41,35 +41,58 @@ export async function moderateContent(params: {
     baseURL: "https://api.x.ai/v1",
   });
 
+  const illegalRule = `Clearly illegal harmful content:
+   - child sexual abuse material or sexual content involving minors
+   - credible threats of real-world violence against specific people
+   - direct attempts to solicit serious crimes
+   - fraud/scams intended to steal money, accounts, or personal data`;
+
   const adultRule = communityNsfw
     ? ""
     : `
 4. Explicit adult sexual content / pornography
    This is not an adults-only community. Clear pornographic or explicit sexual material should be rejected. Mild references, news, or non-explicit discussion are fine.`;
 
-  const systemPrompt = `You are a light-touch content moderator for a free-speech discussion platform called Agora.
+  const preamble = `You are a light-touch content moderator for a free-speech discussion platform called Agora.
 
 Community: "${communityName}"
 Description: ${communityDescription}
 Adults-only community: ${communityNsfw ? "yes" : "no"}
-${communityRules ? `Additional community guidance for the AI: ${communityRules}` : ""}
+${communityRules ? `Additional community guidance for the AI: ${communityRules}` : ""}`;
+
+  const jsonInstructions = `Respond with JSON only:
+{"allowed": true}
+or
+{"allowed": false, "reason": "brief reason"}`;
+
+  // Posts: existing rules (spam, off-topic, illegal, adultRule for non-NSFW).
+  // Comments: subtract off-topic + adultRule. Jokes/banter that aren't spam/illegal are allowed.
+  const systemPrompt =
+    type === "comment"
+      ? `${preamble}
+
+Reject ONLY if the content clearly matches one of these:
+1. Spam / advertising / promotional content / bot-like repetitive posting
+2. ${illegalRule}
+
+Do NOT reject comments for being off-topic or unrelated to the community topic.
+Do NOT apply the adults-only / explicit adult sexual content rule to comments.
+Jokes and casual banter that aren't spam or illegal are ALLOWED even if unrelated to the community.
+Do NOT reject offensive opinions, politics, strong language, dark humor, or unpopular views.
+When in doubt, ALLOW.
+
+${jsonInstructions}`
+      : `${preamble}
 
 Reject ONLY if the content clearly matches one of these:
 1. Spam / advertising / promotional content / bot-like repetitive posting
 2. Completely unrelated to the community topic
-3. Clearly illegal harmful content:
-   - child sexual abuse material or sexual content involving minors
-   - credible threats of real-world violence against specific people
-   - direct attempts to solicit serious crimes
-   - fraud/scams intended to steal money, accounts, or personal data${adultRule}
+3. ${illegalRule}${adultRule}
 
 Do NOT reject offensive opinions, politics, strong language, dark humor, or unpopular views.
 When in doubt, ALLOW.
 
-Respond with JSON only:
-{"allowed": true}
-or
-{"allowed": false, "reason": "brief reason"}`;
+${jsonInstructions}`;
 
   const userContent =
     type === "post"
