@@ -99,17 +99,15 @@ export function CreateCommunityModal({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.top}>
-          <View style={styles.side}>
-            <Pressable onPress={close} hitSlop={8} disabled={busy}>
-              <Text style={styles.cancel} numberOfLines={1}>
-                Cancel
-              </Text>
-            </Pressable>
-          </View>
-          <Text style={styles.heading} numberOfLines={1}>
+          <Pressable onPress={close} hitSlop={8} disabled={busy} style={styles.sideAction}>
+            <Text style={styles.cancel} numberOfLines={1}>
+              Cancel
+            </Text>
+          </Pressable>
+          <Text style={styles.heading} numberOfLines={1} pointerEvents="none">
             Create Community
           </Text>
-          <View style={styles.side} />
+          <View style={styles.sideAction} />
         </View>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {error ? (
@@ -186,26 +184,33 @@ function makeStyles(colors: Palette) {
     top: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "space-between",
       paddingHorizontal: 16,
       paddingTop: 16,
       paddingBottom: 12,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
-    side: {
-      flex: 1,
-      flexShrink: 0,
+    sideAction: {
       minWidth: 88,
-      justifyContent: "center",
+      flexGrow: 0,
+      flexShrink: 0,
+      zIndex: 1,
     },
-    cancel: { color: colors.muted, fontSize: 16, fontWeight: "600" },
+    cancel: {
+      color: colors.muted,
+      fontSize: 16,
+      fontWeight: "600",
+      flexShrink: 0,
+    },
     heading: {
-      flexShrink: 1,
-      paddingHorizontal: 8,
+      position: "absolute",
+      left: 16,
+      right: 16,
+      textAlign: "center",
       color: colors.text,
       fontSize: 17,
       fontWeight: "700",
-      textAlign: "center",
     },
     body: { padding: 16, gap: 10, paddingBottom: 40 },
     label: { color: colors.text, fontSize: 14, fontWeight: "600", marginTop: 6 },
