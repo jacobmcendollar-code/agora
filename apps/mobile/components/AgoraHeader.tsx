@@ -12,6 +12,12 @@ import { logoHeight, logoWidth, space, type Palette } from "@/lib/theme";
 const TAB_ROOTS = new Set(["/", "/communities", "/search", "/submit"]);
 const AVATAR = 28;
 
+/** True on the route itself, a trailing slash, or a nested path under it. */
+function isOnRoute(pathname: string, route: string) {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  return path === route || path.startsWith(`${route}/`);
+}
+
 export function AgoraHeader() {
   const insets = useSafeAreaInsets();
   const { headerStyle } = useChrome();
@@ -28,7 +34,7 @@ export function AgoraHeader() {
       setUnread(0);
       return;
     }
-    if (pathname === "/notifications") {
+    if (isOnRoute(pathname, "/notifications")) {
       setUnread(0);
       return;
     }
@@ -70,7 +76,10 @@ export function AgoraHeader() {
           ) : null}
           {user ? (
             <Pressable
-              onPress={() => router.push("/account")}
+              onPress={() => {
+                if (isOnRoute(pathname, "/account")) return;
+                router.push("/account");
+              }}
               accessibilityLabel="Account"
               style={styles.avatarHit}
             >
@@ -101,7 +110,10 @@ export function AgoraHeader() {
         <View style={[styles.side, styles.sideRight]}>
           {user ? (
             <Pressable
-              onPress={() => router.push("/notifications")}
+              onPress={() => {
+                if (isOnRoute(pathname, "/notifications")) return;
+                router.push("/notifications");
+              }}
               hitSlop={8}
               accessibilityLabel={
                 unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
