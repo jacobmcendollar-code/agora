@@ -23,7 +23,7 @@ export default function RegisterScreen() {
     try {
       await registerAccount({ username, email, password });
       await signIn(username, password);
-      router.replace("/(tabs)/account");
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create account");
     } finally {

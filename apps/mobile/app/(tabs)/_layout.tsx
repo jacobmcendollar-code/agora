@@ -1,19 +1,18 @@
 import { Tabs } from "expo-router";
-import { DeviceEventEmitter, Image, Pressable, StyleSheet } from "react-native";
+import { DeviceEventEmitter, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  IconAccount,
   IconCommunities,
   IconHome,
+  IconSearch,
   IconSubmit,
 } from "@/components/Icons";
-import { useAuth } from "@/lib/auth";
 import { AnimatedView, HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import { space, type Palette } from "@/lib/theme";
 
 type TabDef = {
-  name: "index" | "communities" | "submit" | "account";
+  name: "index" | "communities" | "search" | "submit";
   label: string;
   Icon: typeof IconHome;
 };
@@ -21,8 +20,8 @@ type TabDef = {
 const TABS: TabDef[] = [
   { name: "index", label: "Home", Icon: IconHome },
   { name: "communities", label: "Communities", Icon: IconCommunities },
-  { name: "submit", label: "Submit", Icon: IconSubmit },
-  { name: "account", label: "Account", Icon: IconAccount },
+  { name: "search", label: "Search", Icon: IconSearch },
+  { name: "submit", label: "New Post", Icon: IconSubmit },
 ];
 
 const ICON = 27;
@@ -38,7 +37,6 @@ function HiddenTabBar({
 }) {
   const insets = useSafeAreaInsets();
   const { tabBarStyle } = useChrome();
-  const { user } = useAuth();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const current = state.routes[state.index]?.name;
@@ -71,14 +69,7 @@ function HiddenTabBar({
             accessibilityState={{ selected: active }}
             accessibilityLabel={tab.label}
           >
-            {tab.name === "account" && user?.image ? (
-              <Image
-                source={{ uri: user.image }}
-                style={[styles.avatar, active && { borderColor: colors.emerald }]}
-              />
-            ) : (
-              <tab.Icon color={color} size={ICON} />
-            )}
+            <tab.Icon color={color} size={ICON} />
           </Pressable>
         );
       })}
@@ -109,8 +100,8 @@ export default function TabLayout() {
         })}
       />
       <Tabs.Screen name="communities" options={{ title: "Communities" }} />
-      <Tabs.Screen name="submit" options={{ title: "Submit" }} />
-      <Tabs.Screen name="account" options={{ title: "Account" }} />
+      <Tabs.Screen name="search" options={{ title: "Search" }} />
+      <Tabs.Screen name="submit" options={{ title: "New Post" }} />
       <Tabs.Screen name="community/[name]" options={{ href: null, title: "Community" }} />
     </Tabs>
   );
@@ -133,13 +124,6 @@ function makeStyles(colors: Palette) {
       alignItems: "center",
       justifyContent: "center",
       height: space.tabBarBody,
-    },
-    avatar: {
-      width: ICON,
-      height: ICON,
-      borderRadius: ICON / 2,
-      borderWidth: 1.5,
-      borderColor: "transparent",
     },
   });
 }

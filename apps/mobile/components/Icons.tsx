@@ -18,9 +18,8 @@ export function IconHome({ color, size = 24 }: IconProps) {
 export function IconCommunities({ color, size = 24 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="7" r="2.15" stroke={color} strokeWidth={1.8} />
-      <Circle cx="7.1" cy="16.1" r="2.15" stroke={color} strokeWidth={1.8} />
-      <Circle cx="16.9" cy="16.1" r="2.15" stroke={color} strokeWidth={1.8} />
+      <Circle cx="8.5" cy="12" r="5.5" stroke={color} strokeWidth={1.8} />
+      <Circle cx="15.5" cy="12" r="5.5" stroke={color} strokeWidth={1.8} />
     </Svg>
   );
 }
@@ -39,12 +38,32 @@ export function IconSubmit({ color, size = 24 }: IconProps) {
   );
 }
 
-export function IconAccount({ color, size = 24 }: IconProps) {
+export function IconSearch({ color, size = 24 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="8" r="3.2" stroke={color} strokeWidth={1.8} />
+      <Circle cx="11" cy="11" r="6.2" stroke={color} strokeWidth={1.8} />
       <Path
-        d="M5 19.2c.8-3 3.2-4.5 7-4.5s6.2 1.5 7 4.5"
+        d="m16.2 16.2 4 4"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+export function IconBell({ color, size = 24 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M10.3 21a1.94 1.94 0 0 0 3.4 0"
         stroke={color}
         strokeWidth={1.8}
         strokeLinecap="round"

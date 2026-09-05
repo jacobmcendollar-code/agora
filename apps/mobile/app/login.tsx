@@ -20,7 +20,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(username, password);
-      router.replace("/(tabs)/account");
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid username or password");
     } finally {

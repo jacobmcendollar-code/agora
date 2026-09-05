@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
@@ -32,20 +32,20 @@ export function SortChips({
 
   return (
     <View style={styles.wrap}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <View style={styles.row}>
         {options.map((opt) => {
           const active = value === opt.key;
           return (
             <Pressable
               key={opt.key}
               onPress={() => onChange(opt.key)}
-              style={[styles.chip, active && styles.chipActive]}
+              style={[styles.tab, active && styles.tabActive]}
             >
               <Text style={[styles.label, active && styles.labelActive]}>{opt.label}</Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -57,25 +57,21 @@ function makeStyles(colors: Palette) {
       borderBottomColor: colors.border,
     },
     row: {
+      flexDirection: "row",
+      paddingHorizontal: 4,
+    },
+    tab: {
       paddingHorizontal: 12,
       paddingVertical: 10,
-      gap: 8,
+      borderBottomWidth: 2,
+      borderBottomColor: "transparent",
     },
-    chip: {
-      paddingHorizontal: 14,
-      paddingVertical: 7,
-      borderRadius: 999,
-      backgroundColor: colors.field,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    chipActive: {
-      backgroundColor: colors.chipActive,
-      borderColor: colors.emerald,
+    tabActive: {
+      borderBottomColor: colors.emerald,
     },
     label: {
       color: colors.muted,
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: "600",
     },
     labelActive: {

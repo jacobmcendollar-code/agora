@@ -16,6 +16,8 @@ export type Palette = {
   heroBorder: string;
   dangerBg: string;
   dangerText: string;
+  switchOff: string;
+  switchThumb: string;
 };
 
 export const darkColors: Palette = {
@@ -36,6 +38,8 @@ export const darkColors: Palette = {
   heroBorder: "#064e3b",
   dangerBg: "#3f1d1d",
   dangerText: "#fecaca",
+  switchOff: "#3f3f46",
+  switchThumb: "#ffffff",
 };
 
 export const lightColors: Palette = {
@@ -56,6 +60,8 @@ export const lightColors: Palette = {
   heroBorder: "#6ee7b7",
   dangerBg: "#fef2f2",
   dangerText: "#b91c1c",
+  switchOff: "#8a847c",
+  switchThumb: "#fafaf9",
 };
 
 export function paletteFor(theme: "light" | "dark"): Palette {

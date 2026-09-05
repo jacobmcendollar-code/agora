@@ -42,7 +42,7 @@ Existing `auth()` accepts the JWT when it arrives as the Auth.js session cookie.
 
 ## Screens
 
-Bottom tabs (no hamburger): **Home · Communities · Submit · Account**.
+Bottom tabs (icons only): **Home · Communities · Search · New Post**. Account lives in the logo bar. Notifications use `GET`/`PATCH /api/notifications`. Search uses `GET /api/search/suggest`.
 
 - Home / community feeds: `GET /api/feed?sort=&page=&scope=` (and `community=`).
 - Sort chips (Trending / Recent / Top) only on those two surfaces.

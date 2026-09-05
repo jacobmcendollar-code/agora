@@ -64,3 +64,34 @@ export type PostDetailResponse = {
   post: FeedPost;
   comments: CommentNode[];
 };
+
+export type SearchSuggestCommunity = {
+  name: string;
+  title: string;
+  nsfw?: boolean;
+};
+
+export type SearchSuggestPost = {
+  id: string;
+  title: string;
+  community: { name: string; title: string };
+};
+
+export type SearchSuggest = {
+  communities: SearchSuggestCommunity[];
+  posts: SearchSuggestPost[];
+};
+
+export type SiteNotification = {
+  id: string;
+  type: string;
+  message: string;
+  link: string;
+  read: boolean;
+  createdAt: string;
+};
+
+export type NotificationsResponse = {
+  notifications: SiteNotification[];
+  unreadCount: number;
+};
