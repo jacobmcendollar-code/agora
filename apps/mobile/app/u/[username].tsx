@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenScroll } from "@/components/Screen";
 import { Username } from "@/components/Username";
 import { fetchMutes, muteUser, type MutedUser } from "@/lib/api";
@@ -30,30 +30,29 @@ export default function UserProfileScreen() {
     setTab("posts");
   }, [username]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!username) return;
-      let cancelled = false;
-      fetchPublicProfile(username)
-        .then((data) => {
-          if (cancelled) return;
-          setProfile(data);
-          setTargetId(data.id);
-          setError(null);
-        })
-        .catch((err) => {
-          if (cancelled) return;
-          setProfile(null);
-          setError(err instanceof Error ? err.message : "User not found");
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }, [username])
-  );
+  useEffect(() => {
+    if (!username) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchPublicProfile(username)
+      .then((data) => {
+        if (cancelled) return;
+        setProfile(data);
+        setTargetId(data.id);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setProfile(null);
+        setError(err instanceof Error ? err.message : "User not found");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [username]);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -153,11 +152,7 @@ export default function UserProfileScreen() {
           <Text style={styles.name}>{profile.username}</Text>
           {profile.joined ? <Text style={styles.joined}>Joined {profile.joined}</Text> : null}
           {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
-          {isOwn ? (
-            <Pressable onPress={() => router.push("/edit-profile")} style={styles.muteBtn}>
-              <Text style={styles.muteBtnText}>Edit profile</Text>
-            </Pressable>
-          ) : user && targetId ? (
+          {user && !isOwn && targetId ? (
             <Pressable
               onPress={onMute}
               disabled={busy}

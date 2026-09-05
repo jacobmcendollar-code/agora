@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { IconChevron } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
+import { Username } from "@/components/Username";
 import { useAuth } from "@/lib/auth";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
@@ -39,12 +40,7 @@ export default function AccountScreen() {
       <Text style={styles.heading}>Account</Text>
 
       {user ? (
-        <Pressable
-          onPress={() => router.push(`/u/${encodeURIComponent(user.username.toLowerCase())}`)}
-          accessibilityRole="button"
-          accessibilityLabel="View profile"
-          style={styles.profile}
-        >
+        <View style={styles.profile}>
           {user.image ? (
             <Image source={{ uri: user.image }} style={styles.avatar} />
           ) : (
@@ -53,10 +49,9 @@ export default function AccountScreen() {
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{user.username}</Text>
+            <Username username={user.username} style={styles.name} />
           </View>
-          <IconChevron color={colors.faint} />
-        </Pressable>
+        </View>
       ) : (
         <View style={styles.profile}>
           <View style={{ flex: 1 }}>
@@ -69,7 +64,6 @@ export default function AccountScreen() {
       <View style={styles.card}>
         {user ? (
           <>
-            <Row label="Edit profile" onPress={() => router.push("/edit-profile")} colors={colors} styles={styles} />
             <Row label="Settings" onPress={() => router.push("/settings")} colors={colors} styles={styles} />
             <Row label="About Agora" onPress={() => router.push("/about")} colors={colors} styles={styles} />
             <Row

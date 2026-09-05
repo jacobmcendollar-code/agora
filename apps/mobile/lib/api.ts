@@ -251,19 +251,6 @@ export async function uploadImage(file: {
   });
 }
 
-export async function updateProfile(payload: { bio?: string | null; image?: string | null }) {
-  return apiJson<{
-    id: string;
-    username: string;
-    bio: string | null;
-    image: string | null;
-  }>("/api/profile", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
 export async function fetchSearchSuggest(q: string): Promise<SearchSuggest> {
   const data = await apiJson<SearchSuggest>(
     `/api/search/suggest?q=${encodeURIComponent(q)}`

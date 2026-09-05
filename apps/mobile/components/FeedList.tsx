@@ -27,14 +27,6 @@ type Props = {
   homeRetap?: boolean;
 };
 
-function landHomeListAtTop(list: FlatList<FeedPost> | null, then: () => void) {
-  list?.scrollToOffset({ offset: 0, animated: false });
-  requestAnimationFrame(() => {
-    list?.scrollToOffset({ offset: 0, animated: false });
-    then();
-  });
-}
-
 export function FeedList({
   community,
   hideCommunity,
@@ -124,7 +116,8 @@ export function FeedList({
     if (!homeRetap) return;
     const sub = DeviceEventEmitter.addListener(HOME_TAB_REPRESS, () => {
       chrome.reveal();
-      landHomeListAtTop(listRef.current, onRefresh);
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      onRefresh();
     });
     return () => sub.remove();
   }, [chrome, homeRetap, onRefresh]);
