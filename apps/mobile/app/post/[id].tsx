@@ -12,6 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CommentThread } from "@/components/CommentThread";
 import { ScreenScroll } from "@/components/Screen";
+import { Thumb } from "@/components/Thumb";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -87,6 +88,7 @@ export default function PostDetailScreen() {
   const tree = useMemo(() => buildCommentTree(comments, sort), [comments, sort]);
   const youtubeId = getYouTubeId(post?.url);
   const showBody = !!(post?.body && !isGenericBody(post.body) && !post.url);
+  const showLinkThumb = !!(post?.url && !youtubeId);
 
   async function onComment() {
     if (!user) {
@@ -125,6 +127,14 @@ export default function PostDetailScreen() {
     );
   }
 
+  function openPostLink() {
+    if (!post.url) return;
+    void openExternal(
+      post.url,
+      (isXLink(post.url) || isTikTokLink(post.url)) && openSocialInNativeApp
+    );
+  }
+
   return (
     <ScreenScroll includeTabs={false}>
       <View style={styles.card}>
@@ -144,23 +154,29 @@ export default function PostDetailScreen() {
               </View>
             ) : null}
 
-            {!youtubeId && post.url && (isXLink(post.url) || isTikTokLink(post.url)) ? (
-              <Pressable
-                style={styles.linkBtn}
-                onPress={() => openExternal(post.url!, openSocialInNativeApp)}
-              >
-                <Text style={styles.linkBtnText}>
-                  Open {isTikTokLink(post.url) ? "TikTok" : "X"}
-                </Text>
-              </Pressable>
-            ) : null}
-
-            {!youtubeId && post.url && !isXLink(post.url) && !isTikTokLink(post.url) ? (
-              <Pressable style={styles.linkBtn} onPress={() => openExternal(post.url!, false)}>
-                <Text style={styles.linkBtnText} numberOfLines={2}>
-                  {post.url}
-                </Text>
-              </Pressable>
+            {showLinkThumb ? (
+              <View style={styles.linkRow}>
+                <Pressable
+                  onPress={openPostLink}
+                  accessibilityRole="link"
+                  accessibilityLabel="Open link"
+                >
+                  <Thumb src={post.thumbnail} communityTitle={post.community.title} />
+                </Pressable>
+                <Pressable
+                  style={styles.linkBtn}
+                  onPress={openPostLink}
+                  accessibilityRole="link"
+                >
+                  <Text style={styles.linkBtnText} numberOfLines={2}>
+                    {isTikTokLink(post.url)
+                      ? "Open TikTok"
+                      : isXLink(post.url)
+                        ? "Open X"
+                        : post.url}
+                  </Text>
+                </Pressable>
+              </View>
             ) : null}
 
             {!post.url && post.thumbnail ? (
@@ -262,8 +278,15 @@ function makeStyles(colors: Palette) {
   pillText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
   body: { color: colors.text, marginTop: 12, fontSize: 16, lineHeight: 23 },
   image: { width: "100%", height: 220, borderRadius: 12, marginTop: 12, backgroundColor: colors.field },
-  linkBtn: {
+  linkRow: {
     marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  linkBtn: {
+    flex: 1,
+    minWidth: 0,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.field,
