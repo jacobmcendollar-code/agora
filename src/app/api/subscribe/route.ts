@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { readMobileSession } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -10,7 +11,8 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  const userId = session?.user?.id ?? (await readMobileSession(req))?.userId;
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -23,7 +25,6 @@ export async function POST(req: Request) {
     }
 
     const { communityId, action } = parsed.data;
-    const userId = session.user.id;
 
     if (action === "join") {
       // Check if already subscribed

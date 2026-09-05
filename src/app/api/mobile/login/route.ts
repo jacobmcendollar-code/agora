@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { encode } from "@auth/core/jwt";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { getAuthSecret, MOBILE_SESSION_COOKIE } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
@@ -10,17 +11,6 @@ const loginSchema = z.object({
 });
 
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60;
-
-function getAuthSecret(): string | undefined {
-  return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-}
-
-/**
- * Auth.js v5 cookie name — also the JWT encode salt.
- * `src/lib/auth.ts` forces AUTH_URL to https://www.agor4.com, so `auth()`
- * always reads `__Secure-authjs.session-token`.
- */
-const SESSION_COOKIE_NAME = "__Secure-authjs.session-token";
 
 export async function POST(req: Request) {
   try {
@@ -64,7 +54,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
 
-    const cookieName = SESSION_COOKIE_NAME;
+    const cookieName = MOBILE_SESSION_COOKIE;
     const sessionToken = await encode({
       token: {
         sub: user.id,

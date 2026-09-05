@@ -5,9 +5,11 @@ import { ScreenScroll } from "@/components/Screen";
 import { Username } from "@/components/Username";
 import { fetchMutes, muteUser, type MutedUser } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { fetchPublicProfile, type PublicProfile } from "@/lib/profile";
+import { fetchPublicProfile, type ProfileComment, type PublicProfile } from "@/lib/profile";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
+
+type ProfileTab = "posts" | "comments" | "muted";
 
 export default function UserProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -22,6 +24,11 @@ export default function UserProfileScreen() {
   const [mutes, setMutes] = useState<MutedUser[]>([]);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<ProfileTab>("posts");
+
+  useEffect(() => {
+    setTab("posts");
+  }, [username]);
 
   useEffect(() => {
     if (!username) return;
@@ -82,6 +89,7 @@ export default function UserProfileScreen() {
 
   const initial = profile.username.slice(0, 1).toUpperCase();
   const isOwn = Boolean(user && user.username.toLowerCase() === profile.username.toLowerCase());
+  const activeTab: ProfileTab = !isOwn && tab === "muted" ? "posts" : tab;
 
   async function onMute() {
     if (!user) {
@@ -158,50 +166,82 @@ export default function UserProfileScreen() {
         </View>
       </View>
 
-      {isOwn ? (
-        <>
-          <Text style={styles.section}>Muted</Text>
-          {mutes.length === 0 ? (
-            <Text style={styles.mutedText}>You haven’t muted anyone yet.</Text>
-          ) : (
-            mutes.map((entry) => (
-              <View key={entry.userId} style={styles.muteRow}>
-                {entry.image ? (
-                  <Image source={{ uri: entry.image }} style={styles.muteAvatar} />
-                ) : (
-                  <View style={styles.muteAvatarFallback}>
-                    <Text style={styles.muteAvatarLetter}>
-                      {entry.username.slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-                <Username username={entry.username} style={styles.muteName} />
-                <Pressable onPress={() => onUnmute(entry)} disabled={busy} style={styles.unmuteChip}>
-                  <Text style={styles.unmuteChipText}>Unmute</Text>
-                </Pressable>
-              </View>
-            ))
-          )}
-        </>
+      <View style={styles.tabs}>
+        {(isOwn ? (["posts", "comments", "muted"] as const) : (["posts", "comments"] as const)).map(
+          (key) => (
+            <Pressable key={key} onPress={() => setTab(key)} style={styles.tabBtn}>
+              <Text style={[styles.tabLabel, activeTab === key && styles.tabActive]}>
+                {key === "posts" ? "Posts" : key === "comments" ? "Comments" : "Muted"}
+              </Text>
+            </Pressable>
+          )
+        )}
+      </View>
+
+      {activeTab === "posts" ? (
+        profile.posts.length === 0 ? (
+          <Text style={styles.mutedText}>No posts yet.</Text>
+        ) : (
+          profile.posts.map((post) => (
+            <Pressable
+              key={post.id}
+              style={styles.post}
+              onPress={() => router.push(`/post/${post.id}`)}
+            >
+              <Text style={styles.postTitle}>{post.title}</Text>
+              {post.communityTitle ? (
+                <Text style={styles.postMeta}>{post.communityTitle}</Text>
+              ) : null}
+            </Pressable>
+          ))
+        )
       ) : null}
 
-      <Text style={styles.section}>Recent posts</Text>
-      {profile.posts.length === 0 ? (
-        <Text style={styles.mutedText}>No posts yet.</Text>
-      ) : (
-        profile.posts.map((post) => (
-          <Pressable
-            key={post.id}
-            style={styles.post}
-            onPress={() => router.push(`/post/${post.id}`)}
-          >
-            <Text style={styles.postTitle}>{post.title}</Text>
-            {post.communityTitle ? (
-              <Text style={styles.postMeta}>{post.communityTitle}</Text>
-            ) : null}
-          </Pressable>
-        ))
-      )}
+      {activeTab === "comments" ? (
+        profile.comments.length === 0 ? (
+          <Text style={styles.mutedText}>No comments yet.</Text>
+        ) : (
+          profile.comments.map((comment: ProfileComment) => (
+            <Pressable
+              key={comment.id}
+              style={styles.post}
+              onPress={() => router.push(`/post/${comment.postId}`)}
+            >
+              <Text style={styles.commentBody} numberOfLines={4}>
+                {comment.body}
+              </Text>
+              <Text style={styles.postMeta}>
+                {comment.postTitle || "Post"}
+                {comment.communityTitle ? ` · ${comment.communityTitle}` : ""}
+              </Text>
+            </Pressable>
+          ))
+        )
+      ) : null}
+
+      {activeTab === "muted" && isOwn ? (
+        mutes.length === 0 ? (
+          <Text style={styles.mutedText}>You haven’t muted anyone yet.</Text>
+        ) : (
+          mutes.map((entry) => (
+            <View key={entry.userId} style={styles.muteRow}>
+              {entry.image ? (
+                <Image source={{ uri: entry.image }} style={styles.muteAvatar} />
+              ) : (
+                <View style={styles.muteAvatarFallback}>
+                  <Text style={styles.muteAvatarLetter}>
+                    {entry.username.slice(0, 1).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <Username username={entry.username} style={styles.muteName} />
+              <Pressable onPress={() => onUnmute(entry)} disabled={busy} style={styles.unmuteChip}>
+                <Text style={styles.unmuteChipText}>Unmute</Text>
+              </Pressable>
+            </View>
+          ))
+        )
+      ) : null}
     </ScreenScroll>
   );
 }
@@ -244,8 +284,18 @@ function makeStyles(colors: Palette) {
   unmuteBtn: { borderColor: "#881337" },
   muteBtnText: { color: colors.text, fontSize: 13, fontWeight: "600" },
   unmuteBtnText: { color: colors.rose },
-  section: { color: colors.text, fontSize: 17, fontWeight: "700", marginTop: 22, marginBottom: 10 },
+  tabs: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  tabBtn: { flex: 1, paddingVertical: 10, alignItems: "center" },
+  tabLabel: { color: colors.faint, fontWeight: "600", fontSize: 14 },
+  tabActive: { color: colors.emerald },
   mutedText: { color: colors.muted, fontSize: 14 },
+  commentBody: { color: colors.text, fontSize: 15, lineHeight: 21 },
   muteRow: {
     flexDirection: "row",
     alignItems: "center",
