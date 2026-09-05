@@ -127,11 +127,12 @@ export default function PostDetailScreen() {
     );
   }
 
+  const linkUrl = post.url;
   function openPostLink() {
-    if (!post.url) return;
+    if (!linkUrl) return;
     void openExternal(
-      post.url,
-      (isXLink(post.url) || isTikTokLink(post.url)) && openSocialInNativeApp
+      linkUrl,
+      (isXLink(linkUrl) || isTikTokLink(linkUrl)) && openSocialInNativeApp
     );
   }
 
