@@ -51,6 +51,10 @@ export function cookieHeader(): string {
   return `${stored.cookieName}=${stored.sessionToken}`;
 }
 
+export function sessionToken(): string {
+  return stored?.sessionToken || "";
+}
+
 export async function clearCookies() {
   stored = null;
   try {

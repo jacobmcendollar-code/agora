@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 const postSchema = z.object({
   userId: z.string().min(1),
   action: z.enum(["mute", "unmute"]),
 });
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(req: Request) {
+  const muterId = await userIdFromRequest(req);
+  if (!muterId) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: PRIVATE_NO_STORE_HEADERS }
+    );
   }
 
   const mutes = await prisma.mute.findMany({
-    where: { muterId: session.user.id },
+    where: { muterId },
     orderBy: { createdAt: "desc" },
     include: {
       muted: {
@@ -28,20 +32,23 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({
-    mutes: mutes.map((m) => ({
-      id: m.id,
-      userId: m.muted.id,
-      username: m.muted.username,
-      image: m.muted.image,
-      createdAt: m.createdAt.toISOString(),
-    })),
-  });
+  return NextResponse.json(
+    {
+      mutes: mutes.map((m) => ({
+        id: m.id,
+        userId: m.muted.id,
+        username: m.muted.username,
+        image: m.muted.image,
+        createdAt: m.createdAt.toISOString(),
+      })),
+    },
+    { headers: PRIVATE_NO_STORE_HEADERS }
+  );
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const muterId = await userIdFromRequest(req);
+  if (!muterId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -54,7 +61,7 @@ export async function POST(req: Request) {
 
     const { userId, action } = parsed.data;
 
-    if (userId === session.user.id) {
+    if (userId === muterId) {
       return NextResponse.json(
         { error: "You cannot mute yourself" },
         { status: 400 }
@@ -73,13 +80,13 @@ export async function POST(req: Request) {
       await prisma.mute.upsert({
         where: {
           muterId_mutedId: {
-            muterId: session.user.id,
+            muterId,
             mutedId: userId,
           },
         },
         update: {},
         create: {
-          muterId: session.user.id,
+          muterId,
           mutedId: userId,
         },
       });
@@ -88,7 +95,7 @@ export async function POST(req: Request) {
 
     await prisma.mute.deleteMany({
       where: {
-        muterId: session.user.id,
+        muterId,
         mutedId: userId,
       },
     });

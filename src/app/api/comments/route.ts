@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
 import { notifyMentions } from "@/lib/mentions";
 
@@ -39,14 +39,14 @@ async function countRecentMediaComments(userId: string) {
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { banned: true },
+    where: { id: userId },
+    select: { banned: true, username: true },
   });
   if (dbUser?.banned) {
     return NextResponse.json(
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     if (imageUrl) {
-      const mediaCount = await countRecentMediaComments(session.user.id);
+      const mediaCount = await countRecentMediaComments(userId);
       if (mediaCount >= MEDIA_PER_HOUR) {
         return NextResponse.json(
           {
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
         body: commentBody,
         imageUrl: imageUrl || null,
         postId,
-        authorId: session.user.id,
+        authorId: userId,
         parentId: parentId || null,
         moderationStatus: "approved",
         score: 1,
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
     await prisma.commentVote.create({
       data: {
         value: 1,
-        userId: session.user.id,
+        userId,
         commentId: comment.id,
       },
     });
@@ -161,10 +161,10 @@ export async function POST(req: Request) {
     });
 
     const link = `/c/${post.community.name}/posts/${post.id}#comments`;
-    const actorUsername = session.user.username || "Someone";
+    const actorUsername = dbUser?.username || "Someone";
 
-    if (post.authorId !== session.user.id) {
-      const muted = await isMutedBy(post.authorId, session.user.id);
+    if (post.authorId !== userId) {
+      const muted = await isMutedBy(post.authorId, userId);
       if (!muted) {
         await prisma.notification.create({
           data: {
@@ -177,8 +177,8 @@ export async function POST(req: Request) {
       }
     }
 
-    if (parentComment && parentComment.authorId !== session.user.id) {
-      const muted = await isMutedBy(parentComment.authorId, session.user.id);
+    if (parentComment && parentComment.authorId !== userId) {
+      const muted = await isMutedBy(parentComment.authorId, userId);
       if (!muted) {
         await prisma.notification.create({
           data: {
@@ -195,7 +195,7 @@ export async function POST(req: Request) {
       await notifyMentions({
         text: commentBody,
         actorUsername,
-        actorId: session.user.id,
+        actorId: userId,
         link,
       });
     }

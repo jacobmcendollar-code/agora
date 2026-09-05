@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
 import { fetchThumbnail } from "@/lib/thumbnail";
 
@@ -98,13 +98,13 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { banned: true },
   });
   if (dbUser?.banned) {
@@ -219,7 +219,7 @@ export async function POST(req: Request) {
         thumbnail,
         nsfw: community.nsfw,
         communityId: community.id,
-        authorId: session.user.id,
+        authorId: userId,
         moderationStatus: "approved",
         score: 1,
       },
@@ -228,7 +228,7 @@ export async function POST(req: Request) {
     await prisma.postVote.create({
       data: {
         value: 1,
-        userId: session.user.id,
+        userId,
         postId: post.id,
       },
     });

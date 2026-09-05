@@ -1,5 +1,5 @@
 import { API_URL } from "./config";
-import { cookieHeader, loadCookies } from "./cookies";
+import { cookieHeader, loadCookies, sessionToken } from "./cookies";
 import type {
   CommentNode,
   Community,
@@ -25,6 +25,9 @@ export function peekCachedPost(id: string): FeedPost | undefined {
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   await loadCookies();
   const headers = new Headers(init.headers);
+  const token = sessionToken();
+  // RN fetch strips Cookie as a forbidden header; Bearer is the real session transport.
+  if (token) headers.set("Authorization", `Bearer ${token}`);
   const cookies = cookieHeader();
   if (cookies) headers.set("Cookie", cookies);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");

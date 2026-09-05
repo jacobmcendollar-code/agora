@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { listCommunities } from "@/lib/communities";
-import { readMobileSession } from "@/lib/mobile-session";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
+import { userIdFromRequest } from "@/lib/request-user";
 
 export async function GET(req: Request) {
   try {
-    const session = await readMobileSession(req);
-    return NextResponse.json(await listCommunities(session?.userId ?? null));
+    const userId = await userIdFromRequest(req);
+    return NextResponse.json(await listCommunities(userId), {
+      headers: PRIVATE_NO_STORE_HEADERS,
+    });
   } catch (err) {
     console.error("[mobile/communities GET]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
