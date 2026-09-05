@@ -5,7 +5,9 @@ import type {
   Community,
   FeedPost,
   FeedResponse,
+  NotificationsResponse,
   PostDetailResponse,
+  SearchSuggest,
 } from "./types";
 
 export { API_URL };
@@ -231,6 +233,28 @@ export async function uploadImage(file: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(file),
   });
+}
+
+export async function fetchSearchSuggest(q: string): Promise<SearchSuggest> {
+  const data = await apiJson<SearchSuggest>(
+    `/api/search/suggest?q=${encodeURIComponent(q)}`
+  );
+  return {
+    communities: data.communities || [],
+    posts: data.posts || [],
+  };
+}
+
+export async function fetchNotifications(): Promise<NotificationsResponse> {
+  const data = await apiJson<NotificationsResponse>("/api/notifications");
+  return {
+    notifications: data.notifications || [],
+    unreadCount: data.unreadCount || 0,
+  };
+}
+
+export async function markNotificationsRead() {
+  return apiJson<{ ok: boolean }>("/api/notifications", { method: "PATCH" });
 }
 
 export function commentCount(post: FeedPost): number {

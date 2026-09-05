@@ -2,7 +2,7 @@ import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { ScreenScroll } from "@/components/Screen";
 import { setShowNsfw } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { usePreferences, useThemeColors } from "@/lib/preferences";
+import { usePreferences, useThemeColors, type ThemePref } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
 function ToggleRow({
@@ -12,6 +12,7 @@ function ToggleRow({
   onChange,
   disabled,
   colors,
+  theme,
 }: {
   title: string;
   subtitle: string;
@@ -19,8 +20,9 @@ function ToggleRow({
   onChange: (next: boolean) => void;
   disabled?: boolean;
   colors: Palette;
+  theme: ThemePref;
 }) {
-  const styles = makeStyles(colors);
+  const styles = makeStyles(colors, theme);
   return (
     <View style={styles.row}>
       <View style={{ flex: 1, paddingRight: 12 }}>
@@ -31,8 +33,9 @@ function ToggleRow({
         value={value}
         onValueChange={onChange}
         disabled={disabled}
-        trackColor={{ false: colors.border, true: colors.emerald }}
-        thumbColor={colors.white}
+        trackColor={{ false: colors.switchOff, true: colors.emerald }}
+        thumbColor={colors.switchThumb}
+        ios_backgroundColor={colors.switchOff}
       />
     </View>
   );
@@ -42,7 +45,7 @@ export default function SettingsScreen() {
   const { user, updateUser } = useAuth();
   const { theme, setTheme, openSocialInNativeApp, setOpenSocialInNativeApp } = usePreferences();
   const colors = useThemeColors();
-  const styles = makeStyles(colors);
+  const styles = makeStyles(colors, theme);
 
   async function onNsfw(next: boolean) {
     if (!user) return;
@@ -110,6 +113,7 @@ export default function SettingsScreen() {
           onChange={onNsfw}
           disabled={!user}
           colors={colors}
+          theme={theme}
         />
         <ToggleRow
           title="Open TikTok & X in native apps"
@@ -117,20 +121,24 @@ export default function SettingsScreen() {
           value={openSocialInNativeApp}
           onChange={setOpenSocialInNativeApp}
           colors={colors}
+          theme={theme}
         />
       </View>
     </ScreenScroll>
   );
 }
 
-function makeStyles(colors: Palette) {
+function makeStyles(colors: Palette, theme: ThemePref) {
+  const controlBorder = theme === "light" ? "#c4c0bb" : colors.border;
+  const divider = theme === "light" ? "#d6d3d1" : colors.border;
+  const sub = theme === "light" ? "#57534e" : colors.muted;
   return StyleSheet.create({
     heading: { color: colors.text, fontSize: 24, fontWeight: "700" },
-    lede: { color: colors.muted, marginTop: 6, marginBottom: 16 },
+    lede: { color: sub, marginTop: 6, marginBottom: 16 },
     card: {
       backgroundColor: colors.card,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: controlBorder,
       borderRadius: 14,
       overflow: "hidden",
     },
@@ -140,15 +148,15 @@ function makeStyles(colors: Palette) {
       paddingHorizontal: 16,
       paddingVertical: 14,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      borderBottomColor: divider,
     },
     title: { color: colors.text, fontSize: 15, fontWeight: "600" },
-    sub: { color: colors.muted, fontSize: 12, marginTop: 4, lineHeight: 17 },
+    sub: { color: sub, fontSize: 12, marginTop: 4, lineHeight: 17 },
     themeRow: {
       paddingHorizontal: 16,
       paddingVertical: 14,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      borderBottomColor: divider,
       gap: 10,
     },
     themePair: { flexDirection: "row", gap: 6 },
@@ -157,14 +165,14 @@ function makeStyles(colors: Palette) {
       paddingVertical: 7,
       borderRadius: 999,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: controlBorder,
       backgroundColor: colors.field,
     },
     themeChipActive: {
       backgroundColor: colors.chipActive,
       borderColor: colors.emerald,
     },
-    themeChipText: { color: colors.muted, fontSize: 13, fontWeight: "600" },
+    themeChipText: { color: sub, fontSize: 13, fontWeight: "600" },
     themeChipTextActive: { color: colors.emerald },
   });
 }

@@ -36,7 +36,7 @@ export default function AccountScreen() {
   const initial = user?.username?.[0]?.toUpperCase() || "?";
 
   return (
-    <ScreenScroll>
+    <ScreenScroll includeTabs={false}>
       <Text style={styles.heading}>Account</Text>
 
       {user ? (
