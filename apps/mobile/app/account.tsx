@@ -69,6 +69,7 @@ export default function AccountScreen() {
       <View style={styles.card}>
         {user ? (
           <>
+            <Row label="Edit profile" onPress={() => router.push("/edit-profile")} colors={colors} styles={styles} />
             <Row label="Settings" onPress={() => router.push("/settings")} colors={colors} styles={styles} />
             <Row label="About Agora" onPress={() => router.push("/about")} colors={colors} styles={styles} />
             <Row

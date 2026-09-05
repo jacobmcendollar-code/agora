@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { userIdFromRequest } from "@/lib/request-user";
 
 const schema = z.object({
   bio: z.string().max(500).optional().nullable(),
@@ -9,8 +9,8 @@ const schema = z.object({
 });
 
 export async function PATCH(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await userIdFromRequest(req);
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
     }
 
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data,
       select: {
         id: true,

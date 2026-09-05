@@ -27,6 +27,7 @@ export function mapSitePath(link: string): string {
     path === "/communities" ||
     path === "/search" ||
     path === "/account" ||
+    path === "/edit-profile" ||
     path === "/notifications" ||
     path === "/"
   ) {
