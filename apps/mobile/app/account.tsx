@@ -2,7 +2,6 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { IconChevron } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
-import { Username } from "@/components/Username";
 import { useAuth } from "@/lib/auth";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
@@ -40,7 +39,12 @@ export default function AccountScreen() {
       <Text style={styles.heading}>Account</Text>
 
       {user ? (
-        <View style={styles.profile}>
+        <Pressable
+          onPress={() => router.push(`/u/${encodeURIComponent(user.username.toLowerCase())}`)}
+          accessibilityRole="button"
+          accessibilityLabel="View profile"
+          style={styles.profile}
+        >
           {user.image ? (
             <Image source={{ uri: user.image }} style={styles.avatar} />
           ) : (
@@ -49,9 +53,10 @@ export default function AccountScreen() {
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Username username={user.username} style={styles.name} />
+            <Text style={styles.name}>{user.username}</Text>
           </View>
-        </View>
+          <IconChevron color={colors.faint} />
+        </Pressable>
       ) : (
         <View style={styles.profile}>
           <View style={{ flex: 1 }}>
