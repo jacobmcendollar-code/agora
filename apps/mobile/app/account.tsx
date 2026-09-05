@@ -79,6 +79,7 @@ export default function AccountScreen() {
               styles={styles}
               onPress={async () => {
                 await signOut();
+                router.replace("/");
               }}
             />
           </>

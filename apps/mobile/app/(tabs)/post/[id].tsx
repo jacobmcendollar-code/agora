@@ -124,7 +124,7 @@ export default function PostDetailScreen() {
   const linkUrl = post.url;
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <View style={styles.card}>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <VoteSpears targetType="post" targetId={post.id} initialScore={post.score} />
