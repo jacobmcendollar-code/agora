@@ -53,6 +53,18 @@ function Gate() {
             }}
           >
             <Stack.Screen name="(tabs)" />
+            {/* Post is a root stack screen (not a tab) so back pops to the
+                opener — Home, community, search, profile, or Notifications —
+                instead of leaving Notifications under a nested (tabs) push. */}
+            <Stack.Screen
+              name="post/[id]"
+              options={{
+                animation: "slide_from_right",
+                gestureDirection: "horizontal",
+                gestureEnabled: true,
+                animationMatchesGesture: true,
+              }}
+            />
             <Stack.Screen name="u/[username]" />
             <Stack.Screen
               name="account"

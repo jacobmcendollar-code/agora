@@ -17,7 +17,6 @@ export default function TabLayout() {
       <Tabs.Screen name="search" options={{ title: "Search" }} />
       <Tabs.Screen name="submit" options={{ title: "New Post" }} />
       <Tabs.Screen name="community/[name]" options={{ href: null, title: "Community" }} />
-      <Tabs.Screen name="post/[id]" options={{ href: null, title: "Post" }} />
     </Tabs>
   );
 }

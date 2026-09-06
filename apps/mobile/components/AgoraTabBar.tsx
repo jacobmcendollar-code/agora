@@ -27,9 +27,12 @@ const TABS: TabDef[] = [
 
 const ICON = 27;
 
-function isOnRoute(pathname: string, route: string) {
+const TAB_SURFACES = new Set(["/", "/communities", "/search", "/submit"]);
+
+/** Tab navigator routes. Stack screens (post, notifications, profile, …) are not. */
+function isTabSurface(pathname: string) {
   const path = pathname.replace(/\/+$/, "") || "/";
-  return path === route || path.startsWith(`${route}/`);
+  return TAB_SURFACES.has(path) || path.startsWith("/community/");
 }
 
 export function AgoraTabBar() {
@@ -60,7 +63,7 @@ export function AgoraTabBar() {
                 return;
               }
               if (pathname === tab.path) return;
-              if (isOnRoute(pathname, "/notifications")) {
+              if (!isTabSurface(pathname)) {
                 router.dismissTo(tab.href);
                 return;
               }

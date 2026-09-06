@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FeedList } from "@/components/FeedList";
+import { IconTarget } from "@/components/Icons";
 import { fetchCommunities, resolveCommunityId, subscribe } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useThemeColors } from "@/lib/preferences";
@@ -16,8 +17,10 @@ export default function CommunityScreen() {
   const styles = makeStyles(colors);
   const [community, setCommunity] = useState<Community | null>(null);
   const [busy, setBusy] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   useEffect(() => {
+    setAboutOpen(false);
     if (!name) return;
     fetchCommunities()
       .then((list) => setCommunity(list.find((c) => c.name === name) || null))
@@ -41,6 +44,9 @@ export default function CommunityScreen() {
     }
   }
 
+  const description = community?.description?.trim() || "";
+  const title = community?.title || name;
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <FeedList
@@ -55,23 +61,29 @@ export default function CommunityScreen() {
         header={
           <View style={styles.hero}>
             <View style={styles.titleRow}>
-              <Text style={styles.title}>{community?.title || name}</Text>
+              <Text style={styles.title}>{title}</Text>
+              {description ? (
+                <Pressable
+                  onPress={() => setAboutOpen((open) => !open)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: aboutOpen }}
+                  accessibilityLabel={aboutOpen ? "Hide about" : "About this community"}
+                  style={[styles.aboutChip, aboutOpen && styles.aboutChipOpen]}
+                >
+                  <IconTarget color={colors.text} size={11} />
+                  <Text style={styles.aboutChipText}>About</Text>
+                </Pressable>
+              ) : null}
               {community?.postFormat === "discussion" ? (
                 <View style={styles.pill}>
                   <Text style={styles.pillText}>Discussion</Text>
                 </View>
               ) : null}
             </View>
-            {community?.description ? (
-              <Text style={styles.desc}>{community.description}</Text>
-            ) : null}
+            {aboutOpen && description ? <Text style={styles.desc}>{description}</Text> : null}
             <View style={styles.actions}>
-              <Pressable
-                onPress={onJoin}
-                disabled={busy}
-                style={[styles.join, community?.joined && styles.joined]}
-              >
-                <Text style={[styles.joinText, community?.joined && styles.joinedText]}>
+              <Pressable onPress={onJoin} disabled={busy} style={styles.join}>
+                <Text style={styles.joinText}>
                   {busy ? "…" : community?.joined ? "Joined" : "Join"}
                 </Text>
               </Pressable>
@@ -100,7 +112,21 @@ function makeStyles(colors: Palette) {
       marginBottom: 8,
     },
     titleRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
-    title: { color: colors.text, fontSize: 22, fontWeight: "800" },
+    title: { color: colors.text, fontSize: 22, fontWeight: "800", flexShrink: 1 },
+    aboutChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.text,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    aboutChipOpen: {
+      backgroundColor: colors.chipActive,
+    },
+    aboutChipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
     pill: {
       borderRadius: 999,
       borderWidth: 1,
@@ -109,21 +135,17 @@ function makeStyles(colors: Palette) {
       paddingVertical: 2,
     },
     pillText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
-    desc: { color: colors.muted, marginTop: 8, lineHeight: 20 },
-    actions: { flexDirection: "row", gap: 8, marginTop: 14 },
+    desc: { color: colors.muted, marginTop: 10, lineHeight: 20 },
+    actions: { flexDirection: "row", gap: 8, marginTop: 12 },
     join: {
-      backgroundColor: colors.emeraldDark,
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.text,
       borderRadius: 10,
       paddingHorizontal: 14,
       paddingVertical: 9,
     },
-    joined: {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    joinText: { color: colors.white, fontWeight: "700" },
-    joinedText: { color: colors.muted },
+    joinText: { color: colors.text, fontWeight: "700" },
     postBtn: {
       backgroundColor: colors.emeraldDark,
       borderRadius: 10,
