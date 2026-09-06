@@ -6,11 +6,12 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { space } from "./theme";
@@ -18,8 +19,9 @@ import { space } from "./theme";
 type ChromeContextValue = {
   headerHeight: number;
   tabBarHeight: number;
-  headerStyle: ReturnType<typeof useAnimatedStyle>;
-  tabBarStyle: ReturnType<typeof useAnimatedStyle>;
+  hidden: SharedValue<number>;
+  headerStyle: object;
+  tabBarStyle: object;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   reveal: () => void;
 };
@@ -58,24 +60,26 @@ export function ChromeProvider({ children }: { children: ReactNode }) {
     [hidden, reveal]
   );
 
-  const headerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -hidden.value * headerHeight }],
+  const headerStyle = useAnimatedStyle<ViewStyle>(() => ({
+    height: insets.top + space.headerBody * (1 - hidden.value),
   }));
 
-  const tabBarStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: hidden.value * tabBarHeight }],
+  const tabBarStyle = useAnimatedStyle<ViewStyle>(() => ({
+    height: tabBarHeight * (1 - hidden.value),
+    paddingBottom: insets.bottom * (1 - hidden.value),
   }));
 
   const value = useMemo(
     () => ({
       headerHeight,
       tabBarHeight,
+      hidden,
       headerStyle,
       tabBarStyle,
       onScroll,
       reveal,
     }),
-    [headerHeight, tabBarHeight, headerStyle, tabBarStyle, onScroll, reveal]
+    [headerHeight, tabBarHeight, hidden, headerStyle, tabBarStyle, onScroll, reveal]
   );
 
   return <ChromeContext.Provider value={value}>{children}</ChromeContext.Provider>;
@@ -85,6 +89,31 @@ export function useChrome() {
   const ctx = useContext(ChromeContext);
   if (!ctx) throw new Error("useChrome must be used within ChromeProvider");
   return ctx;
+}
+
+export function ChromePad({
+  edge,
+  extra,
+  includeTabs = true,
+}: {
+  edge: "top" | "bottom";
+  extra?: number;
+  includeTabs?: boolean;
+}) {
+  const { hidden, headerHeight, tabBarHeight } = useChrome();
+  const topExtra = extra ?? 12;
+  const bottomExtra = extra ?? 28;
+  const shown =
+    edge === "top"
+      ? headerHeight + topExtra
+      : bottomExtra + (includeTabs ? tabBarHeight : 24);
+  const style = useAnimatedStyle(() => ({
+    height:
+      edge === "top"
+        ? shown - hidden.value * space.headerBody
+        : shown - hidden.value * (includeTabs ? tabBarHeight : 24),
+  }));
+  return <Animated.View pointerEvents="none" style={[{ height: shown }, style]} />;
 }
 
 export const AnimatedView = Animated.View;

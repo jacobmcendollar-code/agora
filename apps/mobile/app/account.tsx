@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { IconChevron, IconGear, IconInfo, IconPencil } from "@/components/Icons";
+import { IconChevron, IconGear, IconInfo } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { openExternal } from "@/lib/media";
@@ -12,7 +12,7 @@ import type { Palette } from "@/lib/theme";
 
 const PRIVACY_URL = "https://www.agor4.com/privacy";
 
-type MenuIcon = "edit" | "settings" | "about";
+type MenuIcon = "settings" | "about";
 
 type MenuRow = {
   key: string;
@@ -30,7 +30,6 @@ type MenuGroup = {
 };
 
 function MenuIconView({ name, color }: { name: MenuIcon; color: string }) {
-  if (name === "edit") return <IconPencil color={color} />;
   if (name === "settings") return <IconGear color={color} />;
   return <IconInfo color={color} />;
 }
@@ -107,7 +106,6 @@ export default function AccountScreen() {
           key: "account",
           label: "ACCOUNT",
           rows: [
-            { key: "edit", label: "Edit profile", icon: "edit", onPress: () => router.push("/edit-profile") },
             { key: "settings", label: "Settings", icon: "settings", onPress: () => router.push("/settings") },
           ],
         },
@@ -153,7 +151,7 @@ export default function AccountScreen() {
       ];
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       {user ? (
         <View style={styles.hero}>
           {image ? (

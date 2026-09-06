@@ -140,7 +140,7 @@ export default function UserProfileScreen() {
   }
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <View style={styles.hero}>
         {profile.image ? (
           <Image source={{ uri: profile.image }} style={styles.avatar} />
@@ -154,8 +154,13 @@ export default function UserProfileScreen() {
           {profile.joined ? <Text style={styles.joined}>Joined {profile.joined}</Text> : null}
           {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
           {isOwn ? (
-            <Pressable onPress={() => router.push("/edit-profile")} style={styles.muteBtn}>
-              <Text style={styles.muteBtnText}>Edit profile</Text>
+            <Pressable
+              onPress={() => router.push("/edit-profile")}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+              style={styles.editBtn}
+            >
+              <Text style={styles.editBtnText}>Edit profile</Text>
             </Pressable>
           ) : user && targetId ? (
             <Pressable
@@ -277,6 +282,15 @@ function makeStyles(colors: Palette) {
   name: { color: colors.text, fontSize: 22, fontWeight: "800" },
   joined: { color: colors.muted, marginTop: 4, fontSize: 13 },
   bio: { color: colors.text, marginTop: 10, fontSize: 15, lineHeight: 21 },
+  editBtn: {
+    alignSelf: "flex-start",
+    marginTop: 12,
+    backgroundColor: colors.emerald,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  editBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
   muteBtn: {
     alignSelf: "flex-start",
     marginTop: 12,

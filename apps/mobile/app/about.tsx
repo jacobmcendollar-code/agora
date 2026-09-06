@@ -30,7 +30,7 @@ export default function AboutScreen() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <Text style={styles.heading}>About Agora</Text>
       <Text style={styles.lede}>
         Agora is a place for open discussion. It is built around the idea that adults should be able to talk freely, with as little interference as possible.

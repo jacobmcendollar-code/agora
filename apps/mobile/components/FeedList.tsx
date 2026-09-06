@@ -11,7 +11,7 @@ import {
 import Animated from "react-native-reanimated";
 import { fetchCommunities, fetchFeed } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
+import { ChromePad, HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type { Community, FeedPost } from "@/lib/types";
@@ -158,13 +158,7 @@ export function FeedList({
       renderItem={({ item }) => <FeedCard post={item} hideCommunity={hideCommunity} />}
       onScroll={chrome.onScroll}
       scrollEventThrottle={16}
-      contentContainerStyle={{
-        paddingTop: chrome.headerHeight + 8,
-        paddingBottom: chrome.tabBarHeight + 24,
-        paddingHorizontal: 12,
-        gap: 10,
-        flexGrow: 1,
-      }}
+      contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexGrow: 1 }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -176,6 +170,7 @@ export function FeedList({
       onEndReachedThreshold={0.6}
       ListHeaderComponent={
         <View>
+          <ChromePad edge="top" extra={8} />
           {header}
           <SortChips value={sort} onChange={setSort} showMyFeed={showMyFeed} />
         </View>
@@ -191,11 +186,14 @@ export function FeedList({
         )
       }
       ListFooterComponent={
-        loadingMore ? (
-          <ActivityIndicator color={colors.emerald} style={{ marginVertical: 16 }} />
-        ) : !nextPage && visible.length > 0 ? (
-          <Text style={styles.end}>You’ve reached the end</Text>
-        ) : null
+        <View>
+          {loadingMore ? (
+            <ActivityIndicator color={colors.emerald} style={{ marginVertical: 16 }} />
+          ) : !nextPage && visible.length > 0 ? (
+            <Text style={styles.end}>You’ve reached the end</Text>
+          ) : null}
+          <ChromePad edge="bottom" extra={24} />
+        </View>
       }
     />
   );

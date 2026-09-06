@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import "react-native-reanimated";
 import { AgoraHeader } from "@/components/AgoraHeader";
+import { AgoraTabBar } from "@/components/AgoraTabBar";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ChromeProvider } from "@/lib/chrome";
 import { PreferencesProvider, usePreferences, useThemeColors } from "@/lib/preferences";
@@ -63,6 +64,7 @@ function Gate() {
             <Stack.Screen name="about" />
           </Stack>
           <AgoraHeader />
+          <AgoraTabBar />
         </View>
       </ChromeProvider>
     </View>

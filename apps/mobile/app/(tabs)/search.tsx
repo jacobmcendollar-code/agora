@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { fetchCommunities, fetchFeed, fetchSearchSuggest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useChrome } from "@/lib/chrome";
+import { ChromePad, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type {
@@ -141,13 +141,11 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
         onScroll={chrome.onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingTop: chrome.headerHeight + 12,
-          paddingBottom: chrome.tabBarHeight + 24,
-          paddingHorizontal: 12,
-        }}
+        contentContainerStyle={{ paddingHorizontal: 12 }}
         ListHeaderComponent={
-          <View style={styles.headerBlock}>
+          <View>
+            <ChromePad edge="top" />
+            <View style={styles.headerBlock}>
             <Text style={styles.heading}>Search</Text>
             <TextInput
               value={query}
@@ -160,8 +158,10 @@ export default function SearchScreen() {
               autoComplete="off"
               returnKeyType="search"
             />
+            </View>
           </View>
         }
+        ListFooterComponent={<ChromePad edge="bottom" extra={24} />}
         renderItem={({ item }) => {
           if (item.kind === "heading") {
             return <Text style={styles.section}>{item.label}</Text>;

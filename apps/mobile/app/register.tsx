@@ -32,7 +32,7 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <Text style={styles.heading}>Create an account</Text>
       <Text style={styles.sub}>Username is public. Email stays private.</Text>
 

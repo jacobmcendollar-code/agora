@@ -128,7 +128,7 @@ export default function EditProfileScreen() {
   const initial = user.username[0]?.toUpperCase() || "?";
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <Text style={styles.heading}>Edit profile</Text>
       <Text style={styles.lede}>Photo and a short bio. Same fields as the site.</Text>
 

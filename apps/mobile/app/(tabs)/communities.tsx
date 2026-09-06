@@ -12,7 +12,7 @@ import Animated from "react-native-reanimated";
 import { CreateCommunityModal } from "@/components/CreateCommunityModal";
 import { fetchCommunities, resolveCommunityId, subscribe } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useChrome } from "@/lib/chrome";
+import { ChromePad, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type { Community } from "@/lib/types";
@@ -88,17 +88,14 @@ export default function CommunitiesScreen() {
         keyExtractor={(item) => item.name}
         onScroll={chrome.onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingTop: chrome.headerHeight + 12,
-          paddingBottom: chrome.tabBarHeight + 24,
-          paddingHorizontal: 12,
-          gap: 10,
-        }}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
         ListHeaderComponent={
-          <View style={{ gap: 12, marginBottom: 4 }}>
+          <View>
+            <ChromePad edge="top" />
+            <View style={{ gap: 12, marginBottom: 4 }}>
             <Text style={styles.heading}>Communities</Text>
             <Text style={styles.sub}>
-              Topic-based rooms. Light moderation. Free speech by default.
+              Topic rooms · free speech
             </Text>
             <Pressable
               onPress={() => (user ? setCreating(true) : router.push("/login"))}
@@ -129,8 +126,10 @@ export default function CommunitiesScreen() {
                 </Pressable>
               </View>
             ) : null}
+            </View>
           </View>
         }
+        ListFooterComponent={<ChromePad edge="bottom" extra={24} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Pressable
