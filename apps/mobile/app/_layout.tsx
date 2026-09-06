@@ -49,7 +49,12 @@ function Gate() {
             <Stack.Screen name="u/[username]" />
             <Stack.Screen
               name="account"
-              options={{ animation: "slide_from_left", gestureDirection: "horizontal" }}
+              options={{
+                animation: "slide_from_left",
+                gestureDirection: "horizontal-inverted",
+                gestureEnabled: true,
+                customAnimationOnGesture: true,
+              }}
             />
             <Stack.Screen name="notifications" />
             <Stack.Screen name="login" />
