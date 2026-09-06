@@ -10,7 +10,7 @@ export function EdgeSwipeBack({ children }: { children: ReactNode }) {
   const pan = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
+        onMoveShouldSetPanResponderCapture: (_, gesture) =>
           gesture.x0 <= EDGE && gesture.dx > 8 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onPanResponderRelease: (_, gesture) => {
           if (gesture.dx > MIN_DX || gesture.vx > 0.4) router.back();
@@ -20,20 +20,12 @@ export function EdgeSwipeBack({ children }: { children: ReactNode }) {
   );
 
   return (
-    <View style={styles.fill}>
+    <View style={styles.fill} {...pan.panHandlers}>
       {children}
-      <View style={styles.edge} {...pan.panHandlers} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  edge: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: EDGE,
-  },
 });
