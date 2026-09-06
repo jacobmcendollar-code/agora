@@ -27,6 +27,11 @@ const TABS: TabDef[] = [
 
 const ICON = 27;
 
+function isOnRoute(pathname: string, route: string) {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  return path === route || path.startsWith(`${route}/`);
+}
+
 export function AgoraTabBar() {
   const insets = useSafeAreaInsets();
   const { tabBarStyle } = useChrome();
@@ -55,6 +60,10 @@ export function AgoraTabBar() {
                 return;
               }
               if (pathname === tab.path) return;
+              if (isOnRoute(pathname, "/notifications")) {
+                router.dismissTo(tab.href);
+                return;
+              }
               router.navigate(tab.href);
             }}
             style={styles.item}

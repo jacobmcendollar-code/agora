@@ -5,9 +5,8 @@ import { IconComments, IconReply } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
 import { fetchNotifications, markNotificationsRead } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { parseNotification } from "@/lib/notification";
+import { notificationHref, parseNotification } from "@/lib/notification";
 import { useThemeColors } from "@/lib/preferences";
-import { mapSitePath } from "@/lib/routes";
 import type { Palette } from "@/lib/theme";
 import { timeAgo } from "@/lib/time";
 import type { SiteNotification } from "@/lib/types";
@@ -76,7 +75,7 @@ export default function NotificationsScreen() {
               item={n}
               colors={colors}
               styles={styles}
-              onPress={() => router.push(mapSitePath(n.link) as Href)}
+              onPress={() => router.push(notificationHref(n) as Href)}
             />
           ))}
         </View>

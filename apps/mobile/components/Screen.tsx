@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { ChromePad, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
@@ -8,17 +8,25 @@ export function ScreenScroll({
   onRefresh,
   refreshing,
   includeTabs = true,
+  scrollRef,
+  onScrollOffset,
 }: {
   children: ReactNode;
   onRefresh?: () => void;
   refreshing?: boolean;
   includeTabs?: boolean;
+  scrollRef?: Ref<ScrollView>;
+  onScrollOffset?: (y: number) => void;
 }) {
   const chrome = useChrome();
   const colors = useThemeColors();
   return (
     <ScrollView
-      onScroll={chrome.onScroll}
+      ref={scrollRef}
+      onScroll={(e) => {
+        chrome.onScroll(e);
+        onScrollOffset?.(e.nativeEvent.contentOffset.y);
+      }}
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingHorizontal: 16 }}
