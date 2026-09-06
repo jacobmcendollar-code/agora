@@ -75,7 +75,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <Text style={styles.heading}>Settings</Text>
       {user ? (
         <Text style={styles.lede}>Preferences for @{user.username}</Text>

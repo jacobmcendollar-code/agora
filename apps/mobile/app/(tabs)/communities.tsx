@@ -98,7 +98,7 @@ export default function CommunitiesScreen() {
           <View style={{ gap: 12, marginBottom: 4 }}>
             <Text style={styles.heading}>Communities</Text>
             <Text style={styles.sub}>
-              Topic-based rooms. Light moderation. Free speech by default.
+              Topic rooms · free speech
             </Text>
             <Pressable
               onPress={() => (user ? setCreating(true) : router.push("/login"))}

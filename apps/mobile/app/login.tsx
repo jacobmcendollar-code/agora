@@ -29,7 +29,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <Text style={styles.heading}>Log in</Text>
       <Text style={styles.sub}>Same username and password as the site.</Text>
 

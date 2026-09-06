@@ -27,7 +27,7 @@ export function AgoraHeader() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const onAccount = isOnRoute(pathname, "/account");
-  const showBack = !TAB_ROOTS.has(pathname) && !onAccount;
+  const showBack = !TAB_ROOTS.has(pathname);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {

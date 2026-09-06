@@ -43,7 +43,7 @@ export default function NotificationsScreen() {
 
   if (!ready || (loading && user)) {
     return (
-      <ScreenScroll includeTabs={false}>
+      <ScreenScroll>
         <ActivityIndicator color={colors.emerald} style={{ marginTop: 32 }} />
       </ScreenScroll>
     );
@@ -51,7 +51,7 @@ export default function NotificationsScreen() {
 
   if (!user) {
     return (
-      <ScreenScroll includeTabs={false}>
+      <ScreenScroll>
         <Text style={styles.heading}>Notifications</Text>
         <Text style={styles.lede}>You need to be logged in to see notifications.</Text>
         <Pressable onPress={() => router.push("/login")} style={styles.login}>
@@ -62,7 +62,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <ScreenScroll includeTabs={false}>
+    <ScreenScroll>
       <Text style={styles.heading}>Notifications</Text>
       {items.length === 0 ? (
         <Text style={styles.empty}>No notifications yet.</Text>
