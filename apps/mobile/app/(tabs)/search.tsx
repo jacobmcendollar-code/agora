@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import Animated from "react-native-reanimated";
 import { fetchCommunities, fetchFeed, fetchSearchSuggest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useChrome, useChromeContentStyle } from "@/lib/chrome";
+import { ChromePad, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type {
@@ -52,7 +52,6 @@ function mapDiscoverPosts(list: FeedPost[], showNsfw: boolean): SearchSuggestPos
 export default function SearchScreen() {
   const { user } = useAuth();
   const chrome = useChrome();
-  const pads = useChromeContentStyle({ bottomExtra: 24 });
   const router = useRouter();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -142,9 +141,11 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
         onScroll={chrome.onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={[{ paddingHorizontal: 12 }, pads]}
+        contentContainerStyle={{ paddingHorizontal: 12 }}
         ListHeaderComponent={
-          <View style={styles.headerBlock}>
+          <View>
+            <ChromePad edge="top" />
+            <View style={styles.headerBlock}>
             <Text style={styles.heading}>Search</Text>
             <TextInput
               value={query}
@@ -157,8 +158,10 @@ export default function SearchScreen() {
               autoComplete="off"
               returnKeyType="search"
             />
+            </View>
           </View>
         }
+        ListFooterComponent={<ChromePad edge="bottom" extra={24} />}
         renderItem={({ item }) => {
           if (item.kind === "heading") {
             return <Text style={styles.section}>{item.label}</Text>;

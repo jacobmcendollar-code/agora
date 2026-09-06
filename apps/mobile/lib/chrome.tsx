@@ -91,20 +91,29 @@ export function useChrome() {
   return ctx;
 }
 
-export function useChromeContentStyle({
+export function ChromePad({
+  edge,
+  extra,
   includeTabs = true,
-  topExtra = 12,
-  bottomExtra = 28,
 }: {
+  edge: "top" | "bottom";
+  extra?: number;
   includeTabs?: boolean;
-  topExtra?: number;
-  bottomExtra?: number;
-} = {}) {
+}) {
   const { hidden, headerHeight, tabBarHeight } = useChrome();
-  return useAnimatedStyle(() => ({
-    paddingTop: headerHeight + topExtra - hidden.value * space.headerBody,
-    paddingBottom: bottomExtra + (includeTabs ? tabBarHeight : 24) * (1 - hidden.value),
+  const topExtra = extra ?? 12;
+  const bottomExtra = extra ?? 28;
+  const shown =
+    edge === "top"
+      ? headerHeight + topExtra
+      : bottomExtra + (includeTabs ? tabBarHeight : 24);
+  const style = useAnimatedStyle(() => ({
+    height:
+      edge === "top"
+        ? shown - hidden.value * space.headerBody
+        : shown - hidden.value * (includeTabs ? tabBarHeight : 24),
   }));
+  return <Animated.View pointerEvents="none" style={[{ height: shown }, style]} />;
 }
 
 export const AnimatedView = Animated.View;

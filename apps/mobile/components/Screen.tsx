@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { RefreshControl, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
-import { useChrome, useChromeContentStyle } from "@/lib/chrome";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { ChromePad, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 
 export function ScreenScroll({
@@ -17,13 +16,12 @@ export function ScreenScroll({
 }) {
   const chrome = useChrome();
   const colors = useThemeColors();
-  const pads = useChromeContentStyle({ includeTabs });
   return (
-    <Animated.ScrollView
+    <ScrollView
       onScroll={chrome.onScroll}
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[{ paddingHorizontal: 16 }, pads]}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -34,8 +32,10 @@ export function ScreenScroll({
         ) : undefined
       }
     >
+      <ChromePad edge="top" />
       {children}
-    </Animated.ScrollView>
+      <ChromePad edge="bottom" includeTabs={includeTabs} />
+    </ScrollView>
   );
 }
 
