@@ -51,9 +51,8 @@ function Gate() {
               name="account"
               options={{
                 animation: "slide_from_left",
-                gestureDirection: "horizontal-inverted",
                 gestureEnabled: true,
-                customAnimationOnGesture: true,
+                animationMatchesGesture: true,
               }}
             />
             <Stack.Screen name="notifications" />
