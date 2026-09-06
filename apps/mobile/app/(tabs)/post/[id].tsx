@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
 import { CommentThread } from "@/components/CommentThread";
 import { LinkPreviewCard } from "@/components/LinkPreviewCard";
 import { ScreenScroll } from "@/components/Screen";
@@ -107,23 +108,28 @@ export default function PostDetailScreen() {
 
   if (loading && !post) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.emerald} />
-      </View>
+      <EdgeSwipeBack>
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.emerald} />
+        </View>
+      </EdgeSwipeBack>
     );
   }
 
   if (!post) {
     return (
-      <View style={styles.center}>
-        <Text style={{ color: colors.muted }}>{error || "Post not found"}</Text>
-      </View>
+      <EdgeSwipeBack>
+        <View style={styles.center}>
+          <Text style={{ color: colors.muted }}>{error || "Post not found"}</Text>
+        </View>
+      </EdgeSwipeBack>
     );
   }
 
   const linkUrl = post.url;
 
   return (
+    <EdgeSwipeBack>
     <ScreenScroll>
       <View style={styles.card}>
         <View style={{ flexDirection: "row", gap: 12 }}>
@@ -225,6 +231,7 @@ export default function PostDetailScreen() {
         </View>
       )}
     </ScreenScroll>
+    </EdgeSwipeBack>
   );
 }
 
