@@ -1,4 +1,3 @@
-import { type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { sharePost } from "@/lib/share";
@@ -9,21 +8,12 @@ import type { FeedPost } from "@/lib/types";
 import { IconShare } from "./Icons";
 import { Username } from "./Username";
 
-type ShareStyle = "icon" | "labeled";
-
+/** Post detail only: emerald community pill + author · time + labeled Share. */
 export function PostMetaRow({
   post,
-  hideCommunity,
-  share,
-  actions,
-  afterShare,
   style,
 }: {
   post: FeedPost;
-  hideCommunity?: boolean;
-  share: ShareStyle;
-  actions?: ReactNode;
-  afterShare?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
   const router = useRouter();
@@ -34,40 +24,32 @@ export function PostMetaRow({
   return (
     <View style={[styles.row, style]}>
       <View style={styles.left}>
-        {!hideCommunity ? (
-          <Pressable
-            onPress={() => router.push(`/community/${post.community.name}`)}
-            hitSlop={6}
-            accessibilityRole="link"
-            accessibilityLabel={`${communityLabel} community`}
-            style={styles.pill}
-          >
-            <Text style={styles.pillText} numberOfLines={1}>
-              {communityLabel}
-            </Text>
-          </Pressable>
-        ) : post.nsfw ? (
-          <Text style={styles.nsfw}>NSFW</Text>
-        ) : null}
+        <Pressable
+          onPress={() => router.push(`/community/${post.community.name}`)}
+          hitSlop={6}
+          accessibilityRole="link"
+          accessibilityLabel={`${communityLabel} community`}
+          style={styles.pill}
+        >
+          <Text style={styles.pillText} numberOfLines={1}>
+            {communityLabel}
+          </Text>
+        </Pressable>
         <View style={styles.authorTime}>
           <Username username={post.author.username} style={styles.author} />
           <Text style={styles.time}> · {timeAgo(post.createdAt)}</Text>
         </View>
       </View>
-      <View style={styles.right}>
-        {actions}
-        <Pressable
-          onPress={() => void sharePost(post)}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel="Share post"
-          style={share === "labeled" ? styles.shareLabeled : undefined}
-        >
-          <IconShare color={colors.muted} />
-          {share === "labeled" ? <Text style={styles.shareLabel}>Share</Text> : null}
-        </Pressable>
-        {afterShare}
-      </View>
+      <Pressable
+        onPress={() => void sharePost(post)}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel="Share post"
+        style={styles.shareLabeled}
+      >
+        <IconShare color={colors.muted} />
+        <Text style={styles.shareLabel}>Share</Text>
+      </Pressable>
     </View>
   );
 }
@@ -117,25 +99,15 @@ function makeStyles(colors: Palette) {
       color: colors.muted,
       fontSize: 13,
     },
-    right: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      flexShrink: 0,
-    },
     shareLabeled: {
       flexDirection: "row",
       alignItems: "center",
       gap: 5,
+      flexShrink: 0,
     },
     shareLabel: {
       color: colors.muted,
       fontSize: 13,
-    },
-    nsfw: {
-      color: colors.rose,
-      fontSize: 12,
-      fontWeight: "700",
     },
   });
 }

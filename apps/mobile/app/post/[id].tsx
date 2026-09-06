@@ -222,7 +222,7 @@ export default function PostDetailScreen() {
 
             {showBody ? <Text style={styles.body}>{post.body}</Text> : null}
 
-            <PostMetaRow post={post} share="labeled" style={styles.metaRow} />
+            <PostMetaRow post={post} style={styles.metaRow} />
           </View>
         </View>
       </View>
