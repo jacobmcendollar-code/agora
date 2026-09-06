@@ -14,8 +14,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
 import { CommentThread } from "@/components/CommentThread";
 import { LinkPreviewCard } from "@/components/LinkPreviewCard";
+import { PostMetaRow } from "@/components/PostMetaRow";
 import { ScreenScroll } from "@/components/Screen";
-import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import {
@@ -31,7 +31,6 @@ import { getYouTubeId, isGenericBody } from "@/lib/media";
 import { findNotificationComment } from "@/lib/notification";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
-import { timeAgo } from "@/lib/time";
 import type { CommentNode, Community, FeedPost } from "@/lib/types";
 
 function param(value?: string | string[]): string | undefined {
@@ -223,13 +222,7 @@ export default function PostDetailScreen() {
 
             {showBody ? <Text style={styles.body}>{post.body}</Text> : null}
 
-            <View style={styles.metaRow}>
-              <Pressable onPress={() => router.push(`/community/${post.community.name}`)}>
-                <Text style={styles.community}>{post.community.title}</Text>
-              </Pressable>
-              <Username username={post.author.username} style={styles.meta} />
-              <Text style={styles.meta}>{timeAgo(post.createdAt)}</Text>
-            </View>
+            <PostMetaRow post={post} share="labeled" style={styles.metaRow} />
           </View>
         </View>
       </View>
@@ -323,9 +316,7 @@ function makeStyles(colors: Palette) {
   pillText: { color: colors.muted, fontSize: 11, fontWeight: "600" },
   body: { color: colors.text, marginTop: 12, fontSize: 16, lineHeight: 23 },
   image: { width: "100%", height: 220, borderRadius: 12, marginTop: 12, backgroundColor: colors.field },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14, alignItems: "center" },
-  community: { color: colors.text, fontWeight: "700", fontSize: 13 },
-  meta: { color: colors.muted, fontSize: 13 },
+  metaRow: { marginTop: 14 },
   commentBox: {
     marginTop: 18,
     backgroundColor: colors.card,
