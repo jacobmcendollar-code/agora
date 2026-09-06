@@ -65,6 +65,7 @@ export default function PostDetailScreen() {
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [sort, setSort] = useState<"best" | "newest">("best");
   const [loading, setLoading] = useState(!cached);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [commentBody, setCommentBody] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -80,6 +81,7 @@ export default function PostDetailScreen() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    setCommentsLoaded(false);
     fetchPostDetail(id)
       .then((data) => {
         if (cancelled) return;
@@ -92,7 +94,10 @@ export default function PostDetailScreen() {
         if (!cached) setError(err instanceof Error ? err.message : "Post not found");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setCommentsLoaded(true);
+        }
       });
     return () => {
       cancelled = true;
@@ -125,10 +130,10 @@ export default function PostDetailScreen() {
   }
 
   useEffect(() => {
-    if (loading || !wantComment || targetComment || didScroll.current) return;
+    if (!commentsLoaded || !wantComment || targetComment || didScroll.current) return;
     const node = commentsAnchor.current;
     if (node) scrollToNode(node);
-  }, [loading, wantComment, targetComment, comments.length]);
+  }, [commentsLoaded, wantComment, targetComment, comments.length]);
 
   const youtubeId = getYouTubeId(post?.url);
   const showBody = !!(post?.body && !isGenericBody(post.body) && !post.url);
