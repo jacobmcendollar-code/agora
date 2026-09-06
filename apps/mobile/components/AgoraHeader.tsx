@@ -27,6 +27,8 @@ export function AgoraHeader() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const onAccount = isOnRoute(pathname, "/account");
+  const onNotifications = isOnRoute(pathname, "/notifications");
+  const hideMiniAvatar = onAccount || onNotifications;
   const showBack = !TAB_ROOTS.has(pathname);
   const [unread, setUnread] = useState(0);
 
@@ -75,7 +77,7 @@ export function AgoraHeader() {
               <IconBack color={colors.text} />
             </Pressable>
           ) : null}
-          {onAccount ? null : user ? (
+          {hideMiniAvatar ? null : user ? (
             <Pressable
               onPress={() => router.push("/account")}
               accessibilityLabel="Account"
@@ -140,6 +142,7 @@ function makeStyles(colors: Palette) {
       left: 0,
       right: 0,
       zIndex: 20,
+      overflow: "hidden",
       backgroundColor: colors.bg,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,

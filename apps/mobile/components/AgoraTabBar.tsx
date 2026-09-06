@@ -78,6 +78,7 @@ function makeStyles(colors: Palette) {
       right: 0,
       bottom: 0,
       zIndex: 20,
+      overflow: "hidden",
       flexDirection: "row",
       backgroundColor: colors.bg,
       borderTopWidth: StyleSheet.hairlineWidth,

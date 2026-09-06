@@ -86,6 +86,20 @@ export function IconComments({ color, size = 16 }: IconProps) {
   );
 }
 
+export function IconReply({ color, size = 16 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 17 4 12l5-5M4 12h11a5 5 0 0 1 5 5v1"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function IconBack({ color, size = 22 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

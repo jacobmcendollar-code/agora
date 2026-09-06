@@ -11,7 +11,7 @@ import {
 import Animated from "react-native-reanimated";
 import { fetchCommunities, fetchFeed } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
+import { HOME_TAB_REPRESS, useChrome, useChromeContentStyle } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type { Community, FeedPost } from "@/lib/types";
@@ -45,6 +45,7 @@ export function FeedList({
 }: Props) {
   const { user } = useAuth();
   const chrome = useChrome();
+  const pads = useChromeContentStyle({ topExtra: 8, bottomExtra: 24 });
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const listRef = useRef<FlatList<FeedPost>>(null);
@@ -158,13 +159,10 @@ export function FeedList({
       renderItem={({ item }) => <FeedCard post={item} hideCommunity={hideCommunity} />}
       onScroll={chrome.onScroll}
       scrollEventThrottle={16}
-      contentContainerStyle={{
-        paddingTop: chrome.headerHeight + 8,
-        paddingBottom: chrome.tabBarHeight + 24,
-        paddingHorizontal: 12,
-        gap: 10,
-        flexGrow: 1,
-      }}
+      contentContainerStyle={[
+        { paddingHorizontal: 12, gap: 10, flexGrow: 1 },
+        pads,
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
