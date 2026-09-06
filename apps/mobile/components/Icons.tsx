@@ -170,6 +170,15 @@ export function IconInfo({ color, size = 20 }: IconProps) {
   );
 }
 
+export function IconTarget({ color, size = 12 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="8.2" stroke={color} strokeWidth={1.8} />
+      <Circle cx="12" cy="12" r="3.2" stroke={color} strokeWidth={1.8} />
+    </Svg>
+  );
+}
+
 export function IconChevron({ color, size = 18 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
