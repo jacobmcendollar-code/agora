@@ -13,9 +13,11 @@ import { getYouTubeId, isGenericBody, isTikTokLink, isXLink, openExternal } from
 import { usePreferences, useThemeColors } from "@/lib/preferences";
 import { sharePost } from "@/lib/share";
 import type { Palette } from "@/lib/theme";
+import { timeAgo } from "@/lib/time";
 import type { FeedPost } from "@/lib/types";
 import { IconBookmark, IconComments, IconShare } from "./Icons";
 import { Thumb } from "./Thumb";
+import { Username } from "./Username";
 import { VoteSpears } from "./VoteSpears";
 
 export function FeedCard({
@@ -124,6 +126,9 @@ export function FeedCard({
               ) : post.nsfw ? (
                 <Text style={styles.nsfw}>NSFW</Text>
               ) : null}
+              {!hideCommunity || post.nsfw ? <Text style={styles.metaMuted}> · </Text> : null}
+              <Username username={post.author.username} style={styles.metaMuted} />
+              <Text style={styles.metaMuted}> · {timeAgo(post.createdAt)}</Text>
             </View>
             <View style={styles.actions}>
               <Pressable onPress={openPost} style={styles.action} hitSlop={6}>
@@ -205,11 +210,21 @@ function makeStyles(colors: Palette) {
     justifyContent: "space-between",
     gap: 10,
   },
-  metaLeft: { flex: 1, minWidth: 0 },
+  metaLeft: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
   community: {
     color: colors.text,
     fontSize: 13,
     fontWeight: "600",
+  },
+  metaMuted: {
+    color: colors.muted,
+    fontSize: 13,
   },
   actions: {
     flexDirection: "row",
