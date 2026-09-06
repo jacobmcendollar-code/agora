@@ -1,3 +1,14 @@
+export function formatJoinedMonthYear(input: string | Date | null | undefined): string | null {
+  if (!input) return null;
+  const date = input instanceof Date ? input : new Date(input);
+  if (!Number.isNaN(date.getTime())) {
+    return `Joined ${date.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`;
+  }
+  if (typeof input !== "string") return null;
+  const match = input.match(/^([A-Za-z]+)\s+(?:\d{1,2},?\s+)?(\d{4})$/);
+  return match ? `Joined ${match[1]} ${match[2]}` : null;
+}
+
 export function timeAgo(date: string | Date): string {
   const ts = typeof date === "string" ? new Date(date).getTime() : date.getTime();
   const seconds = Math.floor((Date.now() - ts) / 1000);

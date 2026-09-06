@@ -26,7 +26,8 @@ export function AgoraHeader() {
   const { user } = useAuth();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const showBack = !TAB_ROOTS.has(pathname);
+  const onAccount = isOnRoute(pathname, "/account");
+  const showBack = !TAB_ROOTS.has(pathname) && !onAccount;
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -74,12 +75,9 @@ export function AgoraHeader() {
               <IconBack color={colors.text} />
             </Pressable>
           ) : null}
-          {user ? (
+          {onAccount ? null : user ? (
             <Pressable
-              onPress={() => {
-                if (isOnRoute(pathname, "/account")) return;
-                router.push("/account");
-              }}
+              onPress={() => router.push("/account")}
               accessibilityLabel="Account"
               style={styles.avatarHit}
             >
