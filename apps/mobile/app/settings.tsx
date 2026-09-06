@@ -2,7 +2,12 @@ import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { ScreenScroll } from "@/components/Screen";
 import { setShowNsfw } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { usePreferences, useThemeColors, type ThemePref } from "@/lib/preferences";
+import {
+  usePreferences,
+  useResolvedTheme,
+  useThemeColors,
+  type ResolvedTheme,
+} from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
 function ToggleRow({
@@ -20,7 +25,7 @@ function ToggleRow({
   onChange: (next: boolean) => void;
   disabled?: boolean;
   colors: Palette;
-  theme: ThemePref;
+  theme: ResolvedTheme;
 }) {
   const styles = makeStyles(colors, theme);
   return (
@@ -44,8 +49,9 @@ function ToggleRow({
 export default function SettingsScreen() {
   const { user, updateUser } = useAuth();
   const { theme, setTheme, openSocialInNativeApp, setOpenSocialInNativeApp } = usePreferences();
+  const resolvedTheme = useResolvedTheme();
   const colors = useThemeColors();
-  const styles = makeStyles(colors, theme);
+  const styles = makeStyles(colors, resolvedTheme);
 
   async function onNsfw(next: boolean) {
     if (!user) return;
@@ -87,11 +93,12 @@ export default function SettingsScreen() {
         <View style={styles.themeRow}>
           <View>
             <Text style={styles.title}>Theme</Text>
-            <Text style={styles.sub}>Light or dark. Stored on this device.</Text>
+            <Text style={styles.sub}>Light, dark, or system. Stored on this device.</Text>
           </View>
           <View style={styles.themePair}>
-            {(["light", "dark"] as const).map((key) => {
+            {(["light", "dark", "system"] as const).map((key) => {
               const active = theme === key;
+              const label = key === "light" ? "Light" : key === "dark" ? "Dark" : "System";
               return (
                 <Pressable
                   key={key}
@@ -99,7 +106,7 @@ export default function SettingsScreen() {
                   style={[styles.themeChip, active && styles.themeChipActive]}
                 >
                   <Text style={[styles.themeChipText, active && styles.themeChipTextActive]}>
-                    {key === "light" ? "Light" : "Dark"}
+                    {label}
                   </Text>
                 </Pressable>
               );
@@ -113,7 +120,7 @@ export default function SettingsScreen() {
           onChange={onNsfw}
           disabled={!user}
           colors={colors}
-          theme={theme}
+          theme={resolvedTheme}
         />
         <ToggleRow
           title="Open TikTok & X in native apps"
@@ -121,14 +128,14 @@ export default function SettingsScreen() {
           value={openSocialInNativeApp}
           onChange={setOpenSocialInNativeApp}
           colors={colors}
-          theme={theme}
+          theme={resolvedTheme}
         />
       </View>
     </ScreenScroll>
   );
 }
 
-function makeStyles(colors: Palette, theme: ThemePref) {
+function makeStyles(colors: Palette, theme: ResolvedTheme) {
   const controlBorder = theme === "light" ? "#c4c0bb" : colors.border;
   const divider = theme === "light" ? "#d6d3d1" : colors.border;
   const sub = theme === "light" ? "#57534e" : colors.muted;
@@ -159,7 +166,7 @@ function makeStyles(colors: Palette, theme: ThemePref) {
       borderBottomColor: divider,
       gap: 10,
     },
-    themePair: { flexDirection: "row", gap: 6 },
+    themePair: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
     themeChip: {
       paddingHorizontal: 12,
       paddingVertical: 7,

@@ -8,11 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useColorScheme } from "react-native";
 import { paletteFor, type Palette } from "./theme";
 
 const KEY = "agora.prefs.v1";
 
-export type ThemePref = "dark" | "light";
+export type ThemePref = "dark" | "light" | "system";
+export type ResolvedTheme = "dark" | "light";
 
 type Prefs = {
   theme: ThemePref;
@@ -20,9 +22,14 @@ type Prefs = {
 };
 
 const defaults: Prefs = {
-  theme: "dark",
+  theme: "system",
   openSocialInNativeApp: false,
 };
+
+function readTheme(value: unknown): ThemePref {
+  if (value === "light" || value === "dark" || value === "system") return value;
+  return "system";
+}
 
 type PrefsContextValue = Prefs & {
   ready: boolean;
@@ -47,7 +54,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         if (!raw) return;
         const parsed = JSON.parse(raw) as Partial<Prefs>;
         setPrefs({
-          theme: parsed.theme === "light" ? "light" : "dark",
+          theme: readTheme(parsed.theme),
           openSocialInNativeApp: Boolean(parsed.openSocialInNativeApp),
         });
       })
@@ -81,7 +88,13 @@ export function usePreferences() {
   return useContext(PrefsContext);
 }
 
-export function useThemeColors(): Palette {
+export function useResolvedTheme(): ResolvedTheme {
   const { theme } = usePreferences();
-  return paletteFor(theme);
+  const scheme = useColorScheme();
+  if (theme === "light" || theme === "dark") return theme;
+  return scheme === "light" ? "light" : "dark";
+}
+
+export function useThemeColors(): Palette {
+  return paletteFor(useResolvedTheme());
 }

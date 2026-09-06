@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
@@ -16,10 +16,14 @@ export function CommentThread({
   comment,
   onReply,
   depth = 0,
+  highlightId,
+  onHighlightReady,
 }: {
   comment: CommentNode;
   onReply: (id: string) => void;
   depth?: number;
+  highlightId?: string | null;
+  onHighlightReady?: (node: View) => void;
 }) {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -28,8 +32,10 @@ export function CommentThread({
   const replyCount = countReplies(comment);
   const deleted = comment.moderationStatus === "author_deleted";
   const nested = depth > 0;
+  const highlighted = highlightId === comment.id;
+  const cardRef = useRef<View>(null);
 
-  if (collapsed) {
+  if (collapsed && !highlighted) {
     return (
       <View style={nested ? styles.nested : undefined}>
         <Pressable
@@ -53,7 +59,14 @@ export function CommentThread({
 
   return (
     <View style={nested ? styles.nested : undefined}>
-      <View style={styles.card}>
+      <View
+        ref={cardRef}
+        collapsable={false}
+        onLayout={() => {
+          if (highlighted && cardRef.current) onHighlightReady?.(cardRef.current);
+        }}
+        style={[styles.card, highlighted && styles.highlight]}
+      >
         <View style={styles.row}>
           <VoteSpears
             targetType="comment"
@@ -97,6 +110,8 @@ export function CommentThread({
               comment={reply}
               onReply={onReply}
               depth={depth + 1}
+              highlightId={highlightId}
+              onHighlightReady={onHighlightReady}
             />
           ))}
         </View>
@@ -119,6 +134,10 @@ function makeStyles(colors: Palette) {
       borderColor: colors.border,
       borderRadius: 12,
       padding: 12,
+    },
+    highlight: {
+      borderColor: colors.emerald,
+      backgroundColor: colors.hero,
     },
     collapsed: {
       flexDirection: "row",

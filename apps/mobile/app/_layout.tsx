@@ -9,7 +9,12 @@ import { AgoraHeader } from "@/components/AgoraHeader";
 import { AgoraTabBar } from "@/components/AgoraTabBar";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ChromeProvider } from "@/lib/chrome";
-import { PreferencesProvider, usePreferences, useThemeColors } from "@/lib/preferences";
+import {
+  PreferencesProvider,
+  usePreferences,
+  useResolvedTheme,
+  useThemeColors,
+} from "@/lib/preferences";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -21,7 +26,8 @@ SplashScreen.preventAutoHideAsync();
 
 function Gate() {
   const { ready: authReady } = useAuth();
-  const { ready: prefsReady, theme } = usePreferences();
+  const { ready: prefsReady } = usePreferences();
+  const resolvedTheme = useResolvedTheme();
   const colors = useThemeColors();
 
   useEffect(() => {
@@ -36,7 +42,7 @@ function Gate() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={theme === "light" ? "dark" : "light"} />
+      <StatusBar style={resolvedTheme === "light" ? "dark" : "light"} />
       <ChromeProvider>
         <View style={{ flex: 1, backgroundColor: colors.bg }}>
           <Stack
@@ -56,7 +62,16 @@ function Gate() {
                 animationMatchesGesture: true,
               }}
             />
-            <Stack.Screen name="notifications" />
+            <Stack.Screen
+              name="notifications"
+              options={{
+                animation: "slide_from_right",
+                gestureDirection: "horizontal",
+                gestureEnabled: true,
+                animationMatchesGesture: true,
+                animationTypeForReplace: "pop",
+              }}
+            />
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
             <Stack.Screen name="settings" />

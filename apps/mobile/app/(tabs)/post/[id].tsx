@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -25,24 +26,46 @@ import {
   peekCachedPost,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useChrome } from "@/lib/chrome";
 import { getYouTubeId, isGenericBody } from "@/lib/media";
+import { findNotificationComment } from "@/lib/notification";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import { timeAgo } from "@/lib/time";
 import type { CommentNode, Community, FeedPost } from "@/lib/types";
 
+function param(value?: string | string[]): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
 export default function PostDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{
+    id: string;
+    comment?: string | string[];
+    commentUser?: string | string[];
+    at?: string | string[];
+  }>();
+  const id = param(params.id);
+  const commentId = param(params.comment);
+  const commentUser = param(params.commentUser);
+  const commentAt = param(params.at);
   const { user } = useAuth();
   const { openSocialInNativeApp } = usePreferences();
   const router = useRouter();
   const colors = useThemeColors();
+  const chrome = useChrome();
   const styles = makeStyles(colors);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const didScroll = useRef(false);
+  const commentsAnchor = useRef<View>(null);
   const cached = id ? peekCachedPost(id) : undefined;
   const [post, setPost] = useState<FeedPost | undefined>(cached);
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [sort, setSort] = useState<"best" | "newest">("best");
   const [loading, setLoading] = useState(!cached);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [commentBody, setCommentBody] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -58,6 +81,7 @@ export default function PostDetailScreen() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    setCommentsLoaded(false);
     fetchPostDetail(id)
       .then((data) => {
         if (cancelled) return;
@@ -70,7 +94,10 @@ export default function PostDetailScreen() {
         if (!cached) setError(err instanceof Error ? err.message : "Post not found");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setCommentsLoaded(true);
+        }
       });
     return () => {
       cancelled = true;
@@ -81,6 +108,33 @@ export default function PostDetailScreen() {
     post?.community?.postFormat ||
     communities.find((c) => c.name === post?.community?.name)?.postFormat;
   const tree = useMemo(() => buildCommentTree(comments, sort), [comments, sort]);
+  const targetComment = useMemo(
+    () => findNotificationComment(tree, { commentId, commentUser, at: commentAt }),
+    [tree, commentId, commentUser, commentAt]
+  );
+  const wantComment = Boolean(commentId || commentUser);
+
+  useEffect(() => {
+    didScroll.current = false;
+  }, [id, commentId, commentUser, commentAt]);
+
+  function scrollToNode(node: View) {
+    if (didScroll.current) return;
+    didScroll.current = true;
+    requestAnimationFrame(() => {
+      node.measureInWindow((_x, windowY) => {
+        const y = Math.max(0, scrollY.current + windowY - chrome.headerHeight - 16);
+        scrollRef.current?.scrollTo({ y, animated: true });
+      });
+    });
+  }
+
+  useEffect(() => {
+    if (!commentsLoaded || !wantComment || targetComment || didScroll.current) return;
+    const node = commentsAnchor.current;
+    if (node) scrollToNode(node);
+  }, [commentsLoaded, wantComment, targetComment, comments.length]);
+
   const youtubeId = getYouTubeId(post?.url);
   const showBody = !!(post?.body && !isGenericBody(post.body) && !post.url);
   const showLinkCard = !!(post?.url && !youtubeId);
@@ -130,7 +184,12 @@ export default function PostDetailScreen() {
 
   return (
     <EdgeSwipeBack>
-    <ScreenScroll>
+    <ScreenScroll
+      scrollRef={scrollRef}
+      onScrollOffset={(y) => {
+        scrollY.current = y;
+      }}
+    >
       <View style={styles.card}>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <VoteSpears targetType="post" targetId={post.id} initialScore={post.score} />
@@ -206,7 +265,7 @@ export default function PostDetailScreen() {
         )}
       </View>
 
-      <View style={styles.sortRow}>
+      <View ref={commentsAnchor} collapsable={false} style={styles.sortRow}>
         {(["best", "newest"] as const).map((key) => (
           <Pressable key={key} onPress={() => setSort(key)}>
             <Text style={[styles.sort, sort === key && styles.sortActive]}>
@@ -226,7 +285,13 @@ export default function PostDetailScreen() {
       ) : (
         <View style={styles.threadList}>
           {tree.map((c) => (
-            <CommentThread key={c.id} comment={c} onReply={setReplyTo} />
+            <CommentThread
+              key={c.id}
+              comment={c}
+              onReply={setReplyTo}
+              highlightId={targetComment?.id}
+              onHighlightReady={scrollToNode}
+            />
           ))}
         </View>
       )}

@@ -89,6 +89,8 @@ export type SiteNotification = {
   link: string;
   read: boolean;
   createdAt: string;
+  commentId?: string | null;
+  comment_id?: string | null;
 };
 
 export type NotificationsResponse = {
