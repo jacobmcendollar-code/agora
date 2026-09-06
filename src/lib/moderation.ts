@@ -85,10 +85,14 @@ ${jsonInstructions}`
       : `${preamble}
 
 Reject ONLY if the content clearly matches one of these:
-1. Spam / advertising / promotional content / bot-like repetitive posting
+1. Spam / hard-sell advertising / bot-like repetitive posting
+   Block only blatant vendor spam with little substance: affiliate dumps, pure promo CTAs, "we're excited to release…" with no discussion, bot-like repetitive ads.
+   ALLOW product discussion, launches, demos, company announcements, and official or news-like posts about a product (e.g. Tesla Cybercab official launch posts).
+   ALLOW a third-party or official link when it has context or a discussion hook. A naked hard-sell link with no substance is spam.
 2. Completely unrelated to the community topic
 3. ${illegalRule}${adultRule}
 
+Do NOT reject product discussion, launches, demos, or company announcements as spam.
 Do NOT reject offensive opinions, politics, strong language, dark humor, or unpopular views.
 When in doubt, ALLOW.
 
