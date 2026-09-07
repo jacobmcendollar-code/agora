@@ -11,11 +11,13 @@ import {
 import { useAuth } from "@/lib/auth";
 import { getYouTubeId, isGenericBody, isTikTokLink, isXLink, openExternal } from "@/lib/media";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
+import { sharePost } from "@/lib/share";
 import type { Palette } from "@/lib/theme";
+import { timeAgo } from "@/lib/time";
 import type { FeedPost } from "@/lib/types";
-import { IconBookmark, IconComments } from "./Icons";
-import { PostMetaRow } from "./PostMetaRow";
+import { IconBookmark, IconComments, IconShare } from "./Icons";
 import { Thumb } from "./Thumb";
+import { Username } from "./Username";
 import { VoteSpears } from "./VoteSpears";
 
 export function FeedCard({
@@ -110,28 +112,46 @@ export function FeedCard({
               </Text>
             ) : null}
           </Pressable>
-          <PostMetaRow
-            post={post}
-            hideCommunity={hideCommunity}
-            share="icon"
-            style={styles.meta}
-            actions={
-              <>
-                <Pressable onPress={openPost} style={styles.action} hitSlop={6}>
-                  <IconComments color={colors.muted} />
-                  <Text style={styles.commentCount}>{comments}</Text>
-                </Pressable>
+          <View style={styles.meta}>
+            <View style={styles.metaLeft}>
+              {!hideCommunity ? (
                 <Pressable
-                  onPress={onBookmark}
+                  onPress={() => router.push(`/community/${post.community.name}`)}
                   hitSlop={6}
-                  accessibilityLabel={saved ? "Unsave post" : "Save post"}
                 >
-                  <IconBookmark color={saved ? colors.emerald : colors.muted} filled={saved} />
+                  <Text style={styles.community} numberOfLines={1}>
+                    {post.community.title}
+                  </Text>
                 </Pressable>
-              </>
-            }
-            afterShare={!hideCommunity && post.nsfw ? <Text style={styles.nsfw}>NSFW</Text> : null}
-          />
+              ) : post.nsfw ? (
+                <Text style={styles.nsfw}>NSFW</Text>
+              ) : null}
+              {!hideCommunity || post.nsfw ? <Text style={styles.metaMuted}> · </Text> : null}
+              <Username username={post.author.username} style={styles.metaMuted} />
+              <Text style={styles.metaMuted}> · {timeAgo(post.createdAt)}</Text>
+            </View>
+            <View style={styles.actions}>
+              <Pressable onPress={openPost} style={styles.action} hitSlop={6}>
+                <IconComments color={colors.muted} />
+                <Text style={styles.commentCount}>{comments}</Text>
+              </Pressable>
+              <Pressable
+                onPress={onBookmark}
+                hitSlop={6}
+                accessibilityLabel={saved ? "Unsave post" : "Save post"}
+              >
+                <IconBookmark color={saved ? colors.emerald : colors.muted} filled={saved} />
+              </Pressable>
+              <Pressable
+                onPress={() => void sharePost(post)}
+                hitSlop={6}
+                accessibilityLabel="Share post"
+              >
+                <IconShare color={colors.muted} />
+              </Pressable>
+              {!hideCommunity && post.nsfw ? <Text style={styles.nsfw}>NSFW</Text> : null}
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -185,6 +205,32 @@ function makeStyles(colors: Palette) {
     paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  metaLeft: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  community: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  metaMuted: {
+    color: colors.muted,
+    fontSize: 13,
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexShrink: 0,
   },
   action: {
     flexDirection: "row",
