@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   cachePost,
   commentCount,
   fetchSaved,
-  postShareUrl,
   postSnippet,
   toggleSaved,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { getYouTubeId, isGenericBody, isTikTokLink, isXLink, openExternal } from "@/lib/media";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
+import { sharePost } from "@/lib/share";
 import type { Palette } from "@/lib/theme";
 import type { FeedPost } from "@/lib/types";
 import { IconBookmark, IconComments, IconShare } from "./Icons";
@@ -90,12 +90,7 @@ export function FeedCard({
   }
 
   async function onShare() {
-    const url = postShareUrl(post);
-    try {
-      await Share.share({ message: url, url, title: post.title });
-    } catch {
-      // user cancelled
-    }
+    await sharePost(post);
   }
 
   return (
