@@ -164,6 +164,9 @@ export function FeedList({
           refreshing={refreshing}
           onRefresh={onRefresh}
           tintColor={colors.emerald}
+          colors={[colors.emerald]}
+          progressBackgroundColor={colors.card}
+          progressViewOffset={chrome.headerHeight}
         />
       }
       onEndReached={onEnd}
@@ -171,6 +174,9 @@ export function FeedList({
       ListHeaderComponent={
         <View>
           <ChromePad edge="top" extra={8} />
+          {refreshing ? (
+            <ActivityIndicator color={colors.emerald} style={styles.refreshSpinner} />
+          ) : null}
           {header}
           <SortChips value={sort} onChange={setSort} showMyFeed={showMyFeed} />
         </View>
@@ -201,6 +207,7 @@ export function FeedList({
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
+    refreshSpinner: { marginBottom: 10 },
     empty: {
       marginTop: 32,
       borderWidth: 1,

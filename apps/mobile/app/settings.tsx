@@ -12,7 +12,6 @@ import type { Palette } from "@/lib/theme";
 
 function ToggleRow({
   title,
-  subtitle,
   value,
   onChange,
   disabled,
@@ -20,7 +19,6 @@ function ToggleRow({
   theme,
 }: {
   title: string;
-  subtitle: string;
   value: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
@@ -32,7 +30,6 @@ function ToggleRow({
     <View style={styles.row}>
       <View style={{ flex: 1, paddingRight: 12 }}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.sub}>{subtitle}</Text>
       </View>
       <Switch
         value={value}
@@ -91,10 +88,7 @@ export default function SettingsScreen() {
 
       <View style={styles.card}>
         <View style={styles.themeRow}>
-          <View>
-            <Text style={styles.title}>Theme</Text>
-            <Text style={styles.sub}>Light, dark, or system. Stored on this device.</Text>
-          </View>
+          <Text style={styles.title}>Theme</Text>
           <View style={styles.themePair}>
             {(["light", "dark", "system"] as const).map((key) => {
               const active = theme === key;
@@ -103,6 +97,9 @@ export default function SettingsScreen() {
                 <Pressable
                   key={key}
                   onPress={() => setTheme(key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${label} theme`}
+                  accessibilityState={{ selected: active }}
                   style={[styles.themeChip, active && styles.themeChipActive]}
                 >
                   <Text style={[styles.themeChipText, active && styles.themeChipTextActive]}>
@@ -115,7 +112,6 @@ export default function SettingsScreen() {
         </View>
         <ToggleRow
           title="Show NSFW"
-          subtitle="Show communities marked NSFW. Community-level only."
           value={Boolean(user?.showNsfw)}
           onChange={onNsfw}
           disabled={!user}
@@ -124,7 +120,6 @@ export default function SettingsScreen() {
         />
         <ToggleRow
           title="Open TikTok & X in native apps"
-          subtitle="Off: in-app browser (default). On: try the installed app. Stored on this device."
           value={openSocialInNativeApp}
           onChange={setOpenSocialInNativeApp}
           colors={colors}
@@ -158,7 +153,6 @@ function makeStyles(colors: Palette, theme: ResolvedTheme) {
       borderBottomColor: divider,
     },
     title: { color: colors.text, fontSize: 15, fontWeight: "600" },
-    sub: { color: sub, fontSize: 12, marginTop: 4, lineHeight: 17 },
     themeRow: {
       paddingHorizontal: 16,
       paddingVertical: 14,
@@ -166,11 +160,20 @@ function makeStyles(colors: Palette, theme: ResolvedTheme) {
       borderBottomColor: divider,
       gap: 10,
     },
-    themePair: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    themePair: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      width: "100%",
+      gap: 6,
+    },
     themeChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-      borderRadius: 999,
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 40,
+      paddingHorizontal: 8,
+      paddingVertical: 9,
+      borderRadius: 10,
       borderWidth: 1,
       borderColor: controlBorder,
       backgroundColor: colors.field,

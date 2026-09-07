@@ -166,6 +166,8 @@ export default function UserProfileScreen() {
             <Pressable
               onPress={onMute}
               disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel={muted ? "Unmute" : "Mute"}
               style={[styles.muteBtn, muted && styles.unmuteBtn]}
             >
               <Text style={[styles.muteBtnText, muted && styles.unmuteBtnText]}>
@@ -294,14 +296,20 @@ function makeStyles(colors: Palette) {
   muteBtn: {
     alignSelf: "flex-start",
     marginTop: 12,
+    minHeight: 40,
+    justifyContent: "center",
+    backgroundColor: colors.emerald,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.emerald,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
   },
-  unmuteBtn: { borderColor: "#881337" },
-  muteBtnText: { color: colors.text, fontSize: 13, fontWeight: "600" },
+  unmuteBtn: {
+    backgroundColor: colors.dangerBg,
+    borderColor: colors.rose,
+  },
+  muteBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
   unmuteBtnText: { color: colors.rose },
   tabs: {
     flexDirection: "row",
