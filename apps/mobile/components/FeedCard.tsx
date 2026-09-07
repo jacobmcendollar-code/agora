@@ -119,6 +119,7 @@ export function FeedCard({
               </Text>
             ) : null}
           </Pressable>
+          <View style={styles.metaHairline} collapsable={false} />
           <View style={styles.meta}>
             <View style={styles.metaLeft}>
               {!hideCommunity ? (
@@ -200,11 +201,13 @@ function makeStyles(colors: Palette) {
     fontSize: 11,
     fontWeight: "600",
   },
-  meta: {
+  metaHairline: {
     marginTop: "auto",
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  meta: {
     paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
