@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  findNodeHandle,
   Image,
+  InteractionManager,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,7 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useGlobalSearchParams, useLocalSearchParams, useRouter } from "expo-router";
 import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
 import { CommentThread } from "@/components/CommentThread";
 import { LinkPreviewCard } from "@/components/LinkPreviewCard";
@@ -26,38 +28,44 @@ import {
   peekCachedPost,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useChrome } from "@/lib/chrome";
 import { getYouTubeId, isGenericBody } from "@/lib/media";
 import { findNotificationComment } from "@/lib/notification";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type { CommentNode, Community, FeedPost } from "@/lib/types";
 
+type PostSearch = {
+  id: string;
+  comment?: string | string[];
+  commentUser?: string | string[];
+  at?: string | string[];
+};
+
 function param(value?: string | string[]): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
 }
 
+function pickParam(local: PostSearch, global: PostSearch, key: keyof PostSearch): string | undefined {
+  return param(local[key]) || param(global[key]);
+}
+
 export default function PostDetailScreen() {
-  const params = useLocalSearchParams<{
-    id: string;
-    comment?: string | string[];
-    commentUser?: string | string[];
-    at?: string | string[];
-  }>();
-  const id = param(params.id);
-  const commentId = param(params.comment);
-  const commentUser = param(params.commentUser);
-  const commentAt = param(params.at);
+  const local = useLocalSearchParams<PostSearch>();
+  const global = useGlobalSearchParams<PostSearch>();
+  const id = pickParam(local, global, "id");
+  const commentId = pickParam(local, global, "comment");
+  const commentUser = pickParam(local, global, "commentUser");
+  const commentAt = pickParam(local, global, "at");
   const { user } = useAuth();
   const { openSocialInNativeApp } = usePreferences();
   const router = useRouter();
   const colors = useThemeColors();
-  const chrome = useChrome();
   const styles = makeStyles(colors);
   const scrollRef = useRef<ScrollView>(null);
-  const scrollY = useRef(0);
+  const contentRef = useRef<View>(null);
   const didScroll = useRef(false);
+  const pendingNode = useRef<View | null>(null);
   const commentsAnchor = useRef<View>(null);
   const cached = id ? peekCachedPost(id) : undefined;
   const [post, setPost] = useState<FeedPost | undefined>(cached);
@@ -115,24 +123,60 @@ export default function PostDetailScreen() {
 
   useEffect(() => {
     didScroll.current = false;
+    pendingNode.current = null;
   }, [id, commentId, commentUser, commentAt]);
 
-  function scrollToNode(node: View) {
+  const tryScroll = useCallback((node: View, attempt = 0) => {
     if (didScroll.current) return;
-    didScroll.current = true;
-    requestAnimationFrame(() => {
-      node.measureInWindow((_x, windowY) => {
-        const y = Math.max(0, scrollY.current + windowY - chrome.headerHeight - 16);
-        scrollRef.current?.scrollTo({ y, animated: true });
-      });
-    });
-  }
+    const scroll = scrollRef.current;
+    const relative = contentRef.current;
+    const handle = relative ? findNodeHandle(relative) : null;
+    if (!scroll || !handle) {
+      if (attempt < 15) setTimeout(() => tryScroll(node, attempt + 1), 40);
+      return;
+    }
+    node.measureLayout(
+      handle,
+      (_x, y) => {
+        if (didScroll.current) return;
+        didScroll.current = true;
+        scroll.scrollTo({ y: Math.max(0, y - 16), animated: true });
+      },
+      () => {
+        if (attempt < 15) setTimeout(() => tryScroll(node, attempt + 1), 40);
+      }
+    );
+  }, []);
+
+  const scrollToNode = useCallback(
+    (node: View) => {
+      pendingNode.current = node;
+      tryScroll(node, 0);
+    },
+    [tryScroll]
+  );
 
   useEffect(() => {
     if (!commentsLoaded || !wantComment || targetComment || didScroll.current) return;
     const node = commentsAnchor.current;
     if (node) scrollToNode(node);
-  }, [commentsLoaded, wantComment, targetComment, comments.length]);
+  }, [commentsLoaded, wantComment, targetComment, comments.length, scrollToNode]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (didScroll.current) return;
+        if (pendingNode.current) {
+          tryScroll(pendingNode.current, 0);
+          return;
+        }
+        if (commentsLoaded && wantComment && !targetComment && commentsAnchor.current) {
+          scrollToNode(commentsAnchor.current);
+        }
+      });
+      return () => task.cancel();
+    }, [commentsLoaded, wantComment, targetComment, tryScroll, scrollToNode])
+  );
 
   const youtubeId = getYouTubeId(post?.url);
   const showBody = !!(post?.body && !isGenericBody(post.body) && !post.url);
@@ -183,12 +227,8 @@ export default function PostDetailScreen() {
 
   return (
     <EdgeSwipeBack>
-    <ScreenScroll
-      scrollRef={scrollRef}
-      onScrollOffset={(y) => {
-        scrollY.current = y;
-      }}
-    >
+    <ScreenScroll scrollRef={scrollRef}>
+      <View ref={contentRef} collapsable={false}>
       <View style={styles.card}>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <VoteSpears targetType="post" targetId={post.id} initialScore={post.score} />
@@ -288,6 +328,7 @@ export default function PostDetailScreen() {
           ))}
         </View>
       )}
+      </View>
     </ScreenScroll>
     </EdgeSwipeBack>
   );

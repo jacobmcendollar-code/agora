@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
@@ -34,6 +34,10 @@ export function CommentThread({
   const nested = depth > 0;
   const highlighted = highlightId === comment.id;
   const cardRef = useRef<View>(null);
+
+  useEffect(() => {
+    if (highlighted && cardRef.current) onHighlightReady?.(cardRef.current);
+  }, [highlighted, comment.id]);
 
   if (collapsed && !highlighted) {
     return (

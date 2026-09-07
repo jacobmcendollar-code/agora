@@ -47,30 +47,48 @@ function commentIdFromPayload(n: SiteNotification): string | null {
   return commentIdFromSiteLink(n.link);
 }
 
-/** Expo href for a notification: post plus comment id when the payload/link has one. */
-export function notificationHref(n: SiteNotification): string {
+export type NotificationPostHref = {
+  pathname: "/post/[id]";
+  params: {
+    id: string;
+    comment?: string;
+    commentUser?: string;
+    at?: string;
+  };
+};
+
+export type NotificationHref = string | NotificationPostHref;
+
+/**
+ * Expo href for a notification.
+ * Post targets use { pathname, params } so root-stack `post/[id]` receives
+ * comment / commentUser / at. After Note 53 moved the screen out of (tabs),
+ * string query hrefs (`/post/:id?comment=`) only delivered `id`.
+ */
+export function notificationHref(n: SiteNotification): NotificationHref {
   const mapped = mapSitePath(n.link);
   const commentId = commentIdFromPayload(n);
   const post = mapped.split("?")[0].match(/^\/post\/([^/]+)$/);
   if (!post) return mapped;
 
-  const params = new URLSearchParams();
+  const params: NotificationPostHref["params"] = { id: post[1] };
   const existing = mapped.split("?")[1];
   if (existing) {
     new URLSearchParams(existing).forEach((value, key) => {
-      params.set(key, value);
+      if (key === "comment" || key === "commentUser" || key === "at") {
+        params[key] = value;
+      }
     });
   }
-  if (commentId) params.set("comment", commentId);
+  if (commentId) params.comment = commentId;
 
   const parsed = parseNotification(n);
-  if (!commentId && (parsed.kind === "comment" || parsed.kind === "reply" || parsed.kind === "mention")) {
-    params.set("commentUser", parsed.username);
-    if (n.createdAt) params.set("at", n.createdAt);
+  if (!params.comment && (parsed.kind === "comment" || parsed.kind === "reply" || parsed.kind === "mention")) {
+    params.commentUser = parsed.username;
+    if (n.createdAt) params.at = n.createdAt;
   }
 
-  const query = params.toString();
-  return query ? `/post/${post[1]}?${query}` : `/post/${post[1]}`;
+  return { pathname: "/post/[id]", params };
 }
 
 export function flattenComments(comments: CommentNode[]): CommentNode[] {
