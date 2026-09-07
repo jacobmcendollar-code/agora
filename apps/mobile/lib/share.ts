@@ -1,4 +1,4 @@
-import { Share } from "react-native";
+import { Platform, Share } from "react-native";
 import { postShareUrl } from "./api";
 
 export async function sharePost(post: {
@@ -8,7 +8,13 @@ export async function sharePost(post: {
 }) {
   const url = postShareUrl(post);
   try {
-    await Share.share({ message: url, url, title: post.title });
+    // iOS concatenates `message` + `url` (space-separated) when both are set,
+    // so Copy Link / paste would show the same post URL twice.
+    await Share.share(
+      Platform.OS === "ios"
+        ? { url, title: post.title }
+        : { message: url, title: post.title },
+    );
   } catch {
     // user cancelled
   }
