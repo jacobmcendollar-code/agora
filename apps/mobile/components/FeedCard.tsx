@@ -1,23 +1,21 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   cachePost,
   commentCount,
   fetchSaved,
+  postShareUrl,
   postSnippet,
   toggleSaved,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { getYouTubeId, isGenericBody, isTikTokLink, isXLink, openExternal } from "@/lib/media";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
-import { sharePost } from "@/lib/share";
 import type { Palette } from "@/lib/theme";
-import { timeAgo } from "@/lib/time";
 import type { FeedPost } from "@/lib/types";
 import { IconBookmark, IconComments, IconShare } from "./Icons";
 import { Thumb } from "./Thumb";
-import { Username } from "./Username";
 import { VoteSpears } from "./VoteSpears";
 
 export function FeedCard({
@@ -91,6 +89,15 @@ export function FeedCard({
     }
   }
 
+  async function onShare() {
+    const url = postShareUrl(post);
+    try {
+      await Share.share({ message: url, url, title: post.title });
+    } catch {
+      // user cancelled
+    }
+  }
+
   return (
     <View style={styles.card}>
       <View style={styles.row}>
@@ -126,9 +133,6 @@ export function FeedCard({
               ) : post.nsfw ? (
                 <Text style={styles.nsfw}>NSFW</Text>
               ) : null}
-              {!hideCommunity || post.nsfw ? <Text style={styles.metaMuted}> · </Text> : null}
-              <Username username={post.author.username} style={styles.metaMuted} />
-              <Text style={styles.metaMuted}> · {timeAgo(post.createdAt)}</Text>
             </View>
             <View style={styles.actions}>
               <Pressable onPress={openPost} style={styles.action} hitSlop={6}>
@@ -142,11 +146,7 @@ export function FeedCard({
               >
                 <IconBookmark color={saved ? colors.emerald : colors.muted} filled={saved} />
               </Pressable>
-              <Pressable
-                onPress={() => void sharePost(post)}
-                hitSlop={6}
-                accessibilityLabel="Share post"
-              >
+              <Pressable onPress={onShare} hitSlop={6} accessibilityLabel="Share post">
                 <IconShare color={colors.muted} />
               </Pressable>
               {!hideCommunity && post.nsfw ? <Text style={styles.nsfw}>NSFW</Text> : null}
@@ -210,21 +210,11 @@ function makeStyles(colors: Palette) {
     justifyContent: "space-between",
     gap: 10,
   },
-  metaLeft: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
+  metaLeft: { flex: 1, minWidth: 0 },
   community: {
     color: colors.text,
     fontSize: 13,
     fontWeight: "600",
-  },
-  metaMuted: {
-    color: colors.muted,
-    fontSize: 13,
   },
   actions: {
     flexDirection: "row",
