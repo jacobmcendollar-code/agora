@@ -24,6 +24,8 @@ type ChromeContextValue = {
   tabBarStyle: object;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   reveal: () => void;
+  pin: () => void;
+  unpin: () => void;
 };
 
 const ChromeContext = createContext<ChromeContextValue | null>(null);
@@ -35,17 +37,31 @@ export function ChromeProvider({ children }: { children: ReactNode }) {
   const hidden = useSharedValue(0);
   const lastY = useRef(0);
   const isHidden = useRef(false);
+  const pinned = useRef(false);
 
   const reveal = useCallback(() => {
     isHidden.current = false;
     hidden.value = withTiming(0, { duration: 220 });
   }, [hidden]);
 
+  const pin = useCallback(() => {
+    pinned.current = true;
+    reveal();
+  }, [reveal]);
+
+  const unpin = useCallback(() => {
+    pinned.current = false;
+  }, []);
+
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const y = e.nativeEvent.contentOffset.y;
       const dy = y - lastY.current;
       lastY.current = y;
+      if (pinned.current) {
+        if (isHidden.current) reveal();
+        return;
+      }
       if (y < 24) {
         if (isHidden.current) reveal();
         return;
@@ -78,8 +94,10 @@ export function ChromeProvider({ children }: { children: ReactNode }) {
       tabBarStyle,
       onScroll,
       reveal,
+      pin,
+      unpin,
     }),
-    [headerHeight, tabBarHeight, hidden, headerStyle, tabBarStyle, onScroll, reveal]
+    [headerHeight, tabBarHeight, hidden, headerStyle, tabBarStyle, onScroll, reveal, pin, unpin]
   );
 
   return <ChromeContext.Provider value={value}>{children}</ChromeContext.Provider>;

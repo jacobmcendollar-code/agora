@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, InteractionManager, Pressable, StyleSheet, Text, View } from "react-native";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
 import { useThemeColors } from "@/lib/preferences";
@@ -42,15 +42,30 @@ export function CommentThread({
   const replying = replyTo === comment.id;
   const cardRef = useRef<View>(null);
   const replyBoxRef = useRef<View>(null);
-  const replyAnnounced = useRef(false);
 
   useEffect(() => {
     if (highlighted && cardRef.current) onHighlightReady?.(cardRef.current);
   }, [highlighted, comment.id, onHighlightReady]);
 
   useEffect(() => {
-    replyAnnounced.current = false;
-  }, [replying]);
+    if (!replying) return;
+    let cancelled = false;
+    const announce = () => {
+      if (!cancelled && replyBoxRef.current) onReplyBoxReady?.(replyBoxRef.current);
+    };
+    announce();
+    const raf = requestAnimationFrame(announce);
+    const task = InteractionManager.runAfterInteractions(announce);
+    const t1 = setTimeout(announce, 80);
+    const t2 = setTimeout(announce, 280);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      task.cancel();
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [replying, onReplyBoxReady]);
 
   if (collapsed && !highlighted) {
     return (
@@ -121,9 +136,7 @@ export function CommentThread({
                 ref={replyBoxRef}
                 collapsable={false}
                 onLayout={() => {
-                  if (replyAnnounced.current || !replyBoxRef.current) return;
-                  replyAnnounced.current = true;
-                  onReplyBoxReady?.(replyBoxRef.current);
+                  if (replyBoxRef.current) onReplyBoxReady?.(replyBoxRef.current);
                 }}
                 style={styles.replyBox}
               >
