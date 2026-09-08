@@ -17,6 +17,7 @@ import {
   onSessionCleared,
   saveSession,
 } from "./cookies";
+import { clearPushToken, registerPushToken } from "./push";
 import type { AuthSession, SessionUser } from "./types";
 
 type AuthContextValue = {
@@ -49,11 +50,21 @@ function normalizeUser(raw: Record<string, unknown> | undefined | null): Session
   const username = String(raw.username || raw.name || "").trim();
   const id = String(raw.id || "").trim();
   if (!id && !username) return null;
+  const createdAtRaw = raw.createdAt;
+  const createdAt =
+    typeof createdAtRaw === "string"
+      ? createdAtRaw
+      : createdAtRaw instanceof Date
+        ? createdAtRaw.toISOString()
+        : null;
+  const bio = typeof raw.bio === "string" ? raw.bio : raw.bio === null ? null : undefined;
   return {
     id,
     username,
     email: (raw.email as string | null) ?? null,
     image: (raw.image as string | null) ?? null,
+    bio: bio ?? null,
+    createdAt,
     showNsfw: Boolean(raw.showNsfw),
   };
 }
@@ -119,6 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setReady(true));
   }, [refresh]);
 
+  useEffect(() => {
+    if (!ready || !user?.id) return;
+    void registerPushToken();
+  }, [ready, user?.id]);
+
   useEffect(() => onSessionCleared(() => setUser(null)), []);
 
   const signIn = useCallback(async (username: string, password: string) => {
@@ -165,6 +181,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const signOut = useCallback(async () => {
+    try {
+      await clearPushToken();
+    } catch {
+      // Token clear is best-effort.
+    }
     try {
       await apiFetch("/api/mobile/logout", { method: "POST" });
     } catch {

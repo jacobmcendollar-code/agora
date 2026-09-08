@@ -91,6 +91,27 @@ export function notificationHref(n: SiteNotification): NotificationHref {
   return { pathname: "/post/[id]", params };
 }
 
+export function hrefFromPushData(data: Record<string, unknown> | undefined | null): NotificationHref | null {
+  if (!data) return null;
+  const link = typeof data.link === "string" ? data.link : "";
+  if (!link) return null;
+  const commentId =
+    typeof data.commentId === "string"
+      ? data.commentId
+      : typeof data.comment_id === "string"
+        ? data.comment_id
+        : null;
+  return notificationHref({
+    id: typeof data.id === "string" ? data.id : "",
+    type: typeof data.type === "string" ? data.type : "",
+    message: typeof data.message === "string" ? data.message : "",
+    link,
+    read: true,
+    createdAt: typeof data.createdAt === "string" ? data.createdAt : "",
+    commentId,
+  });
+}
+
 export function flattenComments(comments: CommentNode[]): CommentNode[] {
   const out: CommentNode[] = [];
   const walk = (nodes: CommentNode[]) => {

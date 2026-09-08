@@ -11,7 +11,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.agor4.app",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["twitter", "tiktok", "snssdk1233", "instagram"]
+        "LSApplicationQueriesSchemes": ["twitter", "tiktok", "snssdk1233", "instagram"],
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
@@ -37,14 +38,21 @@
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#000000",
-          "imageWidth": 280,
+          "imageWidth": 200,
           "dark": {
             "image": "./assets/images/splash-icon.png",
             "backgroundColor": "#000000"
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#10b981",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

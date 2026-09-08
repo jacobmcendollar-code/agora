@@ -61,6 +61,8 @@ export default function EditProfileScreen() {
       mediaTypes: ["images"],
       quality: 0.85,
       base64: true,
+      allowsEditing: true,
+      aspect: [1, 1],
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
@@ -97,7 +99,7 @@ export default function EditProfileScreen() {
         bio: bio.trim() || null,
         image: image || null,
       });
-      updateUser({ image: next.image });
+      updateUser({ image: next.image, bio: next.bio });
       router.back();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save profile");
@@ -130,7 +132,7 @@ export default function EditProfileScreen() {
   return (
     <ScreenScroll>
       <Text style={styles.heading}>Edit profile</Text>
-      <Text style={styles.lede}>Photo and a short bio. Same fields as the site.</Text>
+      <Text style={styles.lede}>Photo and a short bio.</Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
