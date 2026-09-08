@@ -2,15 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   findNodeHandle,
   Image,
   InteractionManager,
+  Keyboard,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  type KeyboardEvent,
 } from "react-native";
 import { useFocusEffect, useGlobalSearchParams, useLocalSearchParams, useRouter } from "expo-router";
 import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
@@ -71,6 +75,11 @@ export default function PostDetailScreen() {
   const pendingKind = useRef<"comment" | "list" | null>(null);
   const scrollOffset = useRef(0);
   const commentsAnchor = useRef<View>(null);
+  const replyBoxNode = useRef<View | null>(null);
+  const replyInputRef = useRef<TextInput>(null);
+  const keyboardHeight = useRef(0);
+  const scrollGen = useRef(0);
+  const [kbPad, setKbPad] = useState(0);
   const cached = id ? peekCachedPost(id) : undefined;
   const [post, setPost] = useState<FeedPost | undefined>(cached);
   const [comments, setComments] = useState<CommentNode[]>([]);
@@ -231,27 +240,137 @@ export default function PostDetailScreen() {
   const showBody = !!(post?.body && !isGenericBody(post.body) && !post.url);
   const showLinkCard = !!(post?.url && !youtubeId);
 
-  function scrollComposer(node: View) {
-    const scroll = scrollRef.current;
-    const relative = contentRef.current;
-    if (!scroll || !relative) return;
-    const handle = findNodeHandle(relative);
-    if (!handle) return;
-    node.measureLayout(
-      handle,
-      (_x, y) => {
-        scroll.scrollTo({ y: Math.max(0, y - 16), animated: true });
-      },
-      () => {}
-    );
-  }
+  const scrollNodeIntoView = useCallback(
+    (node: View, attempt = 0) => {
+      const gen = scrollGen.current;
+      const again = (next: number, wait: number) => {
+        setTimeout(() => {
+          if (scrollGen.current === gen) scrollNodeIntoView(node, next);
+        }, wait);
+      };
+      const scroll = scrollRef.current;
+      if (!scroll) {
+        if (attempt < 24) again(attempt + 1, 50);
+        return;
+      }
+
+      node.measureInWindow((_x, y, _w, h) => {
+        if (scrollGen.current !== gen) return;
+        if (h < 8 && attempt < 24) {
+          again(attempt + 1, 50);
+          return;
+        }
+
+        const windowH = Dimensions.get("window").height;
+        const kb = keyboardHeight.current;
+        const visibleTop = chrome.headerHeight + 12;
+        // Tab bar overlays the screen (includes home indicator). Keyboard covers it when up.
+        const reservedBottom = Math.max(kb, chrome.tabBarHeight) + 16;
+        const visibleBottom = windowH - reservedBottom;
+        const boxTop = y;
+        const boxBottom = y + Math.max(h, 8);
+        const visibleH = Math.max(80, visibleBottom - visibleTop);
+
+        let delta = 0;
+        if (h >= visibleH) {
+          delta = boxTop - visibleTop;
+        } else if (boxBottom > visibleBottom) {
+          delta = boxBottom - visibleBottom;
+        } else if (boxTop < visibleTop) {
+          delta = boxTop - visibleTop;
+        }
+
+        if (Math.abs(delta) < 6) return;
+        scroll.scrollTo({ y: Math.max(0, scrollOffset.current + delta), animated: true });
+        if (attempt < 6) again(attempt + 1, 180);
+      });
+    },
+    [chrome.headerHeight, chrome.tabBarHeight]
+  );
+
+  const scheduleComposerScroll = useCallback(
+    (node: View, focusReply = false) => {
+      scrollGen.current += 1;
+      const run = () => {
+        scrollNodeIntoView(node, 0);
+        if (focusReply) replyInputRef.current?.focus();
+      };
+      run();
+      requestAnimationFrame(run);
+      InteractionManager.runAfterInteractions(run);
+      setTimeout(run, 80);
+      setTimeout(run, 280);
+    },
+    [scrollNodeIntoView]
+  );
+
+  const onReplyBoxReady = useCallback(
+    (node: View) => {
+      replyBoxNode.current = node;
+      replyInputRef.current?.focus();
+      // Clear the tab / home-indicator overlay now; the keyboard listener forces the real scroll.
+      if (keyboardHeight.current === 0) scrollNodeIntoView(node, 0);
+    },
+    [scrollNodeIntoView]
+  );
+
+  const forceReplyScroll = useCallback(() => {
+    const node = replyBoxNode.current;
+    if (!node) return;
+    scrollGen.current += 1;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollNodeIntoView(node, 0);
+        replyInputRef.current?.focus();
+      });
+    });
+  }, [scrollNodeIntoView]);
+
+  useEffect(() => {
+    const onShow = (e: KeyboardEvent) => {
+      keyboardHeight.current = e.endCoordinates.height;
+      setKbPad(e.endCoordinates.height);
+      if (!replyTo) return;
+      forceReplyScroll();
+    };
+    const onHide = () => {
+      keyboardHeight.current = 0;
+      setKbPad(0);
+    };
+    const will = Keyboard.addListener("keyboardWillShow", onShow);
+    const did = Keyboard.addListener("keyboardDidShow", onShow);
+    const hide = Keyboard.addListener("keyboardDidHide", onHide);
+    return () => {
+      will.remove();
+      did.remove();
+      hide.remove();
+    };
+  }, [replyTo, forceReplyScroll]);
+
+  useEffect(() => {
+    if (!replyTo) {
+      replyBoxNode.current = null;
+      chrome.unpin();
+      return;
+    }
+    chrome.pin();
+    return () => chrome.unpin();
+  }, [replyTo, chrome]);
 
   function onReply(id: string) {
     if (!user) {
       router.push("/login");
       return;
     }
-    setReplyTo((cur) => (cur === id ? null : id));
+    if (replyTo === id) {
+      replyBoxNode.current = null;
+      Keyboard.dismiss();
+      chrome.unpin();
+      setReplyTo(null);
+    } else {
+      chrome.pin();
+      setReplyTo(id);
+    }
     setReplyBody("");
   }
 
@@ -308,6 +427,8 @@ export default function PostDetailScreen() {
     <ScreenScroll
       scrollRef={scrollRef}
       avoidKeyboard
+      keyboardInsets
+      endSpacer={replyTo ? chrome.tabBarHeight + 80 + (Platform.OS === "android" ? kbPad : 0) : 0}
       onScrollOffset={(y) => {
         scrollOffset.current = y;
       }}
@@ -366,7 +487,8 @@ export default function PostDetailScreen() {
               multiline
               style={styles.input}
               onFocus={() => {
-                if (commentBoxRef.current) scrollComposer(commentBoxRef.current);
+                if (replyTo) return;
+                if (commentBoxRef.current) scheduleComposerScroll(commentBoxRef.current);
               }}
             />
             <Pressable
@@ -409,10 +531,11 @@ export default function PostDetailScreen() {
               comment={c}
               onReply={onReply}
               replyTo={replyTo}
-              onReplyBoxReady={scrollComposer}
+              onReplyBoxReady={onReplyBoxReady}
               replyBox={
                 <View>
                   <TextInput
+                    ref={replyInputRef}
                     value={replyBody}
                     onChangeText={setReplyBody}
                     placeholder="Write a reply"
@@ -420,6 +543,9 @@ export default function PostDetailScreen() {
                     multiline
                     style={styles.input}
                     autoFocus
+                    onFocus={() => {
+                      if (keyboardHeight.current > 0) forceReplyScroll();
+                    }}
                   />
                   <Pressable
                     style={[styles.primary, (!replyBody.trim() || posting) && { opacity: 0.5 }]}

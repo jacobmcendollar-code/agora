@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   cachePost,
@@ -9,7 +9,7 @@ import {
   toggleSaved,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { isGenericBody, isNativeSocialLink, openExternal } from "@/lib/media";
+import { getYouTubeId, isGenericBody, isNativeSocialLink, openExternal } from "@/lib/media";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
 import { sharePost } from "@/lib/share";
 import type { Palette } from "@/lib/theme";
@@ -17,6 +17,7 @@ import type { FeedPost } from "@/lib/types";
 import { IconBookmark, IconComments, IconShare } from "./Icons";
 import { Thumb } from "./Thumb";
 import { VoteSpears } from "./VoteSpears";
+import { YouTubeEmbed } from "./YouTubeEmbed";
 
 export function FeedCard({
   post,
@@ -35,6 +36,8 @@ export function FeedCard({
   const snippet =
     post.body && !isGenericBody(post.body) ? postSnippet(post.body) : null;
   const [saved, setSaved] = useState(false);
+  const [youtubeOpen, setYoutubeOpen] = useState(false);
+  const youtubeId = getYouTubeId(post.url);
 
   useEffect(() => {
     if (!user) {
@@ -58,12 +61,15 @@ export function FeedCard({
   }
 
   async function onThumb() {
+    if (youtubeId) {
+      setYoutubeOpen(true);
+      return;
+    }
     if (post.url && isNativeSocialLink(post.url)) {
       await openExternal(post.url, openSocialInNativeApp);
       return;
     }
     if (post.url) {
-      // YouTube and other links open the destination, not the post page.
       await openExternal(post.url, false);
       return;
     }
@@ -146,6 +152,35 @@ export function FeedCard({
           </View>
         </View>
       </View>
+      {youtubeId ? (
+        <Modal
+          visible={youtubeOpen}
+          animationType="fade"
+          transparent
+          supportedOrientations={["portrait", "landscape-left", "landscape-right"]}
+          onRequestClose={() => setYoutubeOpen(false)}
+        >
+          <View style={styles.ytModal}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setYoutubeOpen(false)}
+              accessibilityLabel="Dismiss video"
+            />
+            <View style={styles.ytPlayer}>
+              {youtubeOpen ? <YouTubeEmbed videoId={youtubeId} title={post.title} /> : null}
+              <Pressable
+                onPress={() => setYoutubeOpen(false)}
+                style={styles.ytClose}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Close video"
+              >
+                <Text style={styles.ytCloseText}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
     </View>
   );
 }
@@ -230,6 +265,26 @@ function makeStyles(colors: Palette) {
     color: colors.rose,
     fontSize: 12,
     fontWeight: "700",
+  },
+  ytModal: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.92)",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  ytPlayer: {
+    width: "100%",
+  },
+  ytClose: {
+    alignSelf: "center",
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  ytCloseText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "600",
   },
   });
 }

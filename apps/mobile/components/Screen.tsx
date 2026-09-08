@@ -11,6 +11,8 @@ export function ScreenScroll({
   scrollRef,
   onScrollOffset,
   avoidKeyboard = false,
+  keyboardInsets = false,
+  endSpacer = 0,
 }: {
   children: ReactNode;
   onRefresh?: () => void;
@@ -19,9 +21,12 @@ export function ScreenScroll({
   scrollRef?: Ref<ScrollView>;
   onScrollOffset?: (y: number) => void;
   avoidKeyboard?: boolean;
+  keyboardInsets?: boolean;
+  endSpacer?: number;
 }) {
   const chrome = useChrome();
   const colors = useThemeColors();
+  const useKav = avoidKeyboard && !keyboardInsets;
   const scroll = (
     <ScrollView
       ref={scrollRef}
@@ -31,7 +36,8 @@ export function ScreenScroll({
       }}
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
-      keyboardDismissMode={avoidKeyboard ? "interactive" : undefined}
+      keyboardDismissMode={avoidKeyboard || keyboardInsets ? "interactive" : undefined}
+      automaticallyAdjustKeyboardInsets={keyboardInsets}
       contentContainerStyle={{ paddingHorizontal: 16 }}
       refreshControl={
         onRefresh ? (
@@ -46,10 +52,11 @@ export function ScreenScroll({
       <ChromePad edge="top" />
       {children}
       <ChromePad edge="bottom" includeTabs={includeTabs} />
+      {endSpacer > 0 ? <View style={{ height: endSpacer }} /> : null}
     </ScrollView>
   );
 
-  if (!avoidKeyboard) return scroll;
+  if (!useKav) return scroll;
 
   return (
     <KeyboardAvoidingView
