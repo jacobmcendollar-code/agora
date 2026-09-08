@@ -1,3 +1,4 @@
+import { createNotification } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 
 const MENTION_REGEX = /@([a-zA-Z0-9_]{2,30})/g;
@@ -48,13 +49,11 @@ export async function notifyMentions({
     });
     if (muted) continue;
 
-    await prisma.notification.create({
-      data: {
-        type: "mention",
-        message: `${actorUsername} mentioned you`,
-        link,
-        userId: user.id,
-      },
+    await createNotification({
+      type: "mention",
+      message: `${actorUsername} mentioned you`,
+      link,
+      userId: user.id,
     });
   }
 }

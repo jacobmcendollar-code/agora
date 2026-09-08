@@ -8,13 +8,19 @@ export function isDeletedUsername(username?: string | null) {
 export function Username({
   username,
   style,
+  numberOfLines,
 }: {
   username: string;
   style?: StyleProp<TextStyle>;
+  numberOfLines?: number;
 }) {
   const router = useRouter();
   if (isDeletedUsername(username)) {
-    return <Text style={style}>{username || "[deleted]"}</Text>;
+    return (
+      <Text style={style} numberOfLines={numberOfLines}>
+        {username || "[deleted]"}
+      </Text>
+    );
   }
   return (
     <Pressable
@@ -22,8 +28,11 @@ export function Username({
       hitSlop={6}
       accessibilityRole="link"
       accessibilityLabel={`${username} profile`}
+      style={numberOfLines != null ? { flexShrink: 1, minWidth: 0, overflow: "hidden" } : undefined}
     >
-      <Text style={style}>{username}</Text>
+      <Text style={style} numberOfLines={numberOfLines} ellipsizeMode="tail">
+        {username}
+      </Text>
     </Pressable>
   );
 }

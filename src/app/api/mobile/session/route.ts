@@ -15,6 +15,8 @@ export async function GET(req: Request) {
       username: true,
       email: true,
       image: true,
+      bio: true,
+      createdAt: true,
       showNsfw: true,
     },
   });

@@ -5,6 +5,8 @@ export type SessionUser = {
   username: string;
   email?: string | null;
   image?: string | null;
+  bio?: string | null;
+  createdAt?: string | null;
   showNsfw?: boolean;
 };
 

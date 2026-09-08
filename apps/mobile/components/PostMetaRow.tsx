@@ -20,10 +20,11 @@ export function PostMetaRow({
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const communityLabel = post.community.title || post.community.name;
+  const letter = (communityLabel.trim()[0] || "?").toUpperCase();
 
   return (
     <View style={[styles.row, style]}>
-      <View style={styles.left}>
+      <View style={styles.cluster}>
         <Pressable
           onPress={() => router.push(`/community/${post.community.name}`)}
           hitSlop={6}
@@ -31,12 +32,15 @@ export function PostMetaRow({
           accessibilityLabel={`${communityLabel} community`}
           style={styles.pill}
         >
-          <Text style={styles.pillText} numberOfLines={1}>
+          <View style={styles.letterBox}>
+            <Text style={styles.letter}>{letter}</Text>
+          </View>
+          <Text style={styles.pillText} numberOfLines={1} ellipsizeMode="tail">
             {communityLabel}
           </Text>
         </Pressable>
-        <View style={styles.authorTime}>
-          <Username username={post.author.username} style={styles.author} />
+        <View style={styles.mid}>
+          <Username username={post.author.username} style={styles.author} numberOfLines={1} />
           <Text style={styles.time}> · {timeAgo(post.createdAt)}</Text>
         </View>
       </View>
@@ -59,11 +63,8 @@ function makeStyles(colors: Palette) {
     row: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-      gap: 10,
     },
-    left: {
+    cluster: {
       flex: 1,
       minWidth: 0,
       flexDirection: "row",
@@ -71,8 +72,12 @@ function makeStyles(colors: Palette) {
       gap: 8,
     },
     pill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
       flexShrink: 1,
       maxWidth: "58%",
+      minWidth: 0,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.emerald,
@@ -80,16 +85,34 @@ function makeStyles(colors: Palette) {
       paddingHorizontal: 8,
       paddingVertical: 3,
     },
+    letterBox: {
+      width: 14,
+      height: 14,
+      borderRadius: 2,
+      borderWidth: 1,
+      borderColor: colors.emerald,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    letter: {
+      color: colors.emerald,
+      fontSize: 9,
+      fontWeight: "700",
+      lineHeight: 11,
+    },
     pillText: {
       color: colors.emerald,
       fontSize: 12,
       fontWeight: "600",
-    },
-    authorTime: {
-      flexDirection: "row",
-      alignItems: "center",
       flexShrink: 1,
       minWidth: 0,
+    },
+    mid: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
+      alignItems: "center",
     },
     author: {
       color: colors.muted,
@@ -98,12 +121,14 @@ function makeStyles(colors: Palette) {
     time: {
       color: colors.muted,
       fontSize: 13,
+      flexShrink: 0,
     },
     shareLabeled: {
       flexDirection: "row",
       alignItems: "center",
       gap: 5,
       flexShrink: 0,
+      marginLeft: 10,
     },
     shareLabel: {
       color: colors.muted,

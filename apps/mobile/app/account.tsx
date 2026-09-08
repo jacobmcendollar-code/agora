@@ -1,11 +1,9 @@
-import { useCallback, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { IconChevron, IconGear, IconInfo } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
 import { openExternal } from "@/lib/media";
-import { fetchPublicProfile } from "@/lib/profile";
 import { useThemeColors } from "@/lib/preferences";
 import { formatJoinedMonthYear } from "@/lib/time";
 import type { Palette } from "@/lib/theme";
@@ -66,39 +64,11 @@ export default function AccountScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const [bio, setBio] = useState<string | null>(null);
-  const [joinedLabel, setJoinedLabel] = useState<string | null>(null);
-  const [image, setImage] = useState<string | null>(user?.image ?? null);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!user) {
-        setBio(null);
-        setJoinedLabel(null);
-        setImage(null);
-        return;
-      }
-      setImage(user.image ?? null);
-      let cancelled = false;
-      fetchPublicProfile(user.username)
-        .then((profile) => {
-          if (cancelled) return;
-          setBio(profile.bio);
-          setJoinedLabel(formatJoinedMonthYear(profile.joined));
-          setImage(profile.image ?? user.image ?? null);
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setBio(null);
-          setJoinedLabel(null);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }, [user])
-  );
 
   const initial = user?.username?.[0]?.toUpperCase() || "?";
+  const bio = user?.bio?.trim() || null;
+  const joinedLabel = formatJoinedMonthYear(user?.createdAt);
+  const image = user?.image ?? null;
 
   const groups: MenuGroup[] = user
     ? [

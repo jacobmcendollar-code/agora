@@ -4,8 +4,11 @@ import { useRouter } from "expo-router";
 import { PasswordField } from "@/components/PasswordField";
 import { ScreenScroll } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
+import { openExternal } from "@/lib/media";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
+
+const FORGOT_PASSWORD_URL = "https://www.agor4.com/forgot-password";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -59,6 +62,15 @@ export default function LoginScreen() {
         />
 
         <Pressable
+          onPress={() => void openExternal(FORGOT_PASSWORD_URL, false)}
+          hitSlop={6}
+          accessibilityRole="link"
+          accessibilityLabel="Forgot password"
+        >
+          <Text style={styles.forgot}>Forgot password?</Text>
+        </Pressable>
+
+        <Pressable
           style={[styles.primary, loading && { opacity: 0.6 }]}
           onPress={onSubmit}
           disabled={loading}
@@ -108,6 +120,7 @@ function makeStyles(colors: Palette) {
   primaryText: { color: colors.white, fontWeight: "700" },
   errorBox: { backgroundColor: colors.dangerBg, borderRadius: 10, padding: 10, marginBottom: 8 },
   errorText: { color: colors.dangerText, fontSize: 13 },
+  forgot: { color: colors.muted, fontSize: 13, fontWeight: "600", marginTop: 12 },
   footer: { color: colors.muted, textAlign: "center", marginTop: 18 },
   link: { color: colors.text, fontWeight: "700", textDecorationLine: "underline" },
   });

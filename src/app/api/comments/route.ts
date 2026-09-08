@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
 import { notifyMentions } from "@/lib/mentions";
+import { createNotification } from "@/lib/notify";
 
 const MEDIA_PER_HOUR = 20;
 
@@ -160,19 +161,17 @@ export async function POST(req: Request) {
       data: { commentCount: { increment: 1 } },
     });
 
-    const link = `/c/${post.community.name}/posts/${post.id}#comments`;
+    const link = `/c/${post.community.name}/posts/${post.id}#comment-${comment.id}`;
     const actorUsername = dbUser?.username || "Someone";
 
     if (post.authorId !== userId) {
       const muted = await isMutedBy(post.authorId, userId);
       if (!muted) {
-        await prisma.notification.create({
-          data: {
-            type: "comment_on_post",
-            message: `${actorUsername} commented on your post “${post.title}”`,
-            link,
-            userId: post.authorId,
-          },
+        await createNotification({
+          type: "comment_on_post",
+          message: `${actorUsername} commented on your post “${post.title}”`,
+          link,
+          userId: post.authorId,
         });
       }
     }
@@ -180,13 +179,11 @@ export async function POST(req: Request) {
     if (parentComment && parentComment.authorId !== userId) {
       const muted = await isMutedBy(parentComment.authorId, userId);
       if (!muted) {
-        await prisma.notification.create({
-          data: {
-            type: "reply_to_comment",
-            message: `${actorUsername} replied to your comment`,
-            link,
-            userId: parentComment.authorId,
-          },
+        await createNotification({
+          type: "reply_to_comment",
+          message: `${actorUsername} replied to your comment`,
+          link,
+          userId: parentComment.authorId,
         });
       }
     }

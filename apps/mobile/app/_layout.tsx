@@ -1,20 +1,23 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import "react-native-reanimated";
 import { AgoraHeader } from "@/components/AgoraHeader";
 import { AgoraTabBar } from "@/components/AgoraTabBar";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ChromeProvider } from "@/lib/chrome";
+import { hrefFromPushData } from "@/lib/notification";
 import {
   PreferencesProvider,
   usePreferences,
   useResolvedTheme,
   useThemeColors,
 } from "@/lib/preferences";
+import { initPushHandler } from "@/lib/push";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -23,6 +26,34 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+initPushHandler();
+
+let lastOpenedPushId: string | null = null;
+
+function PushTapListener() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    function open(response: Notifications.NotificationResponse | null) {
+      if (!response) return;
+      const id = response.notification.request.identifier;
+      if (lastOpenedPushId === id) return;
+      lastOpenedPushId = id;
+      const data = response.notification.request.content.data as Record<string, unknown>;
+      const href = hrefFromPushData(data);
+      if (href) router.push(href as Href);
+    }
+
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
+    void Notifications.getLastNotificationResponseAsync().then(open);
+
+    return () => sub.remove();
+  }, [router]);
+
+  return null;
+}
 
 function Gate() {
   const { ready: authReady } = useAuth();
@@ -45,6 +76,7 @@ function Gate() {
       <StatusBar style={resolvedTheme === "light" ? "dark" : "light"} />
       <ChromeProvider>
         <View style={{ flex: 1, backgroundColor: colors.bg }}>
+          <PushTapListener />
           <Stack
             screenOptions={{
               headerShown: false,

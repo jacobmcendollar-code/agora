@@ -41,6 +41,8 @@ export async function POST(req: Request) {
         email: true,
         passwordHash: true,
         image: true,
+        bio: true,
+        createdAt: true,
         showNsfw: true,
       },
     });
@@ -78,6 +80,8 @@ export async function POST(req: Request) {
         username: user.username,
         email: user.email,
         image: user.image,
+        bio: user.bio,
+        createdAt: user.createdAt,
         showNsfw: user.showNsfw,
       },
     });
