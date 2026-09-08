@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { PRIVATE_NO_STORE_HEADERS, readMobileSession } from "@/lib/mobile-session";
+import { ensureExpoPushTokenColumn } from "@/lib/ensure-expo-push-token-column";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
+  await ensureExpoPushTokenColumn();
   await prisma.user.update({
     where: { id: session.userId },
     data: { expoPushToken: parsed.data.token },
