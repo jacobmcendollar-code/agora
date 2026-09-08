@@ -58,8 +58,14 @@ export function AgoraTabBar() {
           <Pressable
             key={tab.path}
             onPress={() => {
-              if (tab.path === "/" && pathname === "/") {
+              if (tab.path === "/") {
                 DeviceEventEmitter.emit(HOME_TAB_REPRESS);
+                if (pathname === "/") return;
+                if (!isTabSurface(pathname)) {
+                  router.dismissTo(tab.href);
+                  return;
+                }
+                router.navigate(tab.href);
                 return;
               }
               if (pathname === tab.path) return;

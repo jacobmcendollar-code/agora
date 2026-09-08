@@ -21,15 +21,64 @@ export function getYouTubeId(url: string | null | undefined): string | null {
   return null;
 }
 
+function hostnameOf(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 export function isXLink(url: string | null | undefined): boolean {
   if (!url) return false;
+  const host = hostnameOf(url);
+  if (host) {
+    return host === "x.com" || host === "twitter.com" || host.endsWith(".x.com") || host.endsWith(".twitter.com");
+  }
   return url.includes("x.com") || url.includes("twitter.com");
 }
 
 export function isTikTokLink(url: string | null | undefined): boolean {
   if (!url) return false;
+  const host = hostnameOf(url);
+  if (host) return host === "tiktok.com" || host.endsWith(".tiktok.com");
   return url.includes("tiktok.com");
 }
+
+export function isInstagramLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const host = hostnameOf(url);
+  if (host) {
+    return (
+      host === "instagram.com" ||
+      host === "instagr.am" ||
+      host.endsWith(".instagram.com") ||
+      host.endsWith(".instagr.am")
+    );
+  }
+  return url.includes("instagram.com") || url.includes("instagr.am");
+}
+
+/** X, TikTok, and Instagram — the networks that honor "Open links in apps". */
+export function isNativeSocialLink(url: string | null | undefined): boolean {
+  return isXLink(url) || isTikTokLink(url) || isInstagramLink(url);
+}
+
+const INSTAGRAM_RESERVED = new Set([
+  "p",
+  "reel",
+  "reels",
+  "tv",
+  "stories",
+  "explore",
+  "accounts",
+  "about",
+  "legal",
+  "developer",
+  "direct",
+  "privacy",
+  "emailsignup",
+]);
 
 export function displayHostname(url: string): string {
   try {
@@ -42,6 +91,7 @@ export function displayHostname(url: string): string {
 export function linkOpenLabel(url: string): string {
   if (isTikTokLink(url)) return "Open TikTok";
   if (isXLink(url)) return "Open X";
+  if (isInstagramLink(url)) return "Open Instagram";
   return "Read original →";
 }
 
@@ -54,8 +104,11 @@ export function isGenericBody(body: string | null | undefined): boolean {
   );
 }
 
-/** Custom schemes that open the exact X status or TikTok video. Empty if we should use https. */
-function nativeUrlsFor(url: string): string[] {
+/**
+ * Custom schemes that open the exact X status, TikTok video, or Instagram
+ * profile. Empty means fall through to https Universal Links.
+ */
+export function nativeUrlsFor(url: string): string[] {
   try {
     const u = new URL(url);
     const host = u.hostname.replace(/^www\./i, "").toLowerCase();
@@ -74,6 +127,27 @@ function nativeUrlsFor(url: string): string[] {
       // tiktok://video?id= is the public-scheme equivalent if snssdk isn't queryable.
       return [`snssdk1233://aweme/detail/${id}`, `tiktok://video?id=${id}`];
     }
+
+    if (
+      host === "instagram.com" ||
+      host === "instagr.am" ||
+      host.endsWith(".instagram.com") ||
+      host.endsWith(".instagr.am")
+    ) {
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts[0] === "stories" && parts[1] && !INSTAGRAM_RESERVED.has(parts[1].toLowerCase())) {
+        return [`instagram://user?username=${encodeURIComponent(parts[1])}`];
+      }
+      // Posts / reels / tv: no public shortcode scheme. Empty list → https UL.
+      if (parts[0] && ["p", "reel", "reels", "tv"].includes(parts[0].toLowerCase())) {
+        return [];
+      }
+      const user = parts[0];
+      if (user && !INSTAGRAM_RESERVED.has(user.toLowerCase())) {
+        return [`instagram://user?username=${encodeURIComponent(user)}`];
+      }
+      return [];
+    }
   } catch {
     return [];
   }
@@ -81,7 +155,7 @@ function nativeUrlsFor(url: string): string[] {
 }
 
 export async function openExternal(url: string, openSocialInNativeApp: boolean) {
-  const social = isXLink(url) || isTikTokLink(url);
+  const social = isNativeSocialLink(url);
   if (social && openSocialInNativeApp) {
     for (const native of nativeUrlsFor(url)) {
       try {

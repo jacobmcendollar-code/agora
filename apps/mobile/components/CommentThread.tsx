@@ -37,7 +37,7 @@ export function CommentThread({
 
   useEffect(() => {
     if (highlighted && cardRef.current) onHighlightReady?.(cardRef.current);
-  }, [highlighted, comment.id]);
+  }, [highlighted, comment.id, onHighlightReady]);
 
   if (collapsed && !highlighted) {
     return (

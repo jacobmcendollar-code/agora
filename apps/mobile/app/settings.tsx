@@ -119,7 +119,7 @@ export default function SettingsScreen() {
           theme={resolvedTheme}
         />
         <ToggleRow
-          title="Open TikTok & X in native apps"
+          title="Open links in apps"
           value={openSocialInNativeApp}
           onChange={setOpenSocialInNativeApp}
           colors={colors}

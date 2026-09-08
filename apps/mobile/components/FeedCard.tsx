@@ -9,7 +9,7 @@ import {
   toggleSaved,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { getYouTubeId, isGenericBody, isTikTokLink, isXLink, openExternal } from "@/lib/media";
+import { isGenericBody, isNativeSocialLink, openExternal } from "@/lib/media";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
 import { sharePost } from "@/lib/share";
 import type { Palette } from "@/lib/theme";
@@ -32,7 +32,6 @@ export function FeedCard({
   const styles = makeStyles(colors);
   const comments = commentCount(post);
   const discussion = post.community?.postFormat === "discussion";
-  const youtubeId = getYouTubeId(post.url);
   const snippet =
     post.body && !isGenericBody(post.body) ? postSnippet(post.body) : null;
   const [saved, setSaved] = useState(false);
@@ -59,15 +58,12 @@ export function FeedCard({
   }
 
   async function onThumb() {
-    if (youtubeId) {
-      openPost();
-      return;
-    }
-    if (post.url && (isXLink(post.url) || isTikTokLink(post.url))) {
+    if (post.url && isNativeSocialLink(post.url)) {
       await openExternal(post.url, openSocialInNativeApp);
       return;
     }
     if (post.url) {
+      // YouTube and other links open the destination, not the post page.
       await openExternal(post.url, false);
       return;
     }

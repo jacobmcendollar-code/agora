@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import {
-  displayHostname,
-  isTikTokLink,
-  isXLink,
-  linkOpenLabel,
-  openExternal,
-} from "@/lib/media";
+import { displayHostname, isNativeSocialLink, linkOpenLabel, openExternal } from "@/lib/media";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import { communityThumbLabel } from "@/lib/thumbs";
@@ -34,7 +28,7 @@ export function LinkPreviewCard({
   const headline = title?.trim();
 
   function onPress() {
-    void openExternal(url, (isXLink(url) || isTikTokLink(url)) && openSocialInNativeApp);
+    void openExternal(url, isNativeSocialLink(url) && openSocialInNativeApp);
   }
 
   return (
