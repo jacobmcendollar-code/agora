@@ -1,3 +1,4 @@
+import { ensureExpoPushTokenColumn } from "@/lib/ensure-expo-push-token-column";
 import { prisma } from "@/lib/prisma";
 
 export type NotificationInput = {
@@ -20,6 +21,7 @@ async function pushExpoNotification(row: {
   createdAt: Date;
 }) {
   try {
+    await ensureExpoPushTokenColumn();
     const user = await prisma.user.findUnique({
       where: { id: row.userId },
       select: { expoPushToken: true },
