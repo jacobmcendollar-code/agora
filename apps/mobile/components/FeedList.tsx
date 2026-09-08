@@ -59,6 +59,10 @@ export function FeedList({
   const [formats, setFormats] = useState<Record<string, Community["postFormat"]>>({});
 
   const showNsfw = Boolean(user?.showNsfw);
+  const sortRef = useRef(sort);
+  const showMyFeedRef = useRef(showMyFeed);
+  sortRef.current = sort;
+  showMyFeedRef.current = showMyFeed;
 
   const load = useCallback(
     async (next: number, replace: boolean) => {
@@ -124,6 +128,12 @@ export function FeedList({
     if (!homeRetap) return;
     const sub = DeviceEventEmitter.addListener(HOME_TAB_REPRESS, () => {
       chrome.reveal();
+      // Home tab lands on My Feed. Do not refresh Recent/Top in place.
+      if (showMyFeedRef.current && sortRef.current !== "my") {
+        setSort("my");
+        landHomeListAtTop(listRef.current, () => {});
+        return;
+      }
       landHomeListAtTop(listRef.current, onRefresh);
     });
     return () => sub.remove();

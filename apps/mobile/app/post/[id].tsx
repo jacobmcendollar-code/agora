@@ -28,6 +28,7 @@ import {
   peekCachedPost,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useChrome } from "@/lib/chrome";
 import { getYouTubeId, isGenericBody } from "@/lib/media";
 import { findNotificationComment } from "@/lib/notification";
 import { usePreferences, useThemeColors } from "@/lib/preferences";
@@ -59,6 +60,7 @@ export default function PostDetailScreen() {
   const commentAt = pickParam(local, global, "at");
   const { user } = useAuth();
   const { openSocialInNativeApp } = usePreferences();
+  const chrome = useChrome();
   const router = useRouter();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -66,6 +68,8 @@ export default function PostDetailScreen() {
   const contentRef = useRef<View>(null);
   const didScroll = useRef(false);
   const pendingNode = useRef<View | null>(null);
+  const pendingKind = useRef<"comment" | "list" | null>(null);
+  const scrollOffset = useRef(0);
   const commentsAnchor = useRef<View>(null);
   const cached = id ? peekCachedPost(id) : undefined;
   const [post, setPost] = useState<FeedPost | undefined>(cached);
@@ -124,34 +128,77 @@ export default function PostDetailScreen() {
   useEffect(() => {
     didScroll.current = false;
     pendingNode.current = null;
+    pendingKind.current = null;
   }, [id, commentId, commentUser, commentAt]);
 
-  const tryScroll = useCallback((node: View, attempt = 0) => {
-    if (didScroll.current) return;
-    const scroll = scrollRef.current;
-    const relative = contentRef.current;
-    const handle = relative ? findNodeHandle(relative) : null;
-    if (!scroll || !handle) {
-      if (attempt < 15) setTimeout(() => tryScroll(node, attempt + 1), 40);
-      return;
-    }
-    node.measureLayout(
-      handle,
-      (_x, y) => {
-        if (didScroll.current) return;
-        didScroll.current = true;
-        scroll.scrollTo({ y: Math.max(0, y - 16), animated: true });
-      },
-      () => {
-        if (attempt < 15) setTimeout(() => tryScroll(node, attempt + 1), 40);
+  const tryScroll = useCallback(
+    (node: View, kind: "comment" | "list", attempt = 0) => {
+      if (kind === "list" && pendingKind.current === "comment") return;
+      if (didScroll.current && pendingKind.current === "comment") return;
+      if (didScroll.current && kind === "list") return;
+
+      const scroll = scrollRef.current;
+      const relative = contentRef.current;
+      if (!scroll) {
+        if (attempt < 30) setTimeout(() => tryScroll(node, kind, attempt + 1), 50);
+        return;
       }
-    );
-  }, []);
+
+      const apply = (contentY: number) => {
+        if (kind === "list" && pendingKind.current === "comment") return;
+        pendingKind.current = kind;
+        didScroll.current = true;
+        scroll.scrollTo({ y: Math.max(0, contentY), animated: true });
+      };
+
+      const viaLayout = () => {
+        const handle = relative ? findNodeHandle(relative) : null;
+        if (!handle) {
+          if (attempt < 30) setTimeout(() => tryScroll(node, kind, attempt + 1), 50);
+          return;
+        }
+        node.measureLayout(
+          handle,
+          (_x, y) => {
+            if (kind === "comment" && y < 24 && attempt < 24) {
+              setTimeout(() => tryScroll(node, kind, attempt + 1), 50);
+              return;
+            }
+            apply(y - 16);
+          },
+          () => {
+            if (attempt < 30) setTimeout(() => tryScroll(node, kind, attempt + 1), 50);
+          }
+        );
+      };
+
+      node.measureInWindow((_x: number, nodeY: number, _w: number, nodeH: number) => {
+        if (kind === "list" && pendingKind.current === "comment") return;
+        const missing = nodeH < 8;
+        if (missing && attempt < 30) {
+          setTimeout(() => tryScroll(node, kind, attempt + 1), 50);
+          return;
+        }
+        const targetWindowY = chrome.headerHeight + 16;
+        const nextY = scrollOffset.current + (nodeY - targetWindowY);
+        // Off-screen / pre-layout comments can report ~0; fall back to measureLayout.
+        if (kind === "comment" && nodeY < 8 && attempt < 20) {
+          viaLayout();
+          return;
+        }
+        apply(nextY);
+      });
+    },
+    [chrome.headerHeight]
+  );
 
   const scrollToNode = useCallback(
-    (node: View) => {
+    (node: View, kind: "comment" | "list" = "comment") => {
       pendingNode.current = node;
-      tryScroll(node, 0);
+      if (kind === "comment" && pendingKind.current !== "comment") {
+        didScroll.current = false;
+      }
+      tryScroll(node, kind, 0);
     },
     [tryScroll]
   );
@@ -159,19 +206,19 @@ export default function PostDetailScreen() {
   useEffect(() => {
     if (!commentsLoaded || !wantComment || targetComment || didScroll.current) return;
     const node = commentsAnchor.current;
-    if (node) scrollToNode(node);
+    if (node) scrollToNode(node, "list");
   }, [commentsLoaded, wantComment, targetComment, comments.length, scrollToNode]);
 
   useFocusEffect(
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
-        if (didScroll.current) return;
+        if (didScroll.current && pendingKind.current === "comment") return;
         if (pendingNode.current) {
-          tryScroll(pendingNode.current, 0);
+          tryScroll(pendingNode.current, pendingKind.current || "comment", 0);
           return;
         }
         if (commentsLoaded && wantComment && !targetComment && commentsAnchor.current) {
-          scrollToNode(commentsAnchor.current);
+          scrollToNode(commentsAnchor.current, "list");
         }
       });
       return () => task.cancel();
@@ -227,7 +274,12 @@ export default function PostDetailScreen() {
 
   return (
     <EdgeSwipeBack>
-    <ScreenScroll scrollRef={scrollRef}>
+    <ScreenScroll
+      scrollRef={scrollRef}
+      onScrollOffset={(y) => {
+        scrollOffset.current = y;
+      }}
+    >
       <View ref={contentRef} collapsable={false}>
       <View style={styles.card}>
         <View style={{ flexDirection: "row", gap: 12 }}>
@@ -316,14 +368,14 @@ export default function PostDetailScreen() {
             : "No comments yet"}
         </Text>
       ) : (
-        <View style={styles.threadList}>
+        <View style={styles.threadList} collapsable={false}>
           {tree.map((c) => (
             <CommentThread
               key={c.id}
               comment={c}
               onReply={setReplyTo}
               highlightId={targetComment?.id}
-              onHighlightReady={scrollToNode}
+              onHighlightReady={(node) => scrollToNode(node, "comment")}
             />
           ))}
         </View>

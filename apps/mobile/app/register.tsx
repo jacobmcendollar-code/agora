@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
+import { PasswordField } from "@/components/PasswordField";
 import { ScreenScroll } from "@/components/Screen";
 import { registerAccount, useAuth } from "@/lib/auth";
 import { useThemeColors } from "@/lib/preferences";
@@ -63,11 +64,11 @@ export default function RegisterScreen() {
         />
 
         <Text style={styles.label}>Password</Text>
-        <TextInput
+        <PasswordField
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
+          autoComplete="new-password"
+          textContentType="newPassword"
         />
 
         <Pressable

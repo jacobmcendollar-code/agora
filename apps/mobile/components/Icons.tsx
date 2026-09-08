@@ -179,6 +179,46 @@ export function IconTarget({ color, size = 12 }: IconProps) {
   );
 }
 
+export function IconEye({ color, size = 20 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M2.2 12S5.5 5.8 12 5.8 21.8 12 21.8 12 18.5 18.2 12 18.2 2.2 12 2.2 12Z"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+      <Circle cx="12" cy="12" r="3.1" stroke={color} strokeWidth={1.8} />
+    </Svg>
+  );
+}
+
+export function IconEyeOff({ color, size = 20 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 3l18 18"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M9.9 5.7A8.7 8.7 0 0 1 12 5.5C18.5 5.5 21.8 12 21.8 12a11.4 11.4 0 0 1-4.1 4.5M6.2 6.8C3.9 8.5 2.2 12 2.2 12a11.6 11.6 0 0 0 7.3 5.9"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M10.1 10.2a3.1 3.1 0 0 0 3.8 3.8"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
 export function IconChevron({ color, size = 18 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

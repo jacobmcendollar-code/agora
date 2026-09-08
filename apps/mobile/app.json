@@ -11,7 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.agor4.app",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["twitter", "tiktok", "snssdk1233"]
+        "LSApplicationQueriesSchemes": ["twitter", "tiktok", "snssdk1233", "instagram"]
       }
     },
     "android": {
@@ -36,7 +36,12 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#0c0c0e"
+          "backgroundColor": "#000000",
+          "imageWidth": 280,
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#000000"
+          }
         }
       ],
       "expo-secure-store"
