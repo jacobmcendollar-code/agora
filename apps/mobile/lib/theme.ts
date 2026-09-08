@@ -2,6 +2,7 @@ export type Palette = {
   bg: string;
   card: string;
   cardHover: string;
+  elev: string;
   field: string;
   border: string;
   text: string;
@@ -24,6 +25,7 @@ export const darkColors: Palette = {
   bg: "#0c0c0e",
   card: "#161618",
   cardHover: "#1c1c1f",
+  elev: "#101012",
   field: "#1a1a1d",
   border: "#27272a",
   text: "#fafafa",
@@ -46,6 +48,7 @@ export const lightColors: Palette = {
   bg: "#f7f6f3",
   card: "#ffffff",
   cardHover: "#f5f5f4",
+  elev: "#e8e6e0",
   field: "#eeede8",
   border: "#e7e5e4",
   text: "#1c1917",

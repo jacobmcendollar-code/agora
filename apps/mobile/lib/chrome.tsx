@@ -101,18 +101,20 @@ export function ChromePad({
   includeTabs?: boolean;
 }) {
   const { hidden, headerHeight, tabBarHeight } = useChrome();
+  const insets = useSafeAreaInsets();
   const topExtra = extra ?? 12;
   const bottomExtra = extra ?? 28;
   const shown =
     edge === "top"
       ? headerHeight + topExtra
       : bottomExtra + (includeTabs ? tabBarHeight : 24);
-  const style = useAnimatedStyle(() => ({
-    height:
-      edge === "top"
-        ? shown - hidden.value * space.headerBody
-        : shown - hidden.value * (includeTabs ? tabBarHeight : 24),
-  }));
+  const style = useAnimatedStyle(() => {
+    if (edge === "top") {
+      return { height: shown - hidden.value * space.headerBody };
+    }
+    const hideBy = includeTabs ? tabBarHeight : 24;
+    return { height: Math.max(insets.bottom, shown - hidden.value * hideBy) };
+  });
   return <Animated.View pointerEvents="none" style={[{ height: shown }, style]} />;
 }
 

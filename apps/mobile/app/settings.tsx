@@ -7,11 +7,19 @@ import {
   useResolvedTheme,
   useThemeColors,
   type ResolvedTheme,
+  type ThemePref,
 } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
+const THEME_OPTIONS: { key: ThemePref; label: string }[] = [
+  { key: "light", label: "Light" },
+  { key: "dark", label: "Dark" },
+  { key: "system", label: "System" },
+];
+
 function ToggleRow({
   title,
+  helper,
   value,
   onChange,
   disabled,
@@ -19,6 +27,7 @@ function ToggleRow({
   theme,
 }: {
   title: string;
+  helper: string;
   value: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
@@ -28,8 +37,9 @@ function ToggleRow({
   const styles = makeStyles(colors, theme);
   return (
     <View style={styles.row}>
-      <View style={{ flex: 1, paddingRight: 12 }}>
+      <View style={styles.toggleCopy}>
         <Text style={styles.title}>{title}</Text>
+        <Text style={styles.helper}>{helper}</Text>
       </View>
       <Switch
         value={value}
@@ -87,12 +97,11 @@ export default function SettingsScreen() {
       )}
 
       <View style={styles.card}>
-        <View style={styles.themeRow}>
+        <View style={styles.themeBlock}>
           <Text style={styles.title}>Theme</Text>
-          <View style={styles.themePair}>
-            {(["light", "dark", "system"] as const).map((key) => {
+          <View style={styles.themeSeg}>
+            {THEME_OPTIONS.map(({ key, label }) => {
               const active = theme === key;
-              const label = key === "light" ? "Light" : key === "dark" ? "Dark" : "System";
               return (
                 <Pressable
                   key={key}
@@ -100,9 +109,9 @@ export default function SettingsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`${label} theme`}
                   accessibilityState={{ selected: active }}
-                  style={[styles.themeChip, active && styles.themeChipActive]}
+                  style={[styles.themeSegItem, active && styles.themeSegItemActive]}
                 >
-                  <Text style={[styles.themeChipText, active && styles.themeChipTextActive]}>
+                  <Text style={[styles.themeSegText, active && styles.themeSegTextActive]}>
                     {label}
                   </Text>
                 </Pressable>
@@ -112,6 +121,7 @@ export default function SettingsScreen() {
         </View>
         <ToggleRow
           title="Show NSFW"
+          helper="Show communities marked NSFW."
           value={Boolean(user?.showNsfw)}
           onChange={onNsfw}
           disabled={!user}
@@ -120,6 +130,7 @@ export default function SettingsScreen() {
         />
         <ToggleRow
           title="Open links in apps"
+          helper="On: open X, TikTok & Instagram in their apps. Off: in-app browser."
           value={openSocialInNativeApp}
           onChange={setOpenSocialInNativeApp}
           colors={colors}
@@ -152,37 +163,42 @@ function makeStyles(colors: Palette, theme: ResolvedTheme) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: divider,
     },
+    toggleCopy: { flex: 1, paddingRight: 12, gap: 4 },
     title: { color: colors.text, fontSize: 15, fontWeight: "600" },
-    themeRow: {
+    helper: { color: colors.muted, fontSize: 13, lineHeight: 18 },
+    themeBlock: {
       paddingHorizontal: 16,
       paddingVertical: 14,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: divider,
       gap: 10,
     },
-    themePair: {
+    themeSeg: {
       flexDirection: "row",
       alignItems: "stretch",
       width: "100%",
-      gap: 6,
+      backgroundColor: colors.elev,
+      borderRadius: 10,
+      padding: 3,
     },
-    themeChip: {
+    themeSegItem: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      minHeight: 40,
+      minHeight: 34,
       paddingHorizontal: 8,
-      paddingVertical: 9,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: controlBorder,
-      backgroundColor: colors.field,
+      paddingVertical: 7,
+      borderRadius: 8,
     },
-    themeChipActive: {
-      backgroundColor: colors.chipActive,
-      borderColor: colors.emerald,
+    themeSegItemActive: {
+      backgroundColor: colors.card,
+      shadowColor: "#000",
+      shadowOpacity: theme === "light" ? 0.1 : 0.35,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 2,
     },
-    themeChipText: { color: sub, fontSize: 13, fontWeight: "600" },
-    themeChipTextActive: { color: colors.emerald },
+    themeSegText: { color: sub, fontSize: 13, fontWeight: "600" },
+    themeSegTextActive: { color: colors.text },
   });
 }
