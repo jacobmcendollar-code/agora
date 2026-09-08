@@ -67,7 +67,7 @@ export function CommentThread({
     };
   }, [replying, onReplyBoxReady]);
 
-  if (collapsed && !highlighted) {
+  if (collapsed) {
     return (
       <View style={nested ? styles.nested : undefined}>
         <Pressable
