@@ -264,7 +264,8 @@ export default function PostDetailScreen() {
         const windowH = Dimensions.get("window").height;
         const kb = keyboardHeight.current;
         const visibleTop = chrome.headerHeight + 12;
-        const reservedBottom = kb > 0 ? kb + 16 : chrome.tabBarHeight + 16;
+        // Tab bar overlays the screen (includes home indicator). Keyboard covers it when up.
+        const reservedBottom = Math.max(kb, chrome.tabBarHeight) + 16;
         const visibleBottom = windowH - reservedBottom;
         const boxTop = y;
         const boxBottom = y + Math.max(h, 8);
@@ -306,17 +307,31 @@ export default function PostDetailScreen() {
   const onReplyBoxReady = useCallback(
     (node: View) => {
       replyBoxNode.current = node;
-      scheduleComposerScroll(node, true);
+      replyInputRef.current?.focus();
+      // Clear the tab / home-indicator overlay now; the keyboard listener forces the real scroll.
+      if (keyboardHeight.current === 0) scrollNodeIntoView(node, 0);
     },
-    [scheduleComposerScroll]
+    [scrollNodeIntoView]
   );
+
+  const forceReplyScroll = useCallback(() => {
+    const node = replyBoxNode.current;
+    if (!node) return;
+    scrollGen.current += 1;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollNodeIntoView(node, 0);
+        replyInputRef.current?.focus();
+      });
+    });
+  }, [scrollNodeIntoView]);
 
   useEffect(() => {
     const onShow = (e: KeyboardEvent) => {
       keyboardHeight.current = e.endCoordinates.height;
       setKbPad(e.endCoordinates.height);
-      if (!replyTo || !replyBoxNode.current) return;
-      scheduleComposerScroll(replyBoxNode.current, true);
+      if (!replyTo) return;
+      forceReplyScroll();
     };
     const onHide = () => {
       keyboardHeight.current = 0;
@@ -330,7 +345,7 @@ export default function PostDetailScreen() {
       did.remove();
       hide.remove();
     };
-  }, [replyTo, scheduleComposerScroll]);
+  }, [replyTo, forceReplyScroll]);
 
   useEffect(() => {
     if (!replyTo) {
@@ -413,7 +428,7 @@ export default function PostDetailScreen() {
       scrollRef={scrollRef}
       avoidKeyboard
       keyboardInsets
-      endSpacer={replyTo ? 160 + (Platform.OS === "android" ? kbPad : 0) : 0}
+      endSpacer={replyTo ? chrome.tabBarHeight + 80 + (Platform.OS === "android" ? kbPad : 0) : 0}
       onScrollOffset={(y) => {
         scrollOffset.current = y;
       }}
@@ -529,7 +544,7 @@ export default function PostDetailScreen() {
                     style={styles.input}
                     autoFocus
                     onFocus={() => {
-                      if (replyBoxNode.current) scheduleComposerScroll(replyBoxNode.current);
+                      if (keyboardHeight.current > 0) forceReplyScroll();
                     }}
                   />
                   <Pressable
