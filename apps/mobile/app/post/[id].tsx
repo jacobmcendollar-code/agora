@@ -79,7 +79,9 @@ export default function PostDetailScreen() {
   const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [commentBody, setCommentBody] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyBody, setReplyBody] = useState("");
   const [posting, setPosting] = useState(false);
+  const commentBoxRef = useRef<View>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -229,17 +231,46 @@ export default function PostDetailScreen() {
   const showBody = !!(post?.body && !isGenericBody(post.body) && !post.url);
   const showLinkCard = !!(post?.url && !youtubeId);
 
-  async function onComment() {
+  function scrollComposer(node: View) {
+    const scroll = scrollRef.current;
+    const relative = contentRef.current;
+    if (!scroll || !relative) return;
+    const handle = findNodeHandle(relative);
+    if (!handle) return;
+    node.measureLayout(
+      handle,
+      (_x, y) => {
+        scroll.scrollTo({ y: Math.max(0, y - 16), animated: true });
+      },
+      () => {}
+    );
+  }
+
+  function onReply(id: string) {
     if (!user) {
       router.push("/login");
       return;
     }
-    if (!id || !commentBody.trim()) return;
+    setReplyTo((cur) => (cur === id ? null : id));
+    setReplyBody("");
+  }
+
+  async function submitComment(parentId: string | null) {
+    const text = parentId ? replyBody : commentBody;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (!id || !text.trim()) return;
     setPosting(true);
     try {
-      await createComment({ postId: id, body: commentBody.trim(), parentId: replyTo });
-      setCommentBody("");
-      setReplyTo(null);
+      await createComment({ postId: id, body: text.trim(), parentId });
+      if (parentId) {
+        setReplyBody("");
+        setReplyTo(null);
+      } else {
+        setCommentBody("");
+      }
       const data = await fetchPostDetail(id);
       setPost(data.post);
       setComments(data.comments);
@@ -276,6 +307,7 @@ export default function PostDetailScreen() {
     <EdgeSwipeBack>
     <ScreenScroll
       scrollRef={scrollRef}
+      avoidKeyboard
       onScrollOffset={(y) => {
         scrollOffset.current = y;
       }}
@@ -319,14 +351,13 @@ export default function PostDetailScreen() {
         </View>
       </View>
 
-      <View style={styles.commentBox}>
+      <View
+        ref={commentBoxRef}
+        collapsable={false}
+        style={styles.commentBox}
+      >
         {user ? (
           <>
-            {replyTo ? (
-              <Pressable onPress={() => setReplyTo(null)}>
-                <Text style={styles.replying}>Replying · tap to cancel</Text>
-              </Pressable>
-            ) : null}
             <TextInput
               value={commentBody}
               onChangeText={setCommentBody}
@@ -334,10 +365,13 @@ export default function PostDetailScreen() {
               placeholderTextColor={colors.faint}
               multiline
               style={styles.input}
+              onFocus={() => {
+                if (commentBoxRef.current) scrollComposer(commentBoxRef.current);
+              }}
             />
             <Pressable
               style={[styles.primary, (!commentBody.trim() || posting) && { opacity: 0.5 }]}
-              onPress={onComment}
+              onPress={() => submitComment(null)}
               disabled={!commentBody.trim() || posting}
             >
               <Text style={styles.primaryText}>{posting ? "Posting…" : "Comment"}</Text>
@@ -373,7 +407,29 @@ export default function PostDetailScreen() {
             <CommentThread
               key={c.id}
               comment={c}
-              onReply={setReplyTo}
+              onReply={onReply}
+              replyTo={replyTo}
+              onReplyBoxReady={scrollComposer}
+              replyBox={
+                <View>
+                  <TextInput
+                    value={replyBody}
+                    onChangeText={setReplyBody}
+                    placeholder="Write a reply"
+                    placeholderTextColor={colors.faint}
+                    multiline
+                    style={styles.input}
+                    autoFocus
+                  />
+                  <Pressable
+                    style={[styles.primary, (!replyBody.trim() || posting) && { opacity: 0.5 }]}
+                    onPress={() => submitComment(replyTo)}
+                    disabled={!replyBody.trim() || posting}
+                  >
+                    <Text style={styles.primaryText}>{posting ? "Posting…" : "Reply"}</Text>
+                  </Pressable>
+                </View>
+              }
               highlightId={targetComment?.id}
               onHighlightReady={(node) => scrollToNode(node, "comment")}
             />
@@ -433,7 +489,6 @@ function makeStyles(colors: Palette) {
   },
   primaryText: { color: colors.white, fontWeight: "700" },
   loginHint: { color: colors.emerald, fontWeight: "600", textAlign: "center", paddingVertical: 8 },
-  replying: { color: colors.emerald, fontSize: 12, marginBottom: 6 },
   sortRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 20, marginBottom: 8 },
   sort: { color: colors.faint, fontWeight: "600" },
   sortActive: { color: colors.text },

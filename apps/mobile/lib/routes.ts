@@ -45,6 +45,7 @@ export function mapSitePath(link: string): string {
     path === "/about" ||
     path === "/login" ||
     path === "/register" ||
+    path === "/forgot-password" ||
     path === "/submit" ||
     path === "/communities" ||
     path === "/search" ||

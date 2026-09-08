@@ -181,6 +181,14 @@ export async function createComment(payload: {
   });
 }
 
+export async function forgotPassword(email: string) {
+  return apiJson<{ ok: boolean; message?: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim() }),
+  });
+}
+
 export async function setShowNsfw(showNsfw: boolean) {
   return apiJson<{ showNsfw: boolean }>("/api/user/show-nsfw", {
     method: "POST",

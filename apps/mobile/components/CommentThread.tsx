@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
@@ -15,12 +15,18 @@ function countReplies(comment: CommentNode): number {
 export function CommentThread({
   comment,
   onReply,
+  replyTo,
+  replyBox,
+  onReplyBoxReady,
   depth = 0,
   highlightId,
   onHighlightReady,
 }: {
   comment: CommentNode;
   onReply: (id: string) => void;
+  replyTo?: string | null;
+  replyBox?: ReactNode;
+  onReplyBoxReady?: (node: View) => void;
   depth?: number;
   highlightId?: string | null;
   onHighlightReady?: (node: View) => void;
@@ -33,11 +39,18 @@ export function CommentThread({
   const deleted = comment.moderationStatus === "author_deleted";
   const nested = depth > 0;
   const highlighted = highlightId === comment.id;
+  const replying = replyTo === comment.id;
   const cardRef = useRef<View>(null);
+  const replyBoxRef = useRef<View>(null);
+  const replyAnnounced = useRef(false);
 
   useEffect(() => {
     if (highlighted && cardRef.current) onHighlightReady?.(cardRef.current);
   }, [highlighted, comment.id, onHighlightReady]);
+
+  useEffect(() => {
+    replyAnnounced.current = false;
+  }, [replying]);
 
   if (collapsed && !highlighted) {
     return (
@@ -100,8 +113,22 @@ export function CommentThread({
             ) : null}
             {!deleted ? (
               <Pressable onPress={() => onReply(comment.id)} hitSlop={6}>
-                <Text style={styles.reply}>Reply</Text>
+                <Text style={styles.reply}>{replying ? "Cancel" : "Reply"}</Text>
               </Pressable>
+            ) : null}
+            {replying ? (
+              <View
+                ref={replyBoxRef}
+                collapsable={false}
+                onLayout={() => {
+                  if (replyAnnounced.current || !replyBoxRef.current) return;
+                  replyAnnounced.current = true;
+                  onReplyBoxReady?.(replyBoxRef.current);
+                }}
+                style={styles.replyBox}
+              >
+                {replyBox}
+              </View>
             ) : null}
           </View>
         </View>
@@ -113,6 +140,9 @@ export function CommentThread({
               key={reply.id}
               comment={reply}
               onReply={onReply}
+              replyTo={replyTo}
+              replyBox={replyBox}
+              onReplyBoxReady={onReplyBoxReady}
               depth={depth + 1}
               highlightId={highlightId}
               onHighlightReady={onHighlightReady}
@@ -169,6 +199,7 @@ function makeStyles(colors: Palette) {
     deletedBody: { color: colors.faint, fontSize: 15, fontStyle: "italic" },
     image: { width: "100%", height: 160, borderRadius: 10, marginTop: 8, backgroundColor: colors.field },
     reply: { color: colors.muted, marginTop: 8, fontSize: 12, fontWeight: "600" },
+    replyBox: { marginTop: 10 },
     replies: { marginTop: 8, gap: 8 },
   });
 }

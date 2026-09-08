@@ -4,11 +4,8 @@ import { useRouter } from "expo-router";
 import { PasswordField } from "@/components/PasswordField";
 import { ScreenScroll } from "@/components/Screen";
 import { useAuth } from "@/lib/auth";
-import { openExternal } from "@/lib/media";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
-
-const FORGOT_PASSWORD_URL = "https://www.agor4.com/forgot-password";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -62,7 +59,7 @@ export default function LoginScreen() {
         />
 
         <Pressable
-          onPress={() => void openExternal(FORGOT_PASSWORD_URL, false)}
+          onPress={() => router.push("/forgot-password")}
           hitSlop={6}
           accessibilityRole="link"
           accessibilityLabel="Forgot password"

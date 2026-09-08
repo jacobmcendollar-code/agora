@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  findNodeHandle,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,6 +20,30 @@ import type { Community, PostFormat } from "@/lib/types";
 import { ScreenScroll } from "@/components/Screen";
 
 type PostType = "text" | "link" | "image";
+
+const GENERIC_POST_ERROR = "Couldn't post. Check your connection and try again.";
+
+function isNativeDump(text: string) {
+  return /ExpoModulesCore|Promise\.swift|NativeModulesProxy|exception in host function|\nat\s/i.test(
+    text
+  );
+}
+
+function friendlyError(err: unknown, fallback: string): string {
+  const extra = err as { data?: { error?: unknown }; message?: unknown };
+  const api = typeof extra.data?.error === "string" ? extra.data.error.trim() : "";
+  if (api && api.length <= 160 && !isNativeDump(api)) return api;
+  const message = typeof extra.message === "string" ? extra.message.trim() : "";
+  if (
+    message &&
+    message.length <= 160 &&
+    !isNativeDump(message) &&
+    !/^Request failed/i.test(message)
+  ) {
+    return message;
+  }
+  return fallback;
+}
 
 function allowedTypes(format: PostFormat | undefined): PostType[] {
   if (format === "discussion") return ["text"];
@@ -45,6 +71,11 @@ export default function SubmitScreen() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const titleFilledFor = useRef<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
+  const titleFieldRef = useRef<View>(null);
+  const linkFieldRef = useRef<View>(null);
+  const bodyFieldRef = useRef<View>(null);
 
   const showNsfw = Boolean(user?.showNsfw);
   const visible = communities.filter((c) => showNsfw || !c.nsfw);
@@ -95,6 +126,37 @@ export default function SubmitScreen() {
       .slice(0, 8);
   }, [query, visible]);
 
+  function scrollFieldIntoView(nodeRef: { current: View | null }) {
+    const node = nodeRef.current;
+    const scroll = scrollRef.current;
+    const relative = contentRef.current;
+    if (!node || !scroll || !relative) return;
+    const handle = findNodeHandle(relative);
+    if (!handle) return;
+    node.measureLayout(
+      handle,
+      (_x, y) => {
+        scroll.scrollTo({ y: Math.max(0, y - 20), animated: true });
+      },
+      () => {}
+    );
+  }
+
+  function resetForm() {
+    setSelected("");
+    setQuery("");
+    setPostType("link");
+    setTitle("");
+    setBody("");
+    setUrl("");
+    setImageUrl(null);
+    setPreviewThumb(null);
+    setError(null);
+    setExistingPostId(null);
+    titleFilledFor.current = null;
+    if (params.community) router.setParams({ community: "" });
+  }
+
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -121,7 +183,7 @@ export default function SubmitScreen() {
       });
       setImageUrl(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(friendlyError(err, "Couldn't upload. Check your connection and try again."));
     } finally {
       setUploading(false);
     }
@@ -155,10 +217,11 @@ export default function SubmitScreen() {
         url: postType === "link" ? url.trim() || null : null,
         imageUrl: postType === "image" ? imageUrl : null,
       });
+      resetForm();
       router.push(`/post/${data.id}`);
     } catch (err) {
-      const extra = err as Error & { data?: { existingPostId?: string; error?: string } };
-      setError(extra.data?.error || extra.message || "Failed to create post");
+      const extra = err as Error & { data?: { existingPostId?: string } };
+      setError(friendlyError(err, GENERIC_POST_ERROR));
       if (extra.data?.existingPostId) setExistingPostId(extra.data.existingPostId);
     } finally {
       setLoading(false);
@@ -192,7 +255,8 @@ export default function SubmitScreen() {
   const types = typeLabels.filter((t) => typesAllowed.includes(t.key));
 
   return (
-    <ScreenScroll>
+    <ScreenScroll scrollRef={scrollRef} avoidKeyboard>
+      <View ref={contentRef} collapsable={false}>
       <Text style={styles.heading}>Create a post</Text>
       <Text style={styles.sub}>Posts are lightly checked for spam and off-topic content.</Text>
 
@@ -203,7 +267,11 @@ export default function SubmitScreen() {
             <Pressable onPress={() => router.push(`/post/${existingPostId}`)}>
               <Text style={styles.link}>Open the existing post</Text>
             </Pressable>
-          ) : null}
+          ) : (
+            <Pressable onPress={onSubmit} disabled={loading || uploading}>
+              <Text style={styles.link}>Try again</Text>
+            </Pressable>
+          )}
         </View>
       ) : null}
 
@@ -259,7 +327,7 @@ export default function SubmitScreen() {
         ))}
       </View>
 
-      <View style={styles.titleRow}>
+      <View ref={titleFieldRef} collapsable={false} style={styles.titleRow}>
         <Text style={styles.label}>Title</Text>
         <Text style={styles.counter}>{title.length}/300</Text>
       </View>
@@ -270,10 +338,11 @@ export default function SubmitScreen() {
         placeholder="A clear, descriptive title"
         placeholderTextColor={colors.faint}
         style={styles.input}
+        onFocus={() => scrollFieldIntoView(titleFieldRef)}
       />
 
       {postType === "link" ? (
-        <>
+        <View ref={linkFieldRef} collapsable={false}>
           <Text style={styles.label}>Link</Text>
           <TextInput
             value={url}
@@ -284,12 +353,13 @@ export default function SubmitScreen() {
             autoCorrect={false}
             keyboardType="url"
             style={styles.input}
+            onFocus={() => scrollFieldIntoView(linkFieldRef)}
           />
           <Text style={styles.hint}>Add discussion in the comments after posting.</Text>
           {previewThumb ? (
             <Image source={{ uri: previewThumb }} style={styles.preview} />
           ) : null}
-        </>
+        </View>
       ) : null}
 
       {postType === "image" ? (
@@ -311,7 +381,7 @@ export default function SubmitScreen() {
       ) : null}
 
       {postType === "text" || postType === "image" ? (
-        <>
+        <View ref={bodyFieldRef} collapsable={false}>
           <Text style={styles.label}>Text (optional)</Text>
           <TextInput
             value={body}
@@ -320,8 +390,9 @@ export default function SubmitScreen() {
             placeholderTextColor={colors.faint}
             multiline
             style={[styles.input, styles.textarea]}
+            onFocus={() => scrollFieldIntoView(bodyFieldRef)}
           />
-        </>
+        </View>
       ) : null}
 
       <Pressable
@@ -331,6 +402,7 @@ export default function SubmitScreen() {
       >
         <Text style={styles.primaryText}>{loading ? "Posting…" : "Post"}</Text>
       </Pressable>
+      </View>
     </ScreenScroll>
   );
 }

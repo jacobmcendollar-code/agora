@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { ChromePad, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 
@@ -10,6 +10,7 @@ export function ScreenScroll({
   includeTabs = true,
   scrollRef,
   onScrollOffset,
+  avoidKeyboard = false,
 }: {
   children: ReactNode;
   onRefresh?: () => void;
@@ -17,10 +18,11 @@ export function ScreenScroll({
   includeTabs?: boolean;
   scrollRef?: Ref<ScrollView>;
   onScrollOffset?: (y: number) => void;
+  avoidKeyboard?: boolean;
 }) {
   const chrome = useChrome();
   const colors = useThemeColors();
-  return (
+  const scroll = (
     <ScrollView
       ref={scrollRef}
       onScroll={(e) => {
@@ -29,6 +31,7 @@ export function ScreenScroll({
       }}
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={avoidKeyboard ? "interactive" : undefined}
       contentContainerStyle={{ paddingHorizontal: 16 }}
       refreshControl={
         onRefresh ? (
@@ -44,6 +47,17 @@ export function ScreenScroll({
       {children}
       <ChromePad edge="bottom" includeTabs={includeTabs} />
     </ScrollView>
+  );
+
+  if (!avoidKeyboard) return scroll;
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.fill}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      {scroll}
+    </KeyboardAvoidingView>
   );
 }
 
