@@ -17,6 +17,7 @@ import {
   type KeyboardEvent,
 } from "react-native";
 import { useFocusEffect, useGlobalSearchParams, useLocalSearchParams, useRouter } from "expo-router";
+import { CommentComposer, type ComposerDraft } from "@/components/CommentComposer";
 import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
 import { CommentThread } from "@/components/CommentThread";
 import { LinkPreviewCard } from "@/components/LinkPreviewCard";
@@ -86,9 +87,7 @@ export default function PostDetailScreen() {
   const [sort, setSort] = useState<"best" | "newest">("best");
   const [loading, setLoading] = useState(!cached);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
-  const [commentBody, setCommentBody] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [replyBody, setReplyBody] = useState("");
   const [posting, setPosting] = useState(false);
   const commentBoxRef = useRef<View>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -371,30 +370,30 @@ export default function PostDetailScreen() {
       chrome.pin();
       setReplyTo(id);
     }
-    setReplyBody("");
   }
 
-  async function submitComment(parentId: string | null) {
-    const text = parentId ? replyBody : commentBody;
+  async function submitComment(parentId: string | null, draft: ComposerDraft): Promise<boolean> {
     if (!user) {
       router.push("/login");
-      return;
+      return false;
     }
-    if (!id || !text.trim()) return;
+    if (!id || (!draft.body.trim() && !draft.imageUrl)) return false;
     setPosting(true);
     try {
-      await createComment({ postId: id, body: text.trim(), parentId });
-      if (parentId) {
-        setReplyBody("");
-        setReplyTo(null);
-      } else {
-        setCommentBody("");
-      }
+      await createComment({
+        postId: id,
+        body: draft.body.trim(),
+        parentId,
+        imageUrl: draft.imageUrl,
+      });
+      if (parentId) setReplyTo(null);
       const data = await fetchPostDetail(id);
       setPost(data.post);
       setComments(data.comments);
+      return true;
     } catch (err) {
       Alert.alert("Could not comment", err instanceof Error ? err.message : "Try again");
+      return false;
     } finally {
       setPosting(false);
     }
@@ -478,27 +477,16 @@ export default function PostDetailScreen() {
         style={styles.commentBox}
       >
         {user ? (
-          <>
-            <TextInput
-              value={commentBody}
-              onChangeText={setCommentBody}
-              placeholder="Add a comment"
-              placeholderTextColor={colors.faint}
-              multiline
-              style={styles.input}
-              onFocus={() => {
-                if (replyTo) return;
-                if (commentBoxRef.current) scheduleComposerScroll(commentBoxRef.current);
-              }}
-            />
-            <Pressable
-              style={[styles.primary, (!commentBody.trim() || posting) && { opacity: 0.5 }]}
-              onPress={() => submitComment(null)}
-              disabled={!commentBody.trim() || posting}
-            >
-              <Text style={styles.primaryText}>{posting ? "Posting…" : "Comment"}</Text>
-            </Pressable>
-          </>
+          <CommentComposer
+            placeholder="Add a comment"
+            submitLabel="Comment"
+            posting={posting}
+            onSubmit={(draft) => submitComment(null, draft)}
+            onFocus={() => {
+              if (replyTo) return;
+              if (commentBoxRef.current) scheduleComposerScroll(commentBoxRef.current);
+            }}
+          />
         ) : (
           <Pressable onPress={() => router.push("/login")}>
             <Text style={styles.loginHint}>Log in to comment</Text>
@@ -533,28 +521,17 @@ export default function PostDetailScreen() {
               replyTo={replyTo}
               onReplyBoxReady={onReplyBoxReady}
               replyBox={
-                <View>
-                  <TextInput
-                    ref={replyInputRef}
-                    value={replyBody}
-                    onChangeText={setReplyBody}
-                    placeholder="Write a reply"
-                    placeholderTextColor={colors.faint}
-                    multiline
-                    style={styles.input}
-                    autoFocus
-                    onFocus={() => {
-                      if (keyboardHeight.current > 0) forceReplyScroll();
-                    }}
-                  />
-                  <Pressable
-                    style={[styles.primary, (!replyBody.trim() || posting) && { opacity: 0.5 }]}
-                    onPress={() => submitComment(replyTo)}
-                    disabled={!replyBody.trim() || posting}
-                  >
-                    <Text style={styles.primaryText}>{posting ? "Posting…" : "Reply"}</Text>
-                  </Pressable>
-                </View>
+                <CommentComposer
+                  placeholder="Write a reply"
+                  submitLabel="Reply"
+                  posting={posting}
+                  inputRef={replyInputRef}
+                  autoFocus
+                  onSubmit={(draft) => submitComment(replyTo, draft)}
+                  onFocus={() => {
+                    if (keyboardHeight.current > 0) forceReplyScroll();
+                  }}
+                />
               }
               highlightId={targetComment?.id}
               onHighlightReady={(node) => scrollToNode(node, "comment")}
@@ -600,20 +577,6 @@ function makeStyles(colors: Palette) {
     borderRadius: 14,
     padding: 12,
   },
-  input: {
-    minHeight: 80,
-    color: colors.text,
-    fontSize: 16,
-    textAlignVertical: "top",
-  },
-  primary: {
-    marginTop: 8,
-    backgroundColor: colors.emeraldDark,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  primaryText: { color: colors.white, fontWeight: "700" },
   loginHint: { color: colors.emerald, fontWeight: "600", textAlign: "center", paddingVertical: 8 },
   sortRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 20, marginBottom: 8 },
   sort: { color: colors.faint, fontWeight: "600" },
