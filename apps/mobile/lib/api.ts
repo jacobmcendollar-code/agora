@@ -173,12 +173,32 @@ export async function createComment(payload: {
   postId: string;
   body: string;
   parentId?: string | null;
+  imageUrl?: string | null;
 }) {
   return apiJson<{ id: string }>("/api/comments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      postId: payload.postId,
+      body: payload.body.trim() || null,
+      parentId: payload.parentId ?? null,
+      imageUrl: payload.imageUrl || null,
+    }),
   });
+}
+
+export type GifResult = {
+  id: string;
+  url: string;
+  preview: string;
+  title: string;
+};
+
+export async function searchGifs(q: string): Promise<GifResult[]> {
+  const data = await apiJson<{ results?: GifResult[] }>(
+    `/api/gifs/search?q=${encodeURIComponent(q.trim())}`
+  );
+  return data.results || [];
 }
 
 export async function forgotPassword(email: string) {
