@@ -126,26 +126,31 @@ export function CommentThread({
             {!deleted && comment.imageUrl ? (
               <Image source={{ uri: comment.imageUrl }} style={styles.image} />
             ) : null}
-            {!deleted ? (
+            {!deleted && !replying ? (
               <Pressable onPress={() => onReply(comment.id)} hitSlop={6}>
-                <Text style={styles.reply}>{replying ? "Cancel" : "Reply"}</Text>
+                <Text style={styles.reply}>Reply</Text>
               </Pressable>
-            ) : null}
-            {replying ? (
-              <View
-                ref={replyBoxRef}
-                collapsable={false}
-                onLayout={() => {
-                  if (replyBoxRef.current) onReplyBoxReady?.(replyBoxRef.current);
-                }}
-                style={styles.replyBox}
-              >
-                {replyBox}
-              </View>
             ) : null}
           </View>
         </View>
       </View>
+      {replying ? (
+        <View
+          ref={replyBoxRef}
+          collapsable={false}
+          onLayout={() => {
+            if (replyBoxRef.current) onReplyBoxReady?.(replyBoxRef.current);
+          }}
+          style={[styles.card, styles.replyBox]}
+        >
+          {!deleted ? (
+            <Pressable onPress={() => onReply(comment.id)} hitSlop={6}>
+              <Text style={styles.replyCancel}>Cancel</Text>
+            </Pressable>
+          ) : null}
+          {replyBox}
+        </View>
+      ) : null}
       {replies.length > 0 ? (
         <View style={styles.replies}>
           {replies.map((reply) => (
@@ -212,7 +217,8 @@ function makeStyles(colors: Palette) {
     deletedBody: { color: colors.faint, fontSize: 15, fontStyle: "italic" },
     image: { width: "100%", height: 160, borderRadius: 10, marginTop: 8, backgroundColor: colors.field },
     reply: { color: colors.muted, marginTop: 8, fontSize: 12, fontWeight: "600" },
-    replyBox: { marginTop: 10 },
+    replyCancel: { color: colors.muted, marginBottom: 8, fontSize: 12, fontWeight: "600" },
+    replyBox: { marginTop: 8 },
     replies: { marginTop: 8, gap: 8 },
   });
 }
