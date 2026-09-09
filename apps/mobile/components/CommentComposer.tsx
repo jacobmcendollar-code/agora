@@ -63,10 +63,12 @@ export function CommentComposer({
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [body, setBody] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focused, setFocused] = useState(Boolean(autoFocus));
   const [gifOpen, setGifOpen] = useState(false);
   const [gifQuery, setGifQuery] = useState("");
   const [gifResults, setGifResults] = useState<GifResult[]>([]);
@@ -75,6 +77,7 @@ export function CommentComposer({
   useEffect(() => {
     return () => {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      if (blurTimer.current) clearTimeout(blurTimer.current);
     };
   }, []);
 
@@ -113,23 +116,27 @@ export function CommentComposer({
     await uploadFile(asset.fileName || "image.jpg", asset.mimeType || "image/jpeg", asset.base64, asset.fileSize);
   }
 
-  async function pasteImage() {
+  async function ingestClipboardImage() {
     try {
-      const hasImage = await Clipboard.hasImageAsync();
-      if (!hasImage) {
-        setError("No image on clipboard");
-        return;
-      }
+      if (!(await Clipboard.hasImageAsync())) return;
       const img = await Clipboard.getImageAsync({ format: "jpeg", jpegQuality: 0.85 });
-      if (!img?.data) {
-        setError("Could not read clipboard image");
-        return;
-      }
+      if (!img?.data) return;
       const parsed = stripDataUrl(img.data);
       await uploadFile("screenshot.jpg", parsed.fileType, parsed.fileData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not paste image");
     }
+  }
+
+  function handleFocus() {
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    setFocused(true);
+    onFocus?.();
+  }
+
+  function handleBlur() {
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    blurTimer.current = setTimeout(() => setFocused(false), 180);
   }
 
   function clearImage() {
@@ -183,18 +190,48 @@ export function CommentComposer({
   return (
     <View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TextInput
-        ref={inputRef}
-        value={body}
-        onChangeText={setBody}
-        placeholder={placeholder}
-        placeholderTextColor={colors.faint}
-        multiline
-        maxLength={10000}
-        style={styles.input}
-        autoFocus={autoFocus}
-        onFocus={onFocus}
-      />
+      <View>
+        <TextInput
+          ref={inputRef}
+          value={body}
+          onChangeText={setBody}
+          placeholder={placeholder}
+          placeholderTextColor={colors.faint}
+          multiline
+          maxLength={10000}
+          style={styles.input}
+          autoFocus={autoFocus}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onPaste={() => {
+            void ingestClipboardImage();
+          }}
+        />
+        {focused || gifOpen ? (
+          <View style={styles.tools}>
+            <Pressable
+              onPress={pickImage}
+              disabled={uploading}
+              hitSlop={6}
+              accessibilityLabel={uploading ? "Uploading…" : "Add image"}
+              style={styles.tool}
+            >
+              {uploading ? <ActivityIndicator size="small" color={colors.muted} /> : <ImageIcon color={colors.muted} />}
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (gifOpen) closeGif();
+                else setGifOpen(true);
+              }}
+              hitSlop={6}
+              accessibilityLabel="Add GIF"
+              style={styles.tool}
+            >
+              <Text style={styles.toolLabel}>GIF</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
       {imageUrl ? (
         <View style={styles.previewWrap}>
           <Image source={{ uri: imageUrl }} style={styles.preview} />
@@ -208,37 +245,6 @@ export function CommentComposer({
           </Pressable>
         </View>
       ) : null}
-      <View style={styles.tools}>
-        <Pressable
-          onPress={pickImage}
-          disabled={uploading}
-          hitSlop={6}
-          accessibilityLabel={uploading ? "Uploading…" : "Add image"}
-          style={styles.tool}
-        >
-          {uploading ? <ActivityIndicator size="small" color={colors.muted} /> : <ImageIcon color={colors.muted} />}
-        </Pressable>
-        <Pressable
-          onPress={pasteImage}
-          disabled={uploading}
-          hitSlop={6}
-          accessibilityLabel="Paste image"
-          style={styles.tool}
-        >
-          <Text style={styles.toolLabel}>Paste</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            if (gifOpen) closeGif();
-            else setGifOpen(true);
-          }}
-          hitSlop={6}
-          accessibilityLabel="Add GIF"
-          style={styles.tool}
-        >
-          <Text style={styles.toolLabel}>GIF</Text>
-        </Pressable>
-      </View>
       {gifOpen ? (
         <View style={styles.gifBox}>
           <TextInput
@@ -312,7 +318,7 @@ function makeStyles(colors: Palette) {
       justifyContent: "center",
     },
     removeText: { color: colors.white, fontSize: 14, lineHeight: 16, fontWeight: "700" },
-    tools: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+    tools: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 6 },
     tool: {
       minHeight: 32,
       minWidth: 32,
