@@ -191,14 +191,9 @@ function makeStyles(colors: Palette, theme: ResolvedTheme) {
       borderRadius: 8,
     },
     themeSegItemActive: {
-      backgroundColor: colors.card,
-      shadowColor: "#000",
-      shadowOpacity: theme === "light" ? 0.1 : 0.35,
-      shadowRadius: 3,
-      shadowOffset: { width: 0, height: 1 },
-      elevation: 2,
+      backgroundColor: colors.emerald,
     },
     themeSegText: { color: sub, fontSize: 13, fontWeight: "600" },
-    themeSegTextActive: { color: colors.text },
+    themeSegTextActive: { color: colors.white },
   });
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { IconChevron } from "@/components/Icons";
 import { ScreenScroll } from "@/components/Screen";
 import { Username } from "@/components/Username";
 import { fetchMutes, muteUser, type MutedUser } from "@/lib/api";
@@ -156,11 +157,12 @@ export default function UserProfileScreen() {
           {isOwn ? (
             <Pressable
               onPress={() => router.push("/edit-profile")}
-              accessibilityRole="button"
+              accessibilityRole="link"
               accessibilityLabel="Edit profile"
-              style={styles.editBtn}
+              style={styles.editLink}
             >
-              <Text style={styles.editBtnText}>Edit profile</Text>
+              <Text style={styles.editLinkText}>Edit profile</Text>
+              <IconChevron color={colors.emerald} size={14} />
             </Pressable>
           ) : user && targetId ? (
             <Pressable
@@ -181,7 +183,13 @@ export default function UserProfileScreen() {
       <View style={styles.tabs}>
         {(isOwn ? (["posts", "comments", "muted"] as const) : (["posts", "comments"] as const)).map(
           (key) => (
-            <Pressable key={key} onPress={() => setTab(key)} style={styles.tabBtn}>
+            <Pressable
+              key={key}
+              onPress={() => setTab(key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: activeTab === key }}
+              style={[styles.tabBtn, activeTab === key && styles.tabBtnActive]}
+            >
               <Text style={[styles.tabLabel, activeTab === key && styles.tabActive]}>
                 {key === "posts" ? "Posts" : key === "comments" ? "Comments" : "Muted"}
               </Text>
@@ -284,15 +292,15 @@ function makeStyles(colors: Palette) {
   name: { color: colors.text, fontSize: 22, fontWeight: "800" },
   joined: { color: colors.muted, marginTop: 4, fontSize: 13 },
   bio: { color: colors.text, marginTop: 10, fontSize: 15, lineHeight: 21 },
-  editBtn: {
+  editLink: {
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 12,
-    backgroundColor: colors.emerald,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    minHeight: 44,
+    paddingVertical: 12,
   },
-  editBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
+  editLinkText: { color: colors.emerald, fontSize: 15, fontWeight: "600" },
   muteBtn: {
     alignSelf: "flex-start",
     marginTop: 12,
@@ -313,13 +321,20 @@ function makeStyles(colors: Palette) {
   unmuteBtnText: { color: colors.rose },
   tabs: {
     flexDirection: "row",
-    borderBottomWidth: 1,
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     marginTop: 18,
     marginBottom: 14,
   },
-  tabBtn: { flex: 1, paddingVertical: 10, alignItems: "center" },
-  tabLabel: { color: colors.faint, fontWeight: "600", fontSize: 14 },
+  tabBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  tabBtnActive: { borderBottomColor: colors.emerald },
+  tabLabel: { color: colors.muted, fontSize: 14, fontWeight: "600" },
   tabActive: { color: colors.emerald },
   mutedText: { color: colors.muted, fontSize: 14 },
   commentBody: { color: colors.text, fontSize: 15, lineHeight: 21 },

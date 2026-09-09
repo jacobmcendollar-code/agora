@@ -136,11 +136,12 @@ export default function AccountScreen() {
           {joinedLabel ? <Text style={styles.joined}>{joinedLabel}</Text> : null}
           <Pressable
             onPress={() => router.push(`/u/${encodeURIComponent(user.username.toLowerCase())}`)}
-            accessibilityRole="button"
+            accessibilityRole="link"
             accessibilityLabel="View profile"
-            style={styles.cta}
+            style={styles.viewLink}
           >
-            <Text style={styles.ctaText}>View profile</Text>
+            <Text style={styles.viewLinkText}>View profile</Text>
+            <IconChevron color={colors.emerald} size={14} />
           </Pressable>
         </View>
       ) : null}
@@ -200,15 +201,14 @@ function makeStyles(colors: Palette) {
       paddingHorizontal: 12,
     },
     joined: { color: colors.faint, fontSize: 13, marginTop: 8 },
-    cta: {
-      marginTop: 18,
-      marginBottom: 12,
-      backgroundColor: colors.emerald,
-      borderRadius: 12,
+    viewLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 12,
+      minHeight: 44,
       paddingVertical: 12,
-      paddingHorizontal: 28,
     },
-    ctaText: { color: colors.white, fontSize: 16, fontWeight: "700" },
+    viewLinkText: { color: colors.emerald, fontSize: 15, fontWeight: "600" },
     group: { marginTop: 16 },
     groupLabel: {
       color: colors.faint,
