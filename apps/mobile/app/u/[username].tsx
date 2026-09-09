@@ -321,14 +321,16 @@ function makeStyles(colors: Palette) {
   unmuteBtnText: { color: colors.rose },
   tabs: {
     flexDirection: "row",
-    paddingHorizontal: 4,
+    marginHorizontal: -16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     marginTop: 18,
     marginBottom: 14,
   },
   tabBtn: {
-    paddingHorizontal: 12,
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 8,
     paddingVertical: 10,
     borderBottomWidth: 2,
     borderBottomColor: "transparent",

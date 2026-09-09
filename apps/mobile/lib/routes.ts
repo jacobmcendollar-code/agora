@@ -20,11 +20,27 @@ function withComment(path: string, commentId: string | null): string {
   return `${path}?comment=${encodeURIComponent(commentId)}`;
 }
 
+function pathFromLink(raw: string): string {
+  if (/^agora:/i.test(raw)) {
+    try {
+      const url = new URL(raw);
+      if (url.hostname && !url.hostname.includes(".")) {
+        const rest = url.pathname === "/" ? "" : url.pathname;
+        return `/${url.hostname}${rest}`;
+      }
+      return url.pathname || "/";
+    } catch {
+      return "/";
+    }
+  }
+  const withoutOrigin = raw.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "");
+  return (withoutOrigin.split("#")[0] || "/").split("?")[0] || "/";
+}
+
 export function mapSitePath(link: string): string {
   const raw = link.trim();
   if (!raw) return "/";
-  const withoutOrigin = raw.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "");
-  const path = (withoutOrigin.split("#")[0] || "/").split("?")[0] || "/";
+  const path = pathFromLink(raw);
   const commentId = commentIdFromSiteLink(raw);
 
   const post = path.match(/^\/c\/[^/]+\/posts\/([^/]+)\/?$/);

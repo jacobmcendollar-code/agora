@@ -53,15 +53,17 @@ export function SortChips({
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
     wrap: {
+      marginHorizontal: -12,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
     row: {
       flexDirection: "row",
-      paddingHorizontal: 4,
     },
     tab: {
-      paddingHorizontal: 12,
+      flex: 1,
+      alignItems: "center",
+      paddingHorizontal: 4,
       paddingVertical: 10,
       borderBottomWidth: 2,
       borderBottomColor: "transparent",

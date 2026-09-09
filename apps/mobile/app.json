@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.agor4.app",
+      "associatedDomains": ["applinks:www.agor4.com", "applinks:agor4.com"],
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["twitter", "tiktok", "snssdk1233", "instagram"],
         "UIBackgroundModes": ["remote-notification"]
