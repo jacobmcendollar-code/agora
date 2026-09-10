@@ -4,7 +4,7 @@ import type { Palette } from "@/lib/theme";
 
 export type SortKey = "my" | "trending" | "recent" | "top";
 
-/** First-paint dock ceiling. chipsDock clips at this height, so onHeight cannot grow past it. */
+/** First-paint list spacer. The open dock sizes to the row, not this number. */
 export const SORT_CHIPS_HEIGHT = 48;
 
 const HOME_OPTIONS: { key: SortKey; label: string }[] = [
@@ -82,6 +82,7 @@ function makeStyles(colors: Palette) {
     label: {
       color: colors.muted,
       fontSize: 14,
+      lineHeight: 20,
       fontWeight: "600",
     },
     labelActive: {

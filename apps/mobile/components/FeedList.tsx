@@ -19,6 +19,8 @@ import type { Community, FeedPost } from "@/lib/types";
 import { FeedCard } from "./FeedCard";
 import { SORT_CHIPS_HEIGHT, SortChips, type SortKey } from "./SortChips";
 
+const CHIPS_DOCK_OPEN_MAX = 4096;
+
 type Props = {
   community?: string;
   hideCommunity?: boolean;
@@ -54,7 +56,7 @@ export function FeedList({
     const shown = 1 - chrome.hidden.value;
     return {
       top: insets.top + space.headerBody * shown,
-      height: chipsH * shown,
+      maxHeight: shown === 1 ? CHIPS_DOCK_OPEN_MAX : chipsH * shown,
     };
   });
   const chipsPadStyle = useAnimatedStyle(() => ({
@@ -233,7 +235,7 @@ export function FeedList({
           onChange={setSort}
           showMyFeed={showMyFeed}
           onHeight={(h) => {
-            if (h >= 36) setChipsH(h);
+            if (h >= 36) setChipsH((prev) => (h > prev ? h : prev));
           }}
         />
       </Animated.View>
