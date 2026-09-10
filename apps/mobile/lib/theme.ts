@@ -10,6 +10,8 @@ export type Palette = {
   faint: string;
   emerald: string;
   emeraldDark: string;
+  /** Softer than username emerald — in-body comment links (style C). */
+  emeraldSoft: string;
   rose: string;
   white: string;
   chipActive: string;
@@ -33,6 +35,7 @@ export const darkColors: Palette = {
   faint: "#71717a",
   emerald: "#10b981",
   emeraldDark: "#059669",
+  emeraldSoft: "#4a9d7c",
   rose: "#f43f5e",
   white: "#ffffff",
   chipActive: "#064e3b",
@@ -56,6 +59,7 @@ export const lightColors: Palette = {
   faint: "#a8a29e",
   emerald: "#059669",
   emeraldDark: "#047857",
+  emeraldSoft: "#2d8a64",
   rose: "#e11d48",
   white: "#ffffff",
   chipActive: "#d1fae5",
