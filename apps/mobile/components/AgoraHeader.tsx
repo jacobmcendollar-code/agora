@@ -5,11 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconBack, IconBell } from "./Icons";
 import { fetchNotifications } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { AnimatedView, useChrome } from "@/lib/chrome";
+import { AnimatedView, isTabRoot, pressHomeTab, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import { logoHeight, logoWidth, space, type Palette } from "@/lib/theme";
 
-const TAB_ROOTS = new Set(["/", "/communities", "/search", "/submit"]);
 const AVATAR = 28;
 
 /** True on the route itself, a trailing slash, or a nested path under it. */
@@ -29,7 +28,7 @@ export function AgoraHeader() {
   const onAccount = isOnRoute(pathname, "/account");
   const onNotifications = isOnRoute(pathname, "/notifications");
   const hideMiniAvatar = onAccount || onNotifications;
-  const showBack = !TAB_ROOTS.has(pathname);
+  const showBack = !isTabRoot(pathname);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -101,12 +100,17 @@ export function AgoraHeader() {
             </Pressable>
           )}
         </View>
-        <Image
-          source={require("../assets/agora-logo.png")}
-          style={{ height: logoHeight, width: logoWidth }}
-          resizeMode="contain"
-          accessibilityLabel="Agora"
-        />
+        <Pressable
+          onPress={() => pressHomeTab(pathname, router)}
+          accessibilityRole="button"
+          accessibilityLabel="Home"
+        >
+          <Image
+            source={require("../assets/agora-logo.png")}
+            style={{ height: logoHeight, width: logoWidth }}
+            resizeMode="contain"
+          />
+        </Pressable>
         <View style={[styles.side, styles.sideRight]}>
           {user ? (
             <Pressable

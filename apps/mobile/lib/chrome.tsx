@@ -6,7 +6,8 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from "react-native";
+import { DeviceEventEmitter, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle } from "react-native";
+import type { Href } from "expo-router";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,6 +16,39 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { space } from "./theme";
+
+export const HOME_TAB_REPRESS = "agora.homeTabRepress";
+
+const TAB_ROOTS = new Set(["/", "/communities", "/search", "/submit"]);
+
+export function normalizePath(pathname: string) {
+  return pathname.replace(/\/+$/, "") || "/";
+}
+
+/** Tab roots — no Back button, no edge-swipe pop. */
+export function isTabRoot(pathname: string) {
+  return TAB_ROOTS.has(normalizePath(pathname));
+}
+
+/** Tab navigator routes. Stack screens (post, notifications, profile, …) are not. */
+export function isTabSurface(pathname: string) {
+  const path = normalizePath(pathname);
+  return TAB_ROOTS.has(path) || path.startsWith("/community/");
+}
+
+/** Same path as tapping the Home tab icon. */
+export function pressHomeTab(
+  pathname: string,
+  router: { dismissTo: (href: Href) => void; navigate: (href: Href) => void }
+) {
+  DeviceEventEmitter.emit(HOME_TAB_REPRESS);
+  if (normalizePath(pathname) === "/") return;
+  if (!isTabSurface(pathname)) {
+    router.dismissTo("/");
+    return;
+  }
+  router.navigate("/");
+}
 
 type ChromeContextValue = {
   headerHeight: number;
@@ -137,5 +171,3 @@ export function ChromePad({
 }
 
 export const AnimatedView = Animated.View;
-
-export const HOME_TAB_REPRESS = "agora.homeTabRepress";
