@@ -1,11 +1,54 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Image, InteractionManager, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, InteractionManager, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
+import { IconExternal } from "@/components/Icons";
 import { Username } from "@/components/Username";
 import { VoteSpears } from "@/components/VoteSpears";
-import { useThemeColors } from "@/lib/preferences";
+import { displayLinkPath, splitBodyLinks } from "@/lib/bodyLinks";
+import { openExternal } from "@/lib/media";
+import { usePreferences, useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import { timeAgo } from "@/lib/time";
 import type { CommentNode } from "@/lib/types";
+
+function CommentBody({
+  body,
+  style,
+  linkStyle,
+  iconColor,
+}: {
+  body: string;
+  style: StyleProp<TextStyle>;
+  linkStyle: StyleProp<TextStyle>;
+  iconColor: string;
+}) {
+  const { openSocialInNativeApp } = usePreferences();
+  const parts = splitBodyLinks(body);
+  return (
+    <Text style={style}>
+      {parts.map((part, i) => {
+        if (part.type !== "url") {
+          return <Text key={i}>{part.value}</Text>;
+        }
+        const label = displayLinkPath(part.value);
+        return (
+          <Text
+            key={i}
+            onPress={() => {
+              void openExternal(part.value, openSocialInNativeApp);
+            }}
+            style={linkStyle}
+            accessibilityRole="link"
+            accessibilityLabel={`Open ${label}`}
+          >
+            {label}
+            {"\u00a0"}
+            <IconExternal color={iconColor} size={11} />
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
 
 function countReplies(comment: CommentNode): number {
   const replies = comment.replies || [];
@@ -120,9 +163,16 @@ export function CommentThread({
                 <Text style={styles.collapseAction}>Collapse</Text>
               </Pressable>
             </View>
-            <Text style={deleted ? styles.deletedBody : styles.body}>
-              {deleted ? "[deleted]" : comment.body}
-            </Text>
+            {deleted ? (
+              <Text style={styles.deletedBody}>[deleted]</Text>
+            ) : (
+              <CommentBody
+                body={comment.body}
+                style={styles.body}
+                linkStyle={styles.link}
+                iconColor={colors.emeraldSoft}
+              />
+            )}
             {!deleted && comment.imageUrl ? (
               <Image source={{ uri: comment.imageUrl }} style={styles.image} />
             ) : null}
@@ -214,6 +264,11 @@ function makeStyles(colors: Palette) {
     meta: { color: colors.faint, fontSize: 12 },
     deletedMeta: { color: colors.faint, fontSize: 12, fontWeight: "600" },
     body: { color: colors.text, fontSize: 15, lineHeight: 21 },
+    link: {
+      color: colors.emeraldSoft,
+      textDecorationLine: "underline",
+      textDecorationColor: colors.emeraldSoft,
+    },
     deletedBody: { color: colors.faint, fontSize: 15, fontStyle: "italic" },
     image: { width: "100%", height: 160, borderRadius: 10, marginTop: 8, backgroundColor: colors.field },
     reply: { color: colors.muted, marginTop: 8, fontSize: 12, fontWeight: "600" },
