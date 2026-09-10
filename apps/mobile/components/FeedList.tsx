@@ -8,15 +8,16 @@ import {
   View,
   type FlatList,
 } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchCommunities, fetchFeed } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ChromePad, HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
-import type { Palette } from "@/lib/theme";
+import { space, type Palette } from "@/lib/theme";
 import type { Community, FeedPost } from "@/lib/types";
 import { FeedCard } from "./FeedCard";
-import { SortChips, type SortKey } from "./SortChips";
+import { SORT_CHIPS_HEIGHT, SortChips, type SortKey } from "./SortChips";
 
 type Props = {
   community?: string;
@@ -45,8 +46,20 @@ export function FeedList({
 }: Props) {
   const { user } = useAuth();
   const chrome = useChrome();
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  const [chipsH, setChipsH] = useState(SORT_CHIPS_HEIGHT);
+  const chipsDockStyle = useAnimatedStyle(() => {
+    const shown = 1 - chrome.hidden.value;
+    return {
+      top: insets.top + space.headerBody * shown,
+      height: chipsH * shown,
+    };
+  });
+  const chipsPadStyle = useAnimatedStyle(() => ({
+    height: chipsH * (1 - chrome.hidden.value),
+  }));
   const listRef = useRef<FlatList<FeedPost>>(null);
   const showMyFeed = Boolean(user) && !community;
   const [sort, setSort] = useState<SortKey>(() => (user && !community ? "my" : "trending"));
@@ -161,62 +174,84 @@ export function FeedList({
     );
 
   return (
-    <Animated.FlatList
-      ref={listRef}
-      data={visible}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <FeedCard post={item} hideCommunity={hideCommunity} />}
-      onScroll={chrome.onScroll}
-      scrollEventThrottle={16}
-      contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexGrow: 1 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.emerald}
-          colors={[colors.emerald]}
-          progressBackgroundColor={colors.card}
-          progressViewOffset={chrome.headerHeight}
-        />
-      }
-      onEndReached={onEnd}
-      onEndReachedThreshold={0.6}
-      ListHeaderComponent={
-        <View>
-          <ChromePad edge="top" extra={8} />
-          {refreshing ? (
-            <ActivityIndicator color={colors.emerald} style={styles.refreshSpinner} />
-          ) : null}
-          {header}
-          <SortChips value={sort} onChange={setSort} showMyFeed={showMyFeed} />
-        </View>
-      }
-      ListEmptyComponent={
-        loading ? (
-          <ActivityIndicator color={colors.emerald} style={{ marginTop: 40 }} />
-        ) : (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-            <Text style={styles.emptyBody}>{emptyBody}</Text>
+    <View style={styles.fill}>
+      <Animated.FlatList
+        ref={listRef}
+        data={visible}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <FeedCard post={item} hideCommunity={hideCommunity} />}
+        onScroll={chrome.onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 10, flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.emerald}
+            colors={[colors.emerald]}
+            progressBackgroundColor={colors.card}
+            progressViewOffset={chrome.headerHeight + chipsH}
+          />
+        }
+        onEndReached={onEnd}
+        onEndReachedThreshold={0.6}
+        ListHeaderComponent={
+          <View>
+            <ChromePad edge="top" extra={0} />
+            <Animated.View style={[{ height: chipsH }, chipsPadStyle]} />
+            <View style={{ height: 8 }} />
+            {refreshing ? (
+              <ActivityIndicator color={colors.emerald} style={styles.refreshSpinner} />
+            ) : null}
+            {header}
           </View>
-        )
-      }
-      ListFooterComponent={
-        <View>
-          {loadingMore ? (
-            <ActivityIndicator color={colors.emerald} style={{ marginVertical: 16 }} />
-          ) : !nextPage && visible.length > 0 ? (
-            <Text style={styles.end}>You’ve reached the end</Text>
-          ) : null}
-          <ChromePad edge="bottom" extra={24} />
-        </View>
-      }
-    />
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator color={colors.emerald} style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>{emptyTitle}</Text>
+              <Text style={styles.emptyBody}>{emptyBody}</Text>
+            </View>
+          )
+        }
+        ListFooterComponent={
+          <View>
+            {loadingMore ? (
+              <ActivityIndicator color={colors.emerald} style={{ marginVertical: 16 }} />
+            ) : !nextPage && visible.length > 0 ? (
+              <Text style={styles.end}>You’ve reached the end</Text>
+            ) : null}
+            <ChromePad edge="bottom" extra={24} />
+          </View>
+        }
+      />
+      <Animated.View pointerEvents="box-none" style={[styles.chipsDock, chipsDockStyle]}>
+        <SortChips
+          value={sort}
+          onChange={setSort}
+          showMyFeed={showMyFeed}
+          onHeight={(h) => {
+            if (h >= 36) setChipsH(h);
+          }}
+        />
+      </Animated.View>
+    </View>
   );
 }
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
+    fill: { flex: 1 },
+    chipsDock: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      zIndex: 15,
+      overflow: "hidden",
+      backgroundColor: colors.bg,
+    },
     refreshSpinner: { marginBottom: 10 },
     empty: {
       marginTop: 32,

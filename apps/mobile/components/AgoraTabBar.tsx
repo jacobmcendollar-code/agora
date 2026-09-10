@@ -1,4 +1,4 @@
-import { DeviceEventEmitter, Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { usePathname, useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -7,7 +7,7 @@ import {
   IconSearch,
   IconSubmit,
 } from "@/components/Icons";
-import { AnimatedView, HOME_TAB_REPRESS, useChrome } from "@/lib/chrome";
+import { AnimatedView, isTabSurface, pressHomeTab, useChrome } from "@/lib/chrome";
 import { useThemeColors } from "@/lib/preferences";
 import { space, type Palette } from "@/lib/theme";
 
@@ -26,14 +26,6 @@ const TABS: TabDef[] = [
 ];
 
 const ICON = 27;
-
-const TAB_SURFACES = new Set(["/", "/communities", "/search", "/submit"]);
-
-/** Tab navigator routes. Stack screens (post, notifications, profile, …) are not. */
-function isTabSurface(pathname: string) {
-  const path = pathname.replace(/\/+$/, "") || "/";
-  return TAB_SURFACES.has(path) || path.startsWith("/community/");
-}
 
 export function AgoraTabBar() {
   const insets = useSafeAreaInsets();
@@ -59,13 +51,7 @@ export function AgoraTabBar() {
             key={tab.path}
             onPress={() => {
               if (tab.path === "/") {
-                DeviceEventEmitter.emit(HOME_TAB_REPRESS);
-                if (pathname === "/") return;
-                if (!isTabSurface(pathname)) {
-                  router.dismissTo(tab.href);
-                  return;
-                }
-                router.navigate(tab.href);
+                pressHomeTab(pathname, router);
                 return;
               }
               if (pathname === tab.path) return;

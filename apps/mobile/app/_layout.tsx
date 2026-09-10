@@ -8,6 +8,7 @@ import { Platform, View } from "react-native";
 import "react-native-reanimated";
 import { AgoraHeader } from "@/components/AgoraHeader";
 import { AgoraTabBar } from "@/components/AgoraTabBar";
+import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ChromeProvider } from "@/lib/chrome";
 import { hrefFromPushData } from "@/lib/notification";
@@ -75,57 +76,62 @@ function Gate() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style={resolvedTheme === "light" ? "dark" : "light"} />
       <ChromeProvider>
-        <View style={{ flex: 1, backgroundColor: colors.bg }}>
-          <PushTapListener />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.bg },
-              animation: "slide_from_right",
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            {/* Post is a root stack screen (not a tab) so back pops to the
-                opener — Home, community, search, profile, or Notifications —
-                instead of leaving Notifications under a nested (tabs) push. */}
-            <Stack.Screen
-              name="post/[id]"
-              options={{
+        <EdgeSwipeBack>
+          <View style={{ flex: 1, backgroundColor: colors.bg }}>
+            <PushTapListener />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.bg },
                 animation: "slide_from_right",
+                gestureEnabled: true,
                 gestureDirection: "horizontal",
-                gestureEnabled: true,
                 animationMatchesGesture: true,
               }}
-            />
-            <Stack.Screen name="u/[username]" />
-            <Stack.Screen
-              name="account"
-              options={{
-                animation: "slide_from_left",
-                gestureEnabled: true,
-                animationMatchesGesture: true,
-              }}
-            />
-            <Stack.Screen
-              name="notifications"
-              options={{
-                animation: "slide_from_right",
-                gestureDirection: "horizontal",
-                gestureEnabled: true,
-                animationMatchesGesture: true,
-                animationTypeForReplace: "pop",
-              }}
-            />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="forgot-password" />
-            <Stack.Screen name="register" />
-            <Stack.Screen name="settings" />
-            <Stack.Screen name="edit-profile" />
-            <Stack.Screen name="about" />
-          </Stack>
-          <AgoraHeader />
-          <AgoraTabBar />
-        </View>
+            >
+              <Stack.Screen name="(tabs)" />
+              {/* Post is a root stack screen (not a tab) so back pops to the
+                  opener — Home, community, search, profile, or Notifications —
+                  instead of leaving Notifications under a nested (tabs) push. */}
+              <Stack.Screen
+                name="post/[id]"
+                options={{
+                  animation: "slide_from_right",
+                  gestureDirection: "horizontal",
+                  gestureEnabled: true,
+                  animationMatchesGesture: true,
+                }}
+              />
+              <Stack.Screen name="u/[username]" />
+              <Stack.Screen
+                name="account"
+                options={{
+                  animation: "slide_from_left",
+                  gestureEnabled: true,
+                  animationMatchesGesture: true,
+                }}
+              />
+              <Stack.Screen
+                name="notifications"
+                options={{
+                  animation: "slide_from_right",
+                  gestureDirection: "horizontal",
+                  gestureEnabled: true,
+                  animationMatchesGesture: true,
+                  animationTypeForReplace: "pop",
+                }}
+              />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="forgot-password" />
+              <Stack.Screen name="register" />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="edit-profile" />
+              <Stack.Screen name="about" />
+            </Stack>
+            <AgoraHeader />
+            <AgoraTabBar />
+          </View>
+        </EdgeSwipeBack>
       </ChromeProvider>
     </View>
   );

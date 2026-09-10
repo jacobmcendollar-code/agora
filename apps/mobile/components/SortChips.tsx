@@ -4,6 +4,9 @@ import type { Palette } from "@/lib/theme";
 
 export type SortKey = "my" | "trending" | "recent" | "top";
 
+/** paddingVertical 10×2 + label ~18 + tab underline 2 + wrap hairline */
+export const SORT_CHIPS_HEIGHT = 42;
+
 const HOME_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "my", label: "My Feed" },
   { key: "trending", label: "Trending" },
@@ -21,17 +24,22 @@ export function SortChips({
   value,
   onChange,
   showMyFeed,
+  onHeight,
 }: {
   value: SortKey;
   onChange: (key: SortKey) => void;
   showMyFeed?: boolean;
+  onHeight?: (height: number) => void;
 }) {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const options = showMyFeed ? HOME_OPTIONS : COMMUNITY_OPTIONS;
 
   return (
-    <View style={styles.wrap}>
+    <View
+      style={styles.wrap}
+      onLayout={onHeight ? (e) => onHeight(e.nativeEvent.layout.height) : undefined}
+    >
       <View style={styles.row}>
         {options.map((opt) => {
           const active = value === opt.key;
@@ -53,7 +61,7 @@ export function SortChips({
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
     wrap: {
-      marginHorizontal: -12,
+      backgroundColor: colors.bg,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
