@@ -17,7 +17,7 @@ import { useThemeColors } from "@/lib/preferences";
 import { space, type Palette } from "@/lib/theme";
 import type { Community, FeedPost } from "@/lib/types";
 import { FeedCard } from "./FeedCard";
-import { SORT_CHIPS_HEIGHT, SortChips, type SortKey } from "./SortChips";
+import { SORT_CHIPS_FIRST_PAINT, SortChips, type SortKey } from "./SortChips";
 
 type Props = {
   community?: string;
@@ -49,12 +49,13 @@ export function FeedList({
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const [chipsH, setChipsH] = useState(SORT_CHIPS_HEIGHT);
+  const [chipsH, setChipsH] = useState(SORT_CHIPS_FIRST_PAINT);
   const chipsDockStyle = useAnimatedStyle(() => {
     const shown = 1 - chrome.hidden.value;
     return {
       top: insets.top + space.headerBody * shown,
       height: chipsH * shown,
+      overflow: shown === 1 ? "visible" : "hidden",
     };
   });
   const chipsPadStyle = useAnimatedStyle(() => ({
@@ -233,7 +234,7 @@ export function FeedList({
           onChange={setSort}
           showMyFeed={showMyFeed}
           onHeight={(h) => {
-            if (h >= 36) setChipsH(h);
+            if (h >= 36) setChipsH((prev) => (h > prev ? h : prev));
           }}
         />
       </Animated.View>
@@ -249,7 +250,6 @@ function makeStyles(colors: Palette) {
       left: 0,
       right: 0,
       zIndex: 15,
-      overflow: "hidden",
       backgroundColor: colors.bg,
     },
     refreshSpinner: { marginBottom: 10 },
