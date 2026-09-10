@@ -4,8 +4,7 @@ import type { Palette } from "@/lib/theme";
 
 export type SortKey = "my" | "trending" | "recent" | "top";
 
-/** First-paint list spacer. The open dock sizes to the row, not this number. */
-export const SORT_CHIPS_HEIGHT = 48;
+export const SORT_CHIPS_FIRST_PAINT = 48;
 
 const HOME_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "my", label: "My Feed" },
