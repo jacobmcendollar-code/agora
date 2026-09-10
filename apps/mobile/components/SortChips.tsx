@@ -4,8 +4,8 @@ import type { Palette } from "@/lib/theme";
 
 export type SortKey = "my" | "trending" | "recent" | "top";
 
-/** paddingVertical 10×2 + label ~18 + tab underline 2 + wrap hairline */
-export const SORT_CHIPS_HEIGHT = 42;
+/** First-paint dock ceiling. chipsDock clips at this height, so onHeight cannot grow past it. */
+export const SORT_CHIPS_HEIGHT = 48;
 
 const HOME_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "my", label: "My Feed" },
