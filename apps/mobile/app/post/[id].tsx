@@ -281,24 +281,16 @@ export default function PostDetailScreen() {
 
         if (Math.abs(delta) < 6) return;
         scroll.scrollTo({ y: Math.max(0, scrollOffset.current + delta), animated: true });
-        if (attempt < 6) again(attempt + 1, 180);
       });
     },
     [chrome.headerHeight, chrome.tabBarHeight]
   );
 
-  const scheduleComposerScroll = useCallback(
-    (node: View, focusReply = false) => {
+  const scrollComposer = useCallback(
+    (node: View | null) => {
+      if (!node) return;
       scrollGen.current += 1;
-      const run = () => {
-        scrollNodeIntoView(node, 0);
-        if (focusReply) replyInputRef.current?.focus();
-      };
-      run();
-      requestAnimationFrame(run);
-      InteractionManager.runAfterInteractions(run);
-      setTimeout(run, 80);
-      setTimeout(run, 280);
+      scrollNodeIntoView(node, 0);
     },
     [scrollNodeIntoView]
   );
@@ -307,44 +299,31 @@ export default function PostDetailScreen() {
     (node: View) => {
       replyBoxNode.current = node;
       replyInputRef.current?.focus();
-      // Clear the tab / home-indicator overlay now; the keyboard listener forces the real scroll.
-      if (keyboardHeight.current === 0) scrollNodeIntoView(node, 0);
+      if (keyboardHeight.current > 0) scrollComposer(node);
     },
-    [scrollNodeIntoView]
+    [scrollComposer]
   );
-
-  const forceReplyScroll = useCallback(() => {
-    const node = replyBoxNode.current;
-    if (!node) return;
-    scrollGen.current += 1;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollNodeIntoView(node, 0);
-        replyInputRef.current?.focus();
-      });
-    });
-  }, [scrollNodeIntoView]);
 
   useEffect(() => {
     const onShow = (e: KeyboardEvent) => {
       keyboardHeight.current = e.endCoordinates.height;
       setKbPad(e.endCoordinates.height);
-      if (!replyTo) return;
-      forceReplyScroll();
+      chrome.pin();
+      const node = replyTo ? replyBoxNode.current : commentBoxRef.current;
+      if (node) scrollComposer(node);
     };
     const onHide = () => {
       keyboardHeight.current = 0;
       setKbPad(0);
+      if (!replyTo) chrome.unpin();
     };
-    const will = Keyboard.addListener("keyboardWillShow", onShow);
-    const did = Keyboard.addListener("keyboardDidShow", onShow);
+    const show = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow", onShow);
     const hide = Keyboard.addListener("keyboardDidHide", onHide);
     return () => {
-      will.remove();
-      did.remove();
+      show.remove();
       hide.remove();
     };
-  }, [replyTo, forceReplyScroll]);
+  }, [replyTo, chrome, scrollComposer]);
 
   useEffect(() => {
     if (!replyTo) {
@@ -420,14 +399,15 @@ export default function PostDetailScreen() {
   }
 
   const linkUrl = post.url;
+  const emptyMin = Math.max(200, Dimensions.get("window").height - chrome.headerHeight - 120);
 
   return (
     <EdgeSwipeBack>
     <ScreenScroll
       scrollRef={scrollRef}
-      avoidKeyboard
-      keyboardInsets
-      endSpacer={replyTo ? chrome.tabBarHeight + 80 + (Platform.OS === "android" ? kbPad : 0) : 0}
+      keyboardDismissMode="interactive"
+      contentInsetAdjustmentBehavior="never"
+      endSpacer={kbPad > 0 ? kbPad + 40 : replyTo ? chrome.tabBarHeight + 80 : 0}
       onScrollOffset={(y) => {
         scrollOffset.current = y;
       }}
@@ -484,7 +464,10 @@ export default function PostDetailScreen() {
             onSubmit={(draft) => submitComment(null, draft)}
             onFocus={() => {
               if (replyTo) return;
-              if (commentBoxRef.current) scheduleComposerScroll(commentBoxRef.current);
+              chrome.pin();
+              if (keyboardHeight.current > 0 && commentBoxRef.current) {
+                scrollComposer(commentBoxRef.current);
+              }
             }}
           />
         ) : (
@@ -505,40 +488,42 @@ export default function PostDetailScreen() {
         <Text style={styles.count}>{comments.length} comments</Text>
       </View>
 
-      {comments.length === 0 ? (
-        <Text style={styles.empty}>
-          {error
-            ? "Comments load from GET /api/posts/[id] after this PR is deployed."
-            : "No comments yet"}
-        </Text>
-      ) : (
-        <View style={styles.threadList} collapsable={false}>
-          {tree.map((c) => (
-            <CommentThread
-              key={c.id}
-              comment={c}
-              onReply={onReply}
-              replyTo={replyTo}
-              onReplyBoxReady={onReplyBoxReady}
-              replyBox={
-                <CommentComposer
-                  placeholder="Write a reply"
-                  submitLabel="Reply"
-                  posting={posting}
-                  inputRef={replyInputRef}
-                  autoFocus
-                  onSubmit={(draft) => submitComment(replyTo, draft)}
-                  onFocus={() => {
-                    if (keyboardHeight.current > 0) forceReplyScroll();
-                  }}
-                />
-              }
-              highlightId={targetComment?.id}
-              onHighlightReady={(node) => scrollToNode(node, "comment")}
-            />
-          ))}
-        </View>
-      )}
+      <View collapsable={false} style={comments.length === 0 ? { minHeight: emptyMin } : undefined}>
+        {comments.length === 0 ? (
+          <Text style={styles.empty}>
+            {error
+              ? "Comments load from GET /api/posts/[id] after this PR is deployed."
+              : "No comments yet"}
+          </Text>
+        ) : (
+          <View style={styles.threadList} collapsable={false}>
+            {tree.map((c) => (
+              <CommentThread
+                key={c.id}
+                comment={c}
+                onReply={onReply}
+                replyTo={replyTo}
+                onReplyBoxReady={onReplyBoxReady}
+                replyBox={
+                  <CommentComposer
+                    placeholder="Write a reply"
+                    submitLabel="Reply"
+                    posting={posting}
+                    inputRef={replyInputRef}
+                    autoFocus
+                    onSubmit={(draft) => submitComment(replyTo, draft)}
+                    onFocus={() => {
+                      if (keyboardHeight.current > 0) scrollComposer(replyBoxNode.current);
+                    }}
+                  />
+                }
+                highlightId={targetComment?.id}
+                onHighlightReady={(node) => scrollToNode(node, "comment")}
+              />
+            ))}
+          </View>
+        )}
+      </View>
       </View>
     </ScreenScroll>
     </EdgeSwipeBack>

@@ -12,6 +12,8 @@ export function ScreenScroll({
   onScrollOffset,
   avoidKeyboard = false,
   keyboardInsets = false,
+  keyboardDismissMode,
+  contentInsetAdjustmentBehavior,
   endSpacer = 0,
 }: {
   children: ReactNode;
@@ -22,6 +24,8 @@ export function ScreenScroll({
   onScrollOffset?: (y: number) => void;
   avoidKeyboard?: boolean;
   keyboardInsets?: boolean;
+  keyboardDismissMode?: "interactive" | "on-drag" | "none";
+  contentInsetAdjustmentBehavior?: "automatic" | "scrollableAxes" | "never" | "always";
   endSpacer?: number;
 }) {
   const chrome = useChrome();
@@ -36,8 +40,9 @@ export function ScreenScroll({
       }}
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
-      keyboardDismissMode={avoidKeyboard || keyboardInsets ? "interactive" : undefined}
+      keyboardDismissMode={keyboardDismissMode ?? (avoidKeyboard || keyboardInsets ? "interactive" : undefined)}
       automaticallyAdjustKeyboardInsets={keyboardInsets}
+      contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
       contentContainerStyle={{ paddingHorizontal: 16 }}
       refreshControl={
         onRefresh ? (

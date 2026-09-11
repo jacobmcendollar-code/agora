@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
+import { TextInputWrapper, type PasteEventPayload } from "expo-paste-input";
 import * as ImagePicker from "expo-image-picker";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { searchGifs, uploadImage, type GifResult } from "@/lib/api";
@@ -31,6 +31,10 @@ function stripDataUrl(data: string): { fileType: string; fileData: string } {
 
 function byteSize(base64: string) {
   return Math.ceil((base64.length * 3) / 4);
+}
+
+function isRemoteImage(value: string) {
+  return /^(file|ph|assets-library|content):/i.test(value) || /^https?:\/\//i.test(value);
 }
 
 function ImageIcon({ color }: { color: string }) {
@@ -116,16 +120,26 @@ export function CommentComposer({
     await uploadFile(asset.fileName || "image.jpg", asset.mimeType || "image/jpeg", asset.base64, asset.fileSize);
   }
 
-  async function ingestClipboardImage() {
-    try {
-      if (!(await Clipboard.hasImageAsync())) return;
-      const img = await Clipboard.getImageAsync({ format: "jpeg", jpegQuality: 0.85 });
-      if (!img?.data) return;
-      const parsed = stripDataUrl(img.data);
-      await uploadFile("screenshot.jpg", parsed.fileType, parsed.fileData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not paste image");
+  async function ingestImagePayload(payload: string, fileType?: string) {
+    if (payload.startsWith("data:image") || !isRemoteImage(payload)) {
+      const parsed = stripDataUrl(payload);
+      await uploadFile("screenshot.jpg", fileType || parsed.fileType, parsed.fileData);
+      return;
     }
+    const res = await fetch(payload);
+    if (!res.ok) throw new Error("Could not read pasted image");
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+    await uploadFile("screenshot.jpg", fileType || "image/jpeg", btoa(binary));
+  }
+
+  function handlePaste(payload: PasteEventPayload) {
+    if (payload.type !== "images" || payload.uris.length === 0) return;
+    void ingestImagePayload(payload.uris[0]).catch((err) => {
+      setError(err instanceof Error ? err.message : "Could not paste image");
+    });
   }
 
   function handleFocus() {
@@ -191,22 +205,21 @@ export function CommentComposer({
     <View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <View>
-        <TextInput
-          ref={inputRef}
-          value={body}
-          onChangeText={setBody}
-          placeholder={placeholder}
-          placeholderTextColor={colors.faint}
-          multiline
-          maxLength={10000}
-          style={styles.input}
-          autoFocus={autoFocus}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onPaste={() => {
-            void ingestClipboardImage();
-          }}
-        />
+        <TextInputWrapper onPaste={handlePaste}>
+          <TextInput
+            ref={inputRef}
+            value={body}
+            onChangeText={setBody}
+            placeholder={placeholder}
+            placeholderTextColor={colors.faint}
+            multiline
+            maxLength={10000}
+            style={styles.input}
+            autoFocus={autoFocus}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+        </TextInputWrapper>
         {focused || gifOpen ? (
           <View style={styles.tools}>
             <Pressable
