@@ -43,12 +43,11 @@ export function SortChips({
         {options.map((opt) => {
           const active = value === opt.key;
           return (
-            <Pressable
-              key={opt.key}
-              onPress={() => onChange(opt.key)}
-              style={[styles.tab, active && styles.tabActive]}
-            >
-              <Text style={[styles.label, active && styles.labelActive]}>{opt.label}</Text>
+            <Pressable key={opt.key} onPress={() => onChange(opt.key)} style={styles.tab}>
+              <View style={styles.cluster}>
+                <Text style={[styles.label, active && styles.labelActive]}>{opt.label}</Text>
+                <View style={[styles.underline, active && styles.underlineOn]} />
+              </View>
             </Pressable>
           );
         })}
@@ -70,19 +69,26 @@ function makeStyles(colors: Palette) {
     tab: {
       flex: 1,
       alignItems: "center",
-      paddingHorizontal: 4,
-      paddingVertical: 10,
-      borderBottomWidth: 2,
-      borderBottomColor: "transparent",
+      paddingTop: 10,
     },
-    tabActive: {
-      borderBottomColor: colors.emerald,
+    cluster: {
+      alignItems: "center",
+    },
+    underline: {
+      alignSelf: "stretch",
+      height: 2,
+      marginTop: 10,
+      backgroundColor: "transparent",
+    },
+    underlineOn: {
+      backgroundColor: colors.emerald,
     },
     label: {
       color: colors.muted,
       fontSize: 14,
       lineHeight: 20,
       fontWeight: "600",
+      textAlign: "center",
     },
     labelActive: {
       color: colors.emerald,
