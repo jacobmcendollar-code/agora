@@ -65,6 +65,10 @@ ${communityRules ? `Additional community guidance for the AI: ${communityRules}`
 or
 {"allowed": false, "reason": "brief reason"}`;
 
+  // Official Apple / Agora beta invites look like promo CTAs; Grok otherwise
+  // classifies them as spam. Keep this narrower than general product promo.
+  const allowOfficialBetaInvites = `ALLOW official Apple TestFlight, App Store Connect, and testflight.apple.com invite/beta links, and official agor4.com beta/invite URLs (including sharing the Agora app TestFlight/beta invite in the agora community). These are not spam.`;
+
   // Posts: existing rules (spam, off-topic, illegal, adultRule for non-NSFW).
   // Comments: subtract off-topic + adultRule. Jokes/banter that aren't spam/illegal are allowed.
   const systemPrompt =
@@ -73,6 +77,7 @@ or
 
 Reject ONLY if the content clearly matches one of these:
 1. Spam / advertising / promotional content / bot-like repetitive posting
+   ${allowOfficialBetaInvites}
 2. ${illegalRule}
 
 Do NOT reject comments for being off-topic or unrelated to the community topic.
@@ -89,6 +94,7 @@ Reject ONLY if the content clearly matches one of these:
    Block only blatant vendor spam with little substance: affiliate dumps, pure promo CTAs, "we're excited to release…" with no discussion, bot-like repetitive ads.
    ALLOW product discussion, launches, demos, company announcements, and official or news-like posts about a product (e.g. Tesla Cybercab official launch posts).
    ALLOW a third-party or official link when it has context or a discussion hook. A naked hard-sell link with no substance is spam.
+   ${allowOfficialBetaInvites}
 2. Completely unrelated to the community topic
 3. ${illegalRule}${adultRule}
 
