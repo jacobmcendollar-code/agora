@@ -1,3 +1,6 @@
+import { readResponseTextLimited } from "@/lib/read-html";
+import { UPSTREAM_FETCH_REVALIDATE_SECONDS } from "@/lib/public-cache";
+
 /**
  * Tries to extract a thumbnail from a URL.
  * Special handling for YouTube and TikTok.
@@ -18,6 +21,7 @@ export async function fetchThumbnail(url: string): Promise<string | null> {
         const oembedRes = await fetch(
           `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
           {
+            next: { revalidate: UPSTREAM_FETCH_REVALIDATE_SECONDS },
             headers: {
               "User-Agent":
                 "Mozilla/5.0 (compatible; AgoraBot/1.0)",
@@ -41,6 +45,7 @@ export async function fetchThumbnail(url: string): Promise<string | null> {
 
     const res = await fetch(url, {
       signal: controller.signal,
+      next: { revalidate: UPSTREAM_FETCH_REVALIDATE_SECONDS },
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -52,7 +57,7 @@ export async function fetchThumbnail(url: string): Promise<string | null> {
 
     if (!res.ok) return null;
 
-    const html = await res.text();
+    const html = await readResponseTextLimited(res);
 
     const patterns = [
       /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,

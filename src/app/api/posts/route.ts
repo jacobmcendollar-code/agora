@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
 import { fetchThumbnail } from "@/lib/thumbnail";
+import { readResponseTextLimited } from "@/lib/read-html";
+import { UPSTREAM_FETCH_REVALIDATE_SECONDS } from "@/lib/public-cache";
 
 const schema = z.object({
   communityName: z.string().min(1),
@@ -64,6 +66,7 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
     const timeout = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(url, {
       signal: controller.signal,
+      next: { revalidate: UPSTREAM_FETCH_REVALIDATE_SECONDS },
       headers: {
         "User-Agent":
           "Mozilla/5.0 (compatible; AgoraBot/1.0; +https://agor4.com)",
@@ -72,7 +75,7 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
     });
     clearTimeout(timeout);
     if (!res.ok) return null;
-    const html = await res.text();
+    const html = await readResponseTextLimited(res);
     const patterns = [
       /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
       /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i,

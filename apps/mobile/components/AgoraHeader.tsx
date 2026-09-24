@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AppState, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconBack, IconBell } from "./Icons";
@@ -30,6 +30,7 @@ export function AgoraHeader() {
   const hideMiniAvatar = onAccount || onNotifications;
   const showBack = !isTabRoot(pathname);
   const [unread, setUnread] = useState(0);
+  const unreadFetchedAt = useRef(0);
 
   useEffect(() => {
     if (!user) {
@@ -41,15 +42,28 @@ export function AgoraHeader() {
       return;
     }
     let cancelled = false;
-    fetchNotifications()
-      .then((data) => {
-        if (!cancelled) setUnread(data.unreadCount);
-      })
-      .catch(() => {
+    const pollMs = 120_000;
+
+    async function load() {
+      if (AppState.currentState !== "active") return;
+      if (Date.now() - unreadFetchedAt.current < pollMs) return;
+      try {
+        const data = await fetchNotifications();
+        if (cancelled) return;
+        unreadFetchedAt.current = Date.now();
+        setUnread(data.unreadCount);
+      } catch {
         if (!cancelled) setUnread(0);
-      });
+      }
+    }
+
+    void load();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void load();
+    });
     return () => {
       cancelled = true;
+      sub.remove();
     };
   }, [user, pathname]);
 

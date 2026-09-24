@@ -1,24 +1,28 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: PRIVATE_NO_STORE_HEADERS }
+    );
   }
 
   const key = process.env.GIPHY_API_KEY;
   if (!key) {
     return NextResponse.json(
       { error: "GIPHY_API_KEY is not configured" },
-      { status: 500 }
+      { status: 500, headers: PRIVATE_NO_STORE_HEADERS }
     );
   }
 
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
   if (!q) {
-    return NextResponse.json({ results: [] });
+    return NextResponse.json({ results: [] }, { headers: PRIVATE_NO_STORE_HEADERS });
   }
 
   try {
@@ -30,12 +34,12 @@ export async function GET(req: Request) {
     url.searchParams.set("lang", "en");
 
     const res = await fetch(url.toString(), {
-      next: { revalidate: 0 },
+      next: { revalidate: 3600 },
     });
 
     if (!res.ok) {
       console.error("[gifs] Giphy error", res.status, await res.text());
-      return NextResponse.json({ error: "GIF search failed" }, { status: 502 });
+      return NextResponse.json({ error: "GIF search failed" }, { status: 502, headers: PRIVATE_NO_STORE_HEADERS });
     }
 
     const data = await res.json();
@@ -60,9 +64,9 @@ export async function GET(req: Request) {
       })
       .filter(Boolean);
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ results }, { headers: PRIVATE_NO_STORE_HEADERS });
   } catch (err) {
     console.error("[gifs] exception", err);
-    return NextResponse.json({ error: "GIF search failed" }, { status: 500 });
+    return NextResponse.json({ error: "GIF search failed" }, { status: 500, headers: PRIVATE_NO_STORE_HEADERS });
   }
 }

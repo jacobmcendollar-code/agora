@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 
 export type CommunityJson = {
@@ -12,20 +13,32 @@ export type CommunityJson = {
   joined: boolean;
 };
 
+const loadCommunityRows = unstable_cache(
+  async () => {
+    const communities = await prisma.community.findMany({
+      orderBy: { title: "asc" },
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        description: true,
+        nsfw: true,
+        postFormat: true,
+        createdAt: true,
+        _count: { select: { posts: true } },
+      },
+    });
+    return communities.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+    }));
+  },
+  ["community-rows-v1"],
+  { revalidate: 60 }
+);
+
 export async function listCommunities(userId?: string | null): Promise<CommunityJson[]> {
-  const communities = await prisma.community.findMany({
-    orderBy: { title: "asc" },
-    select: {
-      id: true,
-      name: true,
-      title: true,
-      description: true,
-      nsfw: true,
-      postFormat: true,
-      createdAt: true,
-      _count: { select: { posts: true } },
-    },
-  });
+  const communities = await loadCommunityRows();
 
   let joinedIds = new Set<string>();
   if (userId) {
@@ -43,7 +56,7 @@ export async function listCommunities(userId?: string | null): Promise<Community
     description: c.description,
     nsfw: c.nsfw,
     postFormat: c.postFormat,
-    createdAt: c.createdAt.toISOString(),
+    createdAt: c.createdAt,
     postCount: c._count.posts,
     joined: joinedIds.has(c.id),
   }));

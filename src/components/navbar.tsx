@@ -40,6 +40,7 @@ export function Navbar() {
   const desktopSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
   const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unreadFetchedAt = useRef(0);
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -50,10 +51,34 @@ export function Navbar() {
       setUnread(0);
       return;
     }
-    fetch("/api/notifications")
-      .then((r) => r.json())
-      .then((data) => setUnread(data.unreadCount || 0))
-      .catch(() => {});
+
+    let cancelled = false;
+    const pollMs = 120_000;
+
+    async function load() {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - unreadFetchedAt.current < pollMs) return;
+      try {
+        const r = await fetch("/api/notifications");
+        const data = await r.json();
+        if (cancelled) return;
+        unreadFetchedAt.current = Date.now();
+        setUnread(data.unreadCount || 0);
+      } catch {
+        // Keep the last badge if the request fails.
+      }
+    }
+
+    void load();
+    function onVisibility() {
+      if (document.visibilityState === "visible") void load();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [status, pathname]);
 
   useEffect(() => {

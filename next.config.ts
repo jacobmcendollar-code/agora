@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     // serverActions is stable in 15, but keep flexible
   },
   images: {
+    // Remote user and link thumbnails are plain <img> tags, so they skip the
+    // optimizer. This only applies when /_next/image is used (the local logo).
+    minimumCacheTTL: 60 * 60 * 24 * 31,
     remotePatterns: [
       {
         protocol: "https",
@@ -32,7 +35,7 @@ const nextConfig: NextConfig = {
         source: "/.well-known/apple-app-site-association",
         headers: [
           { key: "Content-Type", value: "application/json" },
-          { key: "Cache-Control", value: "public, max-age=3600" },
+          { key: "Cache-Control", value: "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" },
         ],
       },
     ];

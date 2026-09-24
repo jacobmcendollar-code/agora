@@ -1,4 +1,13 @@
 import { NextResponse } from "next/server";
+import { readResponseTextLimited } from "@/lib/read-html";
+import {
+  PUBLIC_PREVIEW_CACHE_HEADERS,
+  UPSTREAM_FETCH_REVALIDATE_SECONDS,
+} from "@/lib/public-cache";
+
+function previewJson(body: unknown) {
+  return NextResponse.json(body, { headers: PUBLIC_PREVIEW_CACHE_HEADERS });
+}
 
 function getYouTubeId(url: string): string | null {
   try {
@@ -24,23 +33,25 @@ export async function GET(req: Request) {
   const url = searchParams.get("url");
 
   if (!url) {
-    return NextResponse.json({ title: "", thumbnail: null, description: "" });
+    return previewJson({ title: "", thumbnail: null, description: "" });
   }
 
   // X / Twitter: never suggest a title
   if (url.includes("x.com") || url.includes("twitter.com")) {
     try {
       const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`;
-      const res = await fetch(oembedUrl);
+      const res = await fetch(oembedUrl, {
+        next: { revalidate: UPSTREAM_FETCH_REVALIDATE_SECONDS },
+      });
       const data = await res.json();
-      return NextResponse.json({
+      return previewJson({
         title: "",
         thumbnail: null,
         description: "",
         html: data.html || "",
       });
     } catch {
-      return NextResponse.json({
+      return previewJson({
         title: "",
         thumbnail: null,
         description: "",
@@ -54,6 +65,7 @@ export async function GET(req: Request) {
     try {
       const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
       const res = await fetch(oembedUrl, {
+        next: { revalidate: UPSTREAM_FETCH_REVALIDATE_SECONDS },
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; AgoraBot/1.0)",
         },
@@ -61,7 +73,7 @@ export async function GET(req: Request) {
 
       if (res.ok) {
         const data = await res.json();
-        return NextResponse.json({
+        return previewJson({
           title: (data.title || "").trim(),
           thumbnail:
             data.thumbnail_url ||
@@ -74,7 +86,7 @@ export async function GET(req: Request) {
     }
 
     // Fallback if oEmbed fails
-    return NextResponse.json({
+    return previewJson({
       title: "",
       thumbnail: `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`,
       description: "",
@@ -84,13 +96,14 @@ export async function GET(req: Request) {
   // General fallback for other sites
   try {
     const response = await fetch(url, {
+      next: { revalidate: UPSTREAM_FETCH_REVALIDATE_SECONDS },
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "text/html",
       },
     });
-    const html = await response.text();
+    const html = await readResponseTextLimited(response);
 
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const ogTitleMatch =
@@ -123,12 +136,12 @@ export async function GET(req: Request) {
     const description = (ogDescriptionMatch?.[1] || "").trim();
     const thumbnail = ogImageMatch?.[1] || null;
 
-    return NextResponse.json({
+    return previewJson({
       title,
       thumbnail,
       description,
     });
   } catch {
-    return NextResponse.json({ title: "", thumbnail: null, description: "" });
+    return previewJson({ title: "", thumbnail: null, description: "" });
   }
 }
