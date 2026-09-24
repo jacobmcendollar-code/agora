@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useEngagementVote } from "@/components/engagement-provider";
 
 type Props = {
   targetType: "post" | "comment";
@@ -18,26 +19,12 @@ export function VoteButtons({
 }: Props) {
   const { data: session } = useSession();
   const [score, setScore] = useState(initialScore);
-  const [userVote, setUserVote] = useState<1 | -1 | 0>(0);
+  const [userVote, setUserVote] = useEngagementVote(
+    targetType,
+    targetId,
+    Boolean(session?.user?.id)
+  );
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!session?.user?.id) {
-      setUserVote(0);
-      return;
-    }
-
-    fetch(`/api/vote/me?targetType=${targetType}&targetId=${targetId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.value === 1 || data.value === -1) {
-          setUserVote(data.value);
-        } else {
-          setUserVote(0);
-        }
-      })
-      .catch(() => {});
-  }, [session?.user?.id, targetType, targetId]);
 
   async function vote(value: 1 | -1) {
     if (!session) {

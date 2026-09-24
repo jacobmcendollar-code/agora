@@ -7,6 +7,7 @@ const ALLOWED_CRAWLERS = [
   "Bingbot",
   "Twitterbot",
   "facebookexternalhit",
+  "DuckDuckBot",
 ];
 
 const BLOCKED_CRAWLERS = [
@@ -32,6 +33,10 @@ const BLOCKED_CRAWLERS = [
   "img2dataset",
   "Timpibot",
   "DataForSeoBot",
+  "SemrushBot",
+  "AhrefsBot",
+  "MJ12bot",
+  "DotBot",
 ];
 
 export default function robots(): MetadataRoute.Robots {

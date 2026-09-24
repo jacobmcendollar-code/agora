@@ -80,6 +80,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (
+    (pathname === "/about" || pathname === "/privacy") &&
+    hasAuthSessionCookie(request)
+  ) {
+    return rewrite(request, `/internal${pathname}`);
+  }
+
   return NextResponse.next();
 }
 
@@ -87,5 +94,12 @@ export const config = {
   // Homepage social cards, plus anonymous-vs-logged-in rewrites.
   // Do not match _next/static, _next/image, images, favicon, icons,
   // robots, sitemap, .well-known, or other public files.
-  matcher: ["/", "/communities", "/c/:name", "/c/:name/posts/:postId"],
+  matcher: [
+    "/",
+    "/communities",
+    "/about",
+    "/privacy",
+    "/c/:name",
+    "/c/:name/posts/:postId",
+  ],
 };

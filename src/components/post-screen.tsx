@@ -31,11 +31,21 @@ type PostSession = {
   user?: { id?: string | null; username?: string | null } | null;
 } | null;
 
-const loadPostForMetadata = cache(async (postId: string) => {
+const loadPost = cache(async (postId: string) => {
   if (!hasDatabaseUrl()) return null;
   return prisma.post.findUnique({
     where: { id: postId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      body: true,
+      url: true,
+      thumbnail: true,
+      score: true,
+      commentCount: true,
+      moderationStatus: true,
+      authorId: true,
+      createdAt: true,
       community: { select: { name: true, title: true } },
       author: { select: { username: true } },
     },
@@ -148,7 +158,7 @@ export async function buildPostMetadata(
   name: string,
   postId: string
 ): Promise<Metadata> {
-  const post = await loadPostForMetadata(postId);
+  const post = await loadPost(postId);
 
   if (!post || post.community.name !== name) {
     return { title: "Post not found · Agora" };
@@ -195,13 +205,7 @@ export async function PostScreen({
   sort: "best" | "newest";
   session: PostSession;
 }) {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    include: {
-      author: { select: { username: true } },
-      community: { select: { name: true, title: true } },
-    },
-  });
+  const post = await loadPost(postId);
 
   if (!post || post.community.name !== name) notFound();
   if (post.moderationStatus === "removed") notFound();
@@ -224,7 +228,15 @@ export async function PostScreen({
       ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
     },
     orderBy: { createdAt: "asc" },
-    include: {
+    select: {
+      id: true,
+      body: true,
+      imageUrl: true,
+      score: true,
+      createdAt: true,
+      authorId: true,
+      parentId: true,
+      moderationStatus: true,
       author: { select: { username: true } },
     },
   });

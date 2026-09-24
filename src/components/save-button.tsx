@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
+import { useEngagementSaved } from "@/components/engagement-provider";
 
 type Props = {
   postId: string;
@@ -19,24 +20,12 @@ export function SaveButton({
   const { status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
-  const [saved, setSaved] = useState(initialSaved);
+  const [saved, setSaved] = useEngagementSaved(
+    postId,
+    status === "authenticated",
+    initialSaved
+  );
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    let cancelled = false;
-    fetch(`/api/posts/${postId}/save`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled && typeof data.saved === "boolean") {
-          setSaved(data.saved);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [postId, status]);
 
   async function toggleSave() {
     if (status !== "authenticated") {
