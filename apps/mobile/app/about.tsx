@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ScreenScroll } from "@/components/Screen";
+import { openExternal } from "@/lib/media";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
@@ -41,6 +42,17 @@ export default function AboutScreen() {
           <Text style={styles.cardBody}>{block.body}</Text>
         </View>
       ))}
+      <View style={styles.links}>
+        <Pressable onPress={() => void openExternal("https://www.agor4.com/privacy", false)}>
+          <Text style={styles.link}>Privacy</Text>
+        </Pressable>
+        <Pressable onPress={() => void openExternal("https://www.agor4.com/terms", false)}>
+          <Text style={styles.link}>Terms</Text>
+        </Pressable>
+        <Pressable onPress={() => void openExternal("https://www.agor4.com/support", false)}>
+          <Text style={styles.link}>Support</Text>
+        </Pressable>
+      </View>
     </ScreenScroll>
   );
 }
@@ -59,5 +71,7 @@ function makeStyles(colors: Palette) {
   },
   cardTitle: { color: colors.emerald, fontSize: 17, fontWeight: "700" },
   cardBody: { color: colors.muted, marginTop: 8, lineHeight: 22, fontSize: 15 },
+  links: { flexDirection: "row", gap: 16, marginTop: 8, marginBottom: 12 },
+  link: { color: colors.emerald, fontWeight: "700" },
   });
 }

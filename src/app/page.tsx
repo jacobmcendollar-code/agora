@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { authorNotIn, blockListsFor } from "@/lib/blocks";
 import { hotScore } from "@/lib/ranking";
 import { PostFeed } from "@/components/post-feed";
 import { WelcomeBanner } from "@/components/welcome-banner";
@@ -27,21 +28,18 @@ export default async function HomePage({ searchParams }: Props) {
   const isLoggedIn = !!session?.user?.id;
 
   let joinedCommunityIds: string[] = [];
-  let mutedIds: string[] = [];
+  let hiddenAuthorIds: string[] = [];
 
   if (isLoggedIn) {
-    const [subscriptions, mutes] = await Promise.all([
+    const [subscriptions, lists] = await Promise.all([
       prisma.subscription.findMany({
         where: { userId: session!.user!.id },
         select: { communityId: true },
       }),
-      prisma.mute.findMany({
-        where: { muterId: session!.user!.id },
-        select: { mutedId: true },
-      }),
+      blockListsFor(session!.user!.id),
     ]);
     joinedCommunityIds = subscriptions.map((s) => s.communityId);
-    mutedIds = mutes.map((m) => m.mutedId);
+    hiddenAuthorIds = lists.hiddenAuthorIds;
   }
 
   const hasJoinedCommunities = joinedCommunityIds.length > 0;
@@ -67,7 +65,7 @@ export default async function HomePage({ searchParams }: Props) {
         ...(useJoinedOnly
           ? { communityId: { in: joinedCommunityIds } }
           : {}),
-        ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
+        ...authorNotIn(hiddenAuthorIds),
       },
       take: 200,
       orderBy: { createdAt: "desc" },

@@ -58,6 +58,7 @@ export function mapSitePath(link: string): string {
 
   if (
     path === "/settings" ||
+    path === "/delete-account" ||
     path === "/about" ||
     path === "/login" ||
     path === "/register" ||

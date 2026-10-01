@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { blockListsFor, commentsVisibleToViewer } from "@/lib/blocks";
 import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
@@ -34,20 +35,27 @@ export async function GET(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    let mutedIds: string[] = [];
-    if (userId) {
-      const mutes = await prisma.mute.findMany({
-        where: { muterId: userId },
-        select: { mutedId: true },
-      });
-      mutedIds = mutes.map((m) => m.mutedId);
+    const lists = await blockListsFor(userId);
+    if (lists.hiddenAuthorIds.includes(post.authorId)) {
+      const youBlocked = lists.blockedByViewer.includes(post.authorId);
+      if (!youBlocked) {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      }
+      return NextResponse.json(
+        {
+          blocked: true,
+          blockedByYou: true,
+          userId: post.author.id,
+          username: post.author.username,
+        },
+        { headers: PRIVATE_NO_STORE_HEADERS }
+      );
     }
 
     const comments = await prisma.comment.findMany({
       where: {
         postId: post.id,
         moderationStatus: { in: ["approved", "author_deleted"] },
-        ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
       },
       orderBy: { createdAt: "asc" },
       include: {
@@ -56,6 +64,7 @@ export async function GET(
     });
 
     const isSoftDeleted = post.moderationStatus === "author_deleted";
+    const visibleComments = commentsVisibleToViewer(comments, lists.hiddenAuthorIds);
 
     return NextResponse.json(
       {
@@ -66,7 +75,7 @@ export async function GET(
             username: isSoftDeleted ? "[deleted]" : post.author.username,
           },
         },
-        comments: comments.map((c) => ({
+        comments: visibleComments.map((c) => ({
           ...c,
           author: {
             id: c.author.id,

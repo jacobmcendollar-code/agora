@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { authorNotIn, blockListsFor } from "@/lib/blocks";
 import { hotScore } from "@/lib/ranking";
 import { JoinButton } from "@/components/join-button";
 import { PostFeed } from "@/components/post-feed";
@@ -31,9 +32,9 @@ export default async function CommunityPage({ params, searchParams }: Props) {
   if (!community) notFound();
 
   let isJoined = false;
-  let mutedIds: string[] = [];
+  let hiddenAuthorIds: string[] = [];
   if (session?.user?.id) {
-    const [sub, mutes] = await Promise.all([
+    const [sub, lists] = await Promise.all([
       prisma.subscription.findUnique({
         where: {
           userId_communityId: {
@@ -42,20 +43,17 @@ export default async function CommunityPage({ params, searchParams }: Props) {
           },
         },
       }),
-      prisma.mute.findMany({
-        where: { muterId: session.user.id },
-        select: { mutedId: true },
-      }),
+      blockListsFor(session.user.id),
     ]);
     isJoined = !!sub;
-    mutedIds = mutes.map((m) => m.mutedId);
+    hiddenAuthorIds = lists.hiddenAuthorIds;
   }
 
   const posts = await prisma.post.findMany({
     where: {
       communityId: community.id,
       moderationStatus: { in: ["approved", "author_deleted"] },
-      ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
+      ...authorNotIn(hiddenAuthorIds),
     },
     take: 20,
     orderBy: { createdAt: "desc" },

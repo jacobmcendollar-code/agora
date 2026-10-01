@@ -9,6 +9,8 @@ import { formatJoinedMonthYear } from "@/lib/time";
 import type { Palette } from "@/lib/theme";
 
 const PRIVACY_URL = "https://www.agor4.com/privacy";
+const TERMS_URL = "https://www.agor4.com/terms";
+const SUPPORT_URL = "https://www.agor4.com/support";
 
 type MenuIcon = "settings" | "about";
 
@@ -85,6 +87,8 @@ export default function AccountScreen() {
           rows: [
             { key: "about", label: "About Agora", icon: "about", onPress: () => router.push("/about") },
             { key: "privacy", label: "Privacy", nested: true, onPress: () => void openExternal(PRIVACY_URL, false) },
+            { key: "terms", label: "Terms", nested: true, onPress: () => void openExternal(TERMS_URL, false) },
+            { key: "support", label: "Support", nested: true, onPress: () => void openExternal(SUPPORT_URL, false) },
           ],
         },
         {
@@ -116,6 +120,8 @@ export default function AccountScreen() {
           rows: [
             { key: "about", label: "About Agora", icon: "about", onPress: () => router.push("/about") },
             { key: "privacy", label: "Privacy", nested: true, onPress: () => void openExternal(PRIVACY_URL, false) },
+            { key: "terms", label: "Terms", nested: true, onPress: () => void openExternal(TERMS_URL, false) },
+            { key: "support", label: "Support", nested: true, onPress: () => void openExternal(SUPPORT_URL, false) },
           ],
         },
       ];

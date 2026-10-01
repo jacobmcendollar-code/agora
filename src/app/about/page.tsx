@@ -119,6 +119,15 @@ export default function AboutPage() {
         >
           ← Back to Home
         </Link>
+        <Link href="/privacy" className="text-sm font-medium text-zinc-600 hover:underline dark:text-zinc-400">
+          Privacy
+        </Link>
+        <Link href="/terms" className="text-sm font-medium text-zinc-600 hover:underline dark:text-zinc-400">
+          Terms
+        </Link>
+        <Link href="/support" className="text-sm font-medium text-zinc-600 hover:underline dark:text-zinc-400">
+          Support
+        </Link>
       </div>
     </div>
   );

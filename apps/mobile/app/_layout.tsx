@@ -125,6 +125,7 @@ function Gate() {
               <Stack.Screen name="forgot-password" />
               <Stack.Screen name="register" />
               <Stack.Screen name="settings" />
+              <Stack.Screen name="delete-account" />
               <Stack.Screen name="edit-profile" />
               <Stack.Screen name="about" />
             </Stack>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { authorNotIn, blockListsFor } from "@/lib/blocks";
 import { prisma } from "@/lib/prisma";
 import { formatScore, timeAgo } from "@/lib/utils";
 
@@ -11,6 +13,10 @@ type Props = {
 export default async function SearchPage({ searchParams }: Props) {
   const { q } = await searchParams;
   const query = (q || "").trim();
+  const session = await auth();
+  const hiddenAuthorIds = session?.user?.id
+    ? (await blockListsFor(session.user.id)).hiddenAuthorIds
+    : [];
 
   if (!query) {
     return (
@@ -43,6 +49,7 @@ export default async function SearchPage({ searchParams }: Props) {
           { title: { contains: query, mode: "insensitive" } },
           { body: { contains: query, mode: "insensitive" } },
         ],
+        ...authorNotIn(hiddenAuthorIds),
       },
       take: 30,
       orderBy: { createdAt: "desc" },

@@ -15,6 +15,7 @@ import {
 } from "@/components/edit-comment-button";
 import { DeleteCommentButton } from "@/components/delete-comment-button";
 import { ImageLightbox } from "@/components/image-lightbox";
+import { ContentActions } from "@/components/content-actions";
 
 type CommentData = {
   id: string;
@@ -34,6 +35,7 @@ type Props = {
   communityName: string;
   depth?: number;
   isAdminUser?: boolean;
+  blockedAuthorIds?: string[];
 };
 
 function countReplies(comment: CommentData): number {
@@ -50,6 +52,7 @@ export function Comment({
   communityName,
   depth = 0,
   isAdminUser = false,
+  blockedAuthorIds,
 }: Props) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -169,6 +172,15 @@ export function Comment({
                       <RemoveCommentButton commentId={comment.id} />
                     </>
                   )}
+                  {!isAuthor && !isSoftDeleted && (
+                    <ContentActions
+                      targetType="comment"
+                      targetId={comment.id}
+                      authorId={comment.authorId}
+                      authorUsername={comment.author.username}
+                      initialBlocked={blockedAuthorIds?.includes(comment.authorId)}
+                    />
+                  )}
                 </div>
                 <button
                   type="button"
@@ -230,6 +242,7 @@ export function Comment({
               communityName={communityName}
               depth={depth + 1}
               isAdminUser={isAdminUser}
+              blockedAuthorIds={blockedAuthorIds}
             />
           ))}
         </div>

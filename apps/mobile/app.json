@@ -8,7 +8,7 @@
     "scheme": "agora",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.agor4.app",
       "associatedDomains": ["applinks:www.agor4.com", "applinks:agor4.com"],
       "infoPlist": {

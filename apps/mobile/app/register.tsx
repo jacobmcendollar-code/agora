@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { PasswordField } from "@/components/PasswordField";
 import { ScreenScroll } from "@/components/Screen";
 import { registerAccount, useAuth } from "@/lib/auth";
+import { openExternal } from "@/lib/media";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
@@ -71,6 +72,17 @@ export default function RegisterScreen() {
           textContentType="newPassword"
         />
 
+        <Text style={styles.terms}>
+          By signing up you agree to the{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() => void openExternal("https://www.agor4.com/terms", false)}
+            accessibilityRole="link"
+          >
+            Terms
+          </Text>
+        </Text>
+
         <Pressable
           style={[styles.primary, loading && { opacity: 0.6 }]}
           onPress={onSubmit}
@@ -115,5 +127,7 @@ function makeStyles(colors: Palette) {
   primaryText: { color: colors.white, fontWeight: "700" },
   errorBox: { backgroundColor: colors.dangerBg, borderRadius: 10, padding: 10, marginBottom: 8 },
   errorText: { color: colors.dangerText, fontSize: 13 },
+  terms: { color: colors.muted, textAlign: "center", marginTop: 16, lineHeight: 20 },
+  termsLink: { color: colors.emerald, fontWeight: "700" },
   });
 }

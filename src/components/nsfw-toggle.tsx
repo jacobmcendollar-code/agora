@@ -10,7 +10,8 @@ export function NsfwToggle() {
       <span>
         <span className="block text-sm font-medium">Show NSFW</span>
         <span className="mt-1 block text-xs text-zinc-500">
-          Show communities marked NSFW.
+          Show communities marked NSFW. You must be 18 or older. This setting
+          applies on the website and in the Agora app.
         </span>
       </span>
       <button

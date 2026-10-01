@@ -132,6 +132,13 @@ export default function RegisterPage() {
           </span>
         </label>
 
+        <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+          By signing up you agree to the{" "}
+          <Link href="/terms" className="font-medium text-emerald-600 underline dark:text-emerald-400">
+            Terms
+          </Link>
+        </p>
+
         <button
           type="submit"
           disabled={loading}

@@ -1,6 +1,9 @@
+import { useCallback, useState } from "react";
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
 import { ScreenScroll } from "@/components/Screen";
-import { setShowNsfw } from "@/lib/api";
+import { Username } from "@/components/Username";
+import { blockUser, fetchBlocks, type BlockedUser } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   usePreferences,
@@ -54,37 +57,55 @@ function ToggleRow({
 }
 
 export default function SettingsScreen() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
+  const router = useRouter();
   const { theme, setTheme, openSocialInNativeApp, setOpenSocialInNativeApp } = usePreferences();
   const resolvedTheme = useResolvedTheme();
   const colors = useThemeColors();
   const styles = makeStyles(colors, resolvedTheme);
+  const [blocks, setBlocks] = useState<BlockedUser[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  async function onNsfw(next: boolean) {
-    if (!user) return;
-    if (next) {
-      Alert.alert("Show adult content?", "Confirm you are 18 or older.", [
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) {
+        setBlocks([]);
+        return;
+      }
+      let cancelled = false;
+      fetchBlocks()
+        .then((list) => {
+          if (!cancelled) setBlocks(list);
+        })
+        .catch(() => {});
+      return () => {
+        cancelled = true;
+      };
+    }, [user])
+  );
+
+  function onUnblock(entry: BlockedUser) {
+    Alert.alert(
+      "Unblock this user?",
+      "You'll see their posts and comments again, and they can reply to you.",
+      [
         { text: "Cancel", style: "cancel" },
         {
-          text: "I’m 18+",
+          text: "Unblock",
           onPress: async () => {
+            setBusyId(entry.userId);
             try {
-              await setShowNsfw(true);
-              updateUser({ showNsfw: true });
-            } catch {
-              Alert.alert("Could not update NSFW setting");
+              await blockUser(entry.userId, "unblock");
+              setBlocks((prev) => prev.filter((item) => item.userId !== entry.userId));
+            } catch (err) {
+              Alert.alert("Could not unblock", err instanceof Error ? err.message : "Try again");
+            } finally {
+              setBusyId(null);
             }
           },
         },
-      ]);
-      return;
-    }
-    try {
-      await setShowNsfw(false);
-      updateUser({ showNsfw: false });
-    } catch {
-      Alert.alert("Could not update NSFW setting");
-    }
+      ]
+    );
   }
 
   return (
@@ -120,15 +141,6 @@ export default function SettingsScreen() {
           </View>
         </View>
         <ToggleRow
-          title="Show NSFW"
-          helper="Show communities marked NSFW."
-          value={Boolean(user?.showNsfw)}
-          onChange={onNsfw}
-          disabled={!user}
-          colors={colors}
-          theme={resolvedTheme}
-        />
-        <ToggleRow
           title="Open links in apps"
           helper="On: open X, TikTok & Instagram in their apps. Off: in-app browser."
           value={openSocialInNativeApp}
@@ -137,6 +149,38 @@ export default function SettingsScreen() {
           theme={resolvedTheme}
         />
       </View>
+
+      {user ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Blocked users</Text>
+          <Text style={styles.sectionHelp}>
+            You won&apos;t see their posts or comments, and they can&apos;t reply to or mention you.
+          </Text>
+          {blocks.length === 0 ? (
+            <Text style={styles.empty}>You haven&apos;t blocked anyone.</Text>
+          ) : (
+            blocks.map((entry) => (
+              <View key={entry.userId} style={styles.blockRow}>
+                <Username username={entry.username} style={styles.blockName} />
+                <Pressable onPress={() => onUnblock(entry)} disabled={busyId === entry.userId}>
+                  <Text style={styles.unblock}>{busyId === entry.userId ? "…" : "Unblock"}</Text>
+                </Pressable>
+              </View>
+            ))
+          )}
+        </View>
+      ) : null}
+
+      {user ? (
+        <Pressable
+          onPress={() => router.push("/delete-account")}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          style={styles.deleteLink}
+        >
+          <Text style={styles.deleteText}>Delete account</Text>
+        </Pressable>
+      ) : null}
     </ScreenScroll>
   );
 }
@@ -195,5 +239,21 @@ function makeStyles(colors: Palette, theme: ResolvedTheme) {
     },
     themeSegText: { color: sub, fontSize: 13, fontWeight: "600" },
     themeSegTextActive: { color: colors.white },
+    section: { marginTop: 22 },
+    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
+    sectionHelp: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 4, marginBottom: 10 },
+    empty: { color: colors.muted, fontSize: 14 },
+    blockRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: divider,
+    },
+    blockName: { color: colors.text, fontSize: 15, fontWeight: "600", flex: 1 },
+    unblock: { color: colors.rose, fontWeight: "700" },
+    deleteLink: { marginTop: 28, paddingVertical: 12 },
+    deleteText: { color: colors.rose, fontSize: 16, fontWeight: "700" },
   });
 }

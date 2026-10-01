@@ -64,6 +64,7 @@ export function CommentThread({
   depth = 0,
   highlightId,
   onHighlightReady,
+  renderMenu,
 }: {
   comment: CommentNode;
   onReply: (id: string) => void;
@@ -73,6 +74,7 @@ export function CommentThread({
   depth?: number;
   highlightId?: string | null;
   onHighlightReady?: (node: View) => void;
+  renderMenu?: (comment: CommentNode) => ReactNode;
 }) {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -159,6 +161,7 @@ export function CommentThread({
                 )}
                 <Text style={styles.meta}> · {timeAgo(comment.createdAt)}</Text>
               </View>
+              {renderMenu?.(comment)}
               <Pressable onPress={() => setCollapsed(true)} hitSlop={8}>
                 <Text style={styles.collapseAction}>Collapse</Text>
               </Pressable>
@@ -214,6 +217,7 @@ export function CommentThread({
               depth={depth + 1}
               highlightId={highlightId}
               onHighlightReady={onHighlightReady}
+              renderMenu={renderMenu}
             />
           ))}
         </View>

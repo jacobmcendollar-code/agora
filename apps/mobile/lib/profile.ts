@@ -1,4 +1,4 @@
-import { apiFetch, decodeHtml } from "./api";
+import { apiFetch, apiJson, decodeHtml } from "./api";
 
 export type ProfilePost = {
   id: string;
@@ -25,6 +25,8 @@ export type PublicProfile = {
   joined: string | null;
   posts: ProfilePost[];
   comments: ProfileComment[];
+  blockedByYou?: boolean;
+  contentHidden?: boolean;
 };
 
 function unescapeFlight(html: string) {
@@ -156,6 +158,8 @@ function commentsFromFlight(raw: unknown[]): ProfileComment[] {
 }
 
 function extractUserId(flight: string, html: string, posts: unknown[] | null): string | null {
+  const fromAttr = html.match(/data-user-id="([^"]+)"/);
+  if (fromAttr?.[1]) return fromAttr[1];
   const fromMute = flight.match(/"userId":"(cm[a-z0-9]+)"/);
   if (fromMute) return fromMute[1];
   if (posts) {
@@ -205,6 +209,33 @@ export function parsePublicProfile(html: string, fallbackUsername: string): Publ
 
 export async function fetchPublicProfile(username: string): Promise<PublicProfile> {
   const name = username.trim().toLowerCase();
+  try {
+    const data = await apiJson<{
+      id: string;
+      username: string;
+      image: string | null;
+      bio: string | null;
+      joined: string | null;
+      blockedByYou?: boolean;
+      contentHidden?: boolean;
+      posts?: ProfilePost[];
+      comments?: ProfileComment[];
+    }>(`/api/users/${encodeURIComponent(name)}`);
+    return {
+      username: data.username,
+      id: data.id,
+      image: data.image,
+      bio: data.bio,
+      joined: data.joined,
+      blockedByYou: Boolean(data.blockedByYou),
+      contentHidden: Boolean(data.contentHidden),
+      posts: data.posts || [],
+      comments: data.comments || [],
+    };
+  } catch {
+    // Fall through to the HTML profile if the JSON route is unavailable.
+  }
+
   const res = await apiFetch(`/u/${encodeURIComponent(name)}`, {
     headers: { Accept: "text/html" },
   });

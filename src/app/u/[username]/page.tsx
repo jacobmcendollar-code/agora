@@ -6,7 +6,9 @@ import { isAdmin } from "@/lib/admin";
 import { JoinedCommunities } from "@/components/joined-communities";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileActivityTabs } from "@/components/profile-activity-tabs";
-import { MuteButton } from "@/components/mute-button";
+import { BlockButton } from "@/components/block-button";
+import { ContentActions } from "@/components/content-actions";
+import { blockListsFor, relationWith } from "@/lib/blocks";
 
 export const dynamic = "force-dynamic";
 
@@ -27,17 +29,25 @@ export default async function UserProfilePage({ params }: Props) {
       createdAt: true,
       image: true,
       bio: true,
+      deletedAt: true,
     },
   });
 
-  if (!user) notFound();
+  if (!user || user.deletedAt) notFound();
 
   const isOwnProfile =
     session?.user?.username?.toLowerCase() === user.username;
   const showAdminTools = isOwnProfile && isAdmin(session?.user?.username);
 
-  const [posts, comments, subscriptions, saved, muteRecord, mutedUsers] =
-    await Promise.all([
+  const relation =
+    session?.user?.id && !isOwnProfile
+      ? await relationWith(session.user.id, user.id)
+      : { youBlocked: false, theyBlocked: false, hidden: false };
+  const lists = session?.user?.id ? await blockListsFor(session.user.id) : null;
+  const hidden = new Set(lists?.hiddenAuthorIds || []);
+  const contentHidden = relation.hidden;
+
+  const [posts, comments, subscriptions, saved] = await Promise.all([
       prisma.post.findMany({
         where: { authorId: user.id, moderationStatus: "approved" },
         orderBy: { createdAt: "desc" },
@@ -56,6 +66,7 @@ export default async function UserProfilePage({ params }: Props) {
             select: {
               id: true,
               title: true,
+              authorId: true,
               community: { select: { name: true, title: true } },
             },
           },
@@ -89,31 +100,6 @@ export default async function UserProfilePage({ params }: Props) {
             },
           })
         : Promise.resolve([]),
-      session?.user?.id && !isOwnProfile
-        ? prisma.mute.findUnique({
-            where: {
-              muterId_mutedId: {
-                muterId: session.user.id,
-                mutedId: user.id,
-              },
-            },
-          })
-        : Promise.resolve(null),
-      isOwnProfile && session?.user?.id
-        ? prisma.mute.findMany({
-            where: { muterId: session.user.id },
-            orderBy: { createdAt: "desc" },
-            include: {
-              muted: {
-                select: {
-                  id: true,
-                  username: true,
-                  image: true,
-                },
-              },
-            },
-          })
-        : Promise.resolve([]),
     ]);
 
   const communities = subscriptions.map((s) => ({
@@ -123,21 +109,22 @@ export default async function UserProfilePage({ params }: Props) {
 
   const savedPosts = saved
     .map((s) => s.post)
-    .filter((p) => p && p.moderationStatus === "approved");
-
-  const mutedList = mutedUsers.map((m) => ({
-    id: m.muted.id,
-    username: m.muted.username,
-    image: m.muted.image,
-    createdAt: m.createdAt.toISOString(),
-  }));
+    .filter(
+      (p) =>
+        p &&
+        p.moderationStatus === "approved" &&
+        !hidden.has(p.authorId)
+    );
 
   return (
     <div className="space-y-8">
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900 dark:bg-emerald-950/40">
+      <div
+        data-user-id={user.id}
+        className="rounded-lg border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900 dark:bg-emerald-950/40"
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            {user.image ? (
+            {user.image && !contentHidden ? (
               <img
                 src={user.image}
                 alt={user.username}
@@ -158,9 +145,16 @@ export default async function UserProfilePage({ params }: Props) {
                   day: "numeric",
                 })}
               </p>
-              {user.bio && (
+              {user.bio && !contentHidden && (
                 <p className="mt-3 whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-300">
                   {user.bio}
+                </p>
+              )}
+              {contentHidden && (
+                <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                  {relation.youBlocked
+                    ? "You blocked this user. Their posts and comments are hidden."
+                    : "This content is unavailable."}
                 </p>
               )}
             </div>
@@ -183,32 +177,44 @@ export default async function UserProfilePage({ params }: Props) {
                 )}
               </>
             ) : (
-              session?.user && (
-                <MuteButton
-                  userId={user.id}
-                  username={user.username}
-                  initialMuted={!!muteRecord}
+              <div className="flex items-center gap-2">
+                {session?.user && (
+                  <BlockButton
+                    userId={user.id}
+                    username={user.username}
+                    initialBlocked={relation.youBlocked}
+                  />
+                )}
+                <ContentActions
+                  targetType="user"
+                  targetId={user.id}
+                  authorId={user.id}
+                  authorUsername={user.username}
+                  initialBlocked={relation.youBlocked}
                 />
-              )
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">
-          Joined communities ({communities.length})
-        </h2>
-        <JoinedCommunities communities={communities} />
-      </section>
+      {!contentHidden && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">
+            Joined communities ({communities.length})
+          </h2>
+          <JoinedCommunities communities={communities} />
+        </section>
+      )}
 
-      <ProfileActivityTabs
-        isOwnProfile={isOwnProfile}
-        savedPosts={savedPosts}
-        posts={posts}
-        comments={comments}
-        mutedUsers={mutedList}
-      />
+      {!contentHidden && (
+        <ProfileActivityTabs
+          isOwnProfile={isOwnProfile}
+          savedPosts={savedPosts}
+          posts={posts}
+          comments={comments.filter((comment) => !hidden.has(comment.post.authorId))}
+        />
+      )}
     </div>
   );
 }
