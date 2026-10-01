@@ -1,14 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   Alert,
+  Keyboard,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardDoneBar } from "@/components/KeyboardDoneBar";
 import {
   REPORT_REASONS,
   blockUser,
@@ -16,6 +22,7 @@ import {
   type ReportReason,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useKeyboardInset } from "@/lib/keyboard";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 
@@ -50,6 +57,12 @@ export function ContentActions({
   const [sending, setSending] = useState(false);
   const [thanks, setThanks] = useState(false);
   const [blocked, setBlocked] = useState(initialBlocked);
+  const [headerHeight, setHeaderHeight] = useState(44);
+  const [footerHeight, setFooterHeight] = useState(64);
+  const keyboardHeight = useKeyboardInset();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const noteAccessoryId = `report-note-${useId().replace(/:/g, "")}`;
 
   useEffect(() => {
     setBlocked(initialBlocked);
@@ -94,6 +107,7 @@ export function ContentActions({
 
   async function onSubmit() {
     if (!requireUser() || sending) return;
+    Keyboard.dismiss();
     setSending(true);
     try {
       await submitReport({
@@ -155,8 +169,22 @@ export function ContentActions({
       </Modal>
 
       <Modal visible={reporting} transparent animationType="fade" onRequestClose={closeReport}>
-        <View style={styles.backdrop}>
-          <View style={styles.dialog}>
+        <View style={[styles.sheetRoot, { paddingBottom: keyboardHeight }]}>
+          <Pressable
+            style={styles.sheetBackdrop}
+            onPress={Keyboard.dismiss}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+          <View
+            style={[
+              styles.dialog,
+              {
+                maxHeight: Math.max(220, windowHeight - keyboardHeight - insets.top - 12),
+                paddingBottom: keyboardHeight > 0 ? 12 : Math.max(insets.bottom, 12),
+              },
+            ]}
+          >
             {thanks ? (
               <>
                 <Text style={styles.dialogTitle}>Thanks, we&apos;ll take a look</Text>
@@ -174,27 +202,56 @@ export function ContentActions({
               </>
             ) : (
               <>
-                <Text style={styles.dialogTitle}>Report</Text>
-                {REPORT_REASONS.map((item) => {
-                  const selected = reason === item;
-                  return (
-                    <Pressable key={item} onPress={() => setReason(item)} style={styles.reasonRow}>
-                      <View style={[styles.radio, selected && styles.radioOn]} />
-                      <Text style={styles.reasonText}>{item}</Text>
-                    </Pressable>
-                  );
-                })}
-                <Text style={styles.noteLabel}>Note (optional)</Text>
-                <TextInput
-                  value={note}
-                  onChangeText={setNote}
-                  multiline
-                  maxLength={2000}
-                  style={styles.note}
-                  placeholder="Add details"
-                  placeholderTextColor={colors.faint}
-                />
-                <View style={styles.dialogActions}>
+                <Text
+                  style={styles.dialogTitle}
+                  onLayout={(event) => {
+                    const next = event.nativeEvent.layout.height;
+                    setHeaderHeight((prev) => (prev === next ? prev : next));
+                  }}
+                >
+                  Report
+                </Text>
+                <ScrollView
+                  style={{
+                    maxHeight: Math.max(
+                      140,
+                      windowHeight - keyboardHeight - insets.top - headerHeight - footerHeight - 64
+                    ),
+                  }}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="interactive"
+                  bounces={false}
+                >
+                  {REPORT_REASONS.map((item) => {
+                    const selected = reason === item;
+                    return (
+                      <Pressable key={item} onPress={() => setReason(item)} style={styles.reasonRow}>
+                        <View style={[styles.radio, selected && styles.radioOn]} />
+                        <Text style={styles.reasonText}>{item}</Text>
+                      </Pressable>
+                    );
+                  })}
+                  <Text style={styles.noteLabel}>Note (optional)</Text>
+                  <TextInput
+                    value={note}
+                    onChangeText={setNote}
+                    multiline
+                    blurOnSubmit
+                    returnKeyType="done"
+                    inputAccessoryViewID={Platform.OS === "ios" ? noteAccessoryId : undefined}
+                    maxLength={2000}
+                    style={styles.note}
+                    placeholder="Add details"
+                    placeholderTextColor={colors.faint}
+                  />
+                </ScrollView>
+                <View
+                  style={styles.dialogActions}
+                  onLayout={(event) => {
+                    const next = event.nativeEvent.layout.height;
+                    setFooterHeight((prev) => (prev === next ? prev : next));
+                  }}
+                >
                   <Pressable onPress={closeReport} style={styles.secondary}>
                     <Text style={styles.secondaryText}>Cancel</Text>
                   </Pressable>
@@ -205,6 +262,7 @@ export function ContentActions({
               </>
             )}
           </View>
+          {reporting && !thanks ? <KeyboardDoneBar nativeID={noteAccessoryId} /> : null}
         </View>
       </Modal>
     </>
@@ -220,6 +278,18 @@ function makeStyles(colors: Palette) {
       backgroundColor: "rgba(0,0,0,0.45)",
       justifyContent: "flex-end",
     },
+    sheetRoot: {
+      flex: 1,
+      justifyContent: "flex-end",
+    },
+    sheetBackdrop: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+    },
     sheet: {
       backgroundColor: colors.card,
       borderTopLeftRadius: 16,
@@ -231,12 +301,12 @@ function makeStyles(colors: Palette) {
     sheetText: { color: colors.text, fontSize: 17, fontWeight: "600" },
     cancelText: { color: colors.muted, fontSize: 17, fontWeight: "600" },
     dialog: {
-      marginTop: "auto",
-      marginBottom: "auto",
-      marginHorizontal: 20,
+      zIndex: 1,
       backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 18,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingTop: 16,
+      paddingHorizontal: 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
