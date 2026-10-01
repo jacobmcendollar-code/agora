@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { PRIVATE_NO_STORE_HEADERS, readMobileSession } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 
@@ -8,6 +9,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ user: null }, { headers: PRIVATE_NO_STORE_HEADERS });
   }
 
+  await ensureComplianceSchema();
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {
@@ -18,8 +20,29 @@ export async function GET(req: Request) {
       bio: true,
       createdAt: true,
       showNsfw: true,
+      deletedAt: true,
     },
   });
 
-  return NextResponse.json({ user: user ?? null }, { headers: PRIVATE_NO_STORE_HEADERS });
+  if (!user || user.deletedAt) {
+    return NextResponse.json(
+      { user: null },
+      { status: 401, headers: PRIVATE_NO_STORE_HEADERS }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        image: user.image,
+        bio: user.bio,
+        createdAt: user.createdAt,
+        showNsfw: user.showNsfw,
+      },
+    },
+    { headers: PRIVATE_NO_STORE_HEADERS }
+  );
 }

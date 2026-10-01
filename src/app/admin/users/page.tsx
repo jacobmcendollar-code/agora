@@ -37,7 +37,10 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="text-2xl font-bold">Users</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          {users.length} total · Admin only
+          {users.length} total · Admin only ·{" "}
+          <Link href="/admin/reports" className="font-medium text-emerald-600 hover:underline">
+            Reports
+          </Link>
         </p>
       </div>
 

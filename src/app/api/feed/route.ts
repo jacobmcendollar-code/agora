@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorNotIn, blockListsFor } from "@/lib/blocks";
 import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 import { hotScore } from "@/lib/ranking";
@@ -13,15 +14,7 @@ export async function GET(req: Request) {
   const limit = 15;
 
   const userId = await userIdFromRequest(req);
-
-  let mutedIds: string[] = [];
-  if (userId) {
-    const mutes = await prisma.mute.findMany({
-      where: { muterId: userId },
-      select: { mutedId: true },
-    });
-    mutedIds = mutes.map((m) => m.mutedId);
-  }
+  const hiddenAuthorIds = (await blockListsFor(userId)).hiddenAuthorIds;
 
   let communityIds: string[] | null = null;
 
@@ -48,7 +41,7 @@ export async function GET(req: Request) {
     where: {
       moderationStatus: { in: ["approved", "author_deleted"] },
       ...(communityIds ? { communityId: { in: communityIds } } : {}),
-      ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
+      ...authorNotIn(hiddenAuthorIds),
     },
     take: 200,
     orderBy: { createdAt: "desc" },

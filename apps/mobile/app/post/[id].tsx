@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useFocusEffect, useGlobalSearchParams, useLocalSearchParams, useRouter } from "expo-router";
 import { CommentComposer, type ComposerDraft } from "@/components/CommentComposer";
+import { ContentActions } from "@/components/ContentActions";
 import { EdgeSwipeBack } from "@/components/EdgeSwipeBack";
 import { CommentThread } from "@/components/CommentThread";
 import { LinkPreviewCard } from "@/components/LinkPreviewCard";
@@ -26,10 +27,13 @@ import { ScreenScroll } from "@/components/Screen";
 import { VoteSpears } from "@/components/VoteSpears";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import {
+  blockUser,
   buildCommentTree,
   createComment,
+  fetchBlocks,
   fetchCommunities,
   fetchPostDetail,
+  isBlockedPost,
   peekCachedPost,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -92,6 +96,8 @@ export default function PostDetailScreen() {
   const commentBoxRef = useRef<View>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [blockedNotice, setBlockedNotice] = useState<{ userId: string; username: string } | null>(null);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchCommunities()
@@ -100,18 +106,49 @@ export default function PostDetailScreen() {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setBlockedIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetchBlocks()
+      .then((list) => {
+        if (!cancelled) setBlockedIds(new Set(list.map((item) => item.userId)));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
     if (!id) return;
     let cancelled = false;
     setCommentsLoaded(false);
     fetchPostDetail(id)
       .then((data) => {
         if (cancelled) return;
+        if (isBlockedPost(data)) {
+          setPost(undefined);
+          setComments([]);
+          setBlockedNotice({ userId: data.userId, username: data.username });
+          setError(null);
+          return;
+        }
+        setBlockedNotice(null);
         setPost(data.post);
         setComments(data.comments);
         setError(null);
       })
       .catch((err) => {
         if (cancelled) return;
+        const status = (err as { status?: number }).status;
+        if (status === 404 || status === 403) {
+          setPost(undefined);
+          setComments([]);
+          setError("Post not found");
+          return;
+        }
         if (!cached) setError(err instanceof Error ? err.message : "Post not found");
       })
       .finally(() => {
@@ -367,6 +404,12 @@ export default function PostDetailScreen() {
       });
       if (parentId) setReplyTo(null);
       const data = await fetchPostDetail(id);
+      if (isBlockedPost(data)) {
+        setPost(undefined);
+        setComments([]);
+        setBlockedNotice({ userId: data.userId, username: data.username });
+        return true;
+      }
       setPost(data.post);
       setComments(data.comments);
       return true;
@@ -392,11 +435,48 @@ export default function PostDetailScreen() {
     return (
       <EdgeSwipeBack>
         <View style={styles.center}>
-          <Text style={{ color: colors.muted }}>{error || "Post not found"}</Text>
+          {blockedNotice ? (
+            <View style={{ paddingHorizontal: 24 }}>
+              <Text style={styles.title}>You blocked this user</Text>
+              <Text style={[styles.body, { textAlign: "center" }]}>
+                You won&apos;t see posts or comments from {blockedNotice.username}. Unblock them if you want this post back.
+              </Text>
+              <Pressable
+                onPress={() => {
+                  Alert.alert("Unblock this user?", "You'll see their posts and comments again, and they can reply to you.", [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Unblock",
+                      onPress: async () => {
+                        try {
+                          await blockUser(blockedNotice.userId, "unblock");
+                          setBlockedNotice(null);
+                          if (!id) return;
+                          const data = await fetchPostDetail(id);
+                          if (isBlockedPost(data)) return;
+                          setPost(data.post);
+                          setComments(data.comments);
+                        } catch (err) {
+                          Alert.alert("Could not unblock", err instanceof Error ? err.message : "Try again");
+                        }
+                      },
+                    },
+                  ]);
+                }}
+                style={{ marginTop: 16, alignItems: "center" }}
+              >
+                <Text style={{ color: colors.emerald, fontWeight: "700" }}>Unblock</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text style={{ color: colors.muted }}>{error || "Post not found"}</Text>
+          )}
         </View>
       </EdgeSwipeBack>
     );
   }
+
+  const postAuthorId = post.author.id || post.authorId || "";
 
   const linkUrl = post.url;
   const emptyMin = Math.max(200, Dimensions.get("window").height - chrome.headerHeight - 120);
@@ -447,6 +527,17 @@ export default function PostDetailScreen() {
             {showBody ? <Text style={styles.body}>{post.body}</Text> : null}
 
             <PostMetaRow post={post} style={styles.metaRow} />
+            {user && postAuthorId && postAuthorId !== user.id && post.author.username !== "[deleted]" ? (
+              <View style={{ alignItems: "flex-end", marginTop: 8 }}>
+                <ContentActions
+                  targetType="post"
+                  targetId={post.id}
+                  authorId={postAuthorId}
+                  authorUsername={post.author.username}
+                  initialBlocked={blockedIds.has(postAuthorId)}
+                />
+              </View>
+            ) : null}
           </View>
         </View>
       </View>
@@ -519,6 +610,20 @@ export default function PostDetailScreen() {
                 }
                 highlightId={targetComment?.id}
                 onHighlightReady={(node) => scrollToNode(node, "comment")}
+                renderMenu={(comment) => {
+                  const authorId = comment.author.id || comment.authorId || "";
+                  if (!authorId || comment.moderationStatus === "author_deleted") return null;
+                  if (user && authorId === user.id) return null;
+                  return (
+                    <ContentActions
+                      targetType="comment"
+                      targetId={comment.id}
+                      authorId={authorId}
+                      authorUsername={comment.author.username}
+                      initialBlocked={blockedIds.has(authorId)}
+                    />
+                  );
+                }}
               />
             ))}
           </View>

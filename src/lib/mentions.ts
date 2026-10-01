@@ -37,23 +37,24 @@ export async function notifyMentions({
   for (const user of users) {
     if (user.id === actorId) continue;
 
-    // Do not notify if this user has muted the actor
-    const muted = await prisma.mute.findUnique({
+    // Do not notify across a block in either direction.
+    const blocked = await prisma.mute.findFirst({
       where: {
-        muterId_mutedId: {
-          muterId: user.id,
-          mutedId: actorId,
-        },
+        OR: [
+          { muterId: user.id, mutedId: actorId },
+          { muterId: actorId, mutedId: user.id },
+        ],
       },
       select: { id: true },
     });
-    if (muted) continue;
+    if (blocked) continue;
 
     await createNotification({
       type: "mention",
       message: `${actorUsername} mentioned you`,
       link,
       userId: user.id,
+      actorId,
     });
   }
 }

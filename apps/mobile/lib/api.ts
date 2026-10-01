@@ -122,8 +122,33 @@ export async function resolveCommunityId(
   return feed.posts[0]?.communityId || feed.posts[0]?.community?.id || null;
 }
 
-export async function fetchPostDetail(id: string): Promise<PostDetailResponse> {
-  const data = await apiJson<PostDetailResponse>(`/api/posts/${id}`);
+export type BlockedPostNotice = {
+  blocked: true;
+  blockedByYou: true;
+  userId: string;
+  username: string;
+};
+
+export function isBlockedPost(
+  data: PostDetailResponse | BlockedPostNotice
+): data is BlockedPostNotice {
+  return "blocked" in data && data.blocked === true;
+}
+
+export async function fetchPostDetail(
+  id: string
+): Promise<PostDetailResponse | BlockedPostNotice> {
+  const data = await apiJson<PostDetailResponse & Partial<BlockedPostNotice>>(
+    `/api/posts/${id}`
+  );
+  if (data.blocked) {
+    return {
+      blocked: true,
+      blockedByYou: true,
+      userId: data.userId || "",
+      username: data.username || "",
+    };
+  }
   const post = normalizePost(data.post);
   cachePost(post);
   return { post, comments: data.comments || [] };
@@ -209,12 +234,8 @@ export async function forgotPassword(email: string) {
   });
 }
 
-export async function setShowNsfw(showNsfw: boolean) {
-  return apiJson<{ showNsfw: boolean }>("/api/user/show-nsfw", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ showNsfw }),
-  });
+export async function deleteAccount() {
+  return apiJson<{ ok: boolean }>("/api/account/delete", { method: "POST" });
 }
 
 export async function fetchSaved(postId: string) {
@@ -242,23 +263,50 @@ export function postSnippet(body: string | null | undefined, max = 120) {
   return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
 }
 
-export type MutedUser = {
+export type BlockedUser = {
   userId: string;
   username: string;
   image?: string | null;
 };
 
-export async function muteUser(userId: string, action: "mute" | "unmute") {
-  return apiJson<{ muted: boolean }>("/api/mute", {
+export async function blockUser(userId: string, action: "block" | "unblock") {
+  const data = await apiJson<{ blocked?: boolean; muted?: boolean }>("/api/mute", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, action }),
   });
+  return { blocked: Boolean(data.blocked ?? data.muted) };
 }
 
-export async function fetchMutes(): Promise<MutedUser[]> {
-  const data = await apiJson<{ mutes?: MutedUser[] }>("/api/mute");
-  return data.mutes || [];
+export async function fetchBlocks(): Promise<BlockedUser[]> {
+  const data = await apiJson<{ blocks?: BlockedUser[]; mutes?: BlockedUser[] }>("/api/mute");
+  return data.blocks || data.mutes || [];
+}
+
+export const REPORT_REASONS = [
+  "Illegal content",
+  "Threat of violence",
+  "Doxxing",
+  "Targeted harassment",
+  "Spam",
+] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+export async function submitReport(payload: {
+  targetType: "post" | "comment" | "user";
+  targetId: string;
+  reason: ReportReason;
+  note?: string | null;
+}) {
+  return apiJson<{ ok: boolean }>("/api/reports", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      note: payload.note?.trim() || null,
+    }),
+  });
 }
 
 export async function fetchLinkPreview(url: string) {

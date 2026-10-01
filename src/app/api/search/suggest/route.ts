@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorNotIn, blockListsFor } from "@/lib/blocks";
 import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
@@ -17,12 +18,17 @@ export async function GET(req: Request) {
   // Default: hide adult content unless the logged-in account has opted in
   let allowAdult = false;
   const userId = await userIdFromRequest(req);
+  let hiddenAuthorIds: string[] = [];
   if (userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { showNsfw: true },
-    });
+    const [user, lists] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { showNsfw: true },
+      }),
+      blockListsFor(userId),
+    ]);
     allowAdult = Boolean(user?.showNsfw);
+    hiddenAuthorIds = lists.hiddenAuthorIds;
   }
 
   const communityWhere = {
@@ -37,6 +43,7 @@ export async function GET(req: Request) {
     moderationStatus: "approved",
     title: { contains: q, mode: "insensitive" as const },
     ...(allowAdult ? {} : { community: { nsfw: false } }),
+    ...authorNotIn(hiddenAuthorIds),
   };
 
   const [communities, posts] = await Promise.all([

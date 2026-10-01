@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
+import { relationWith } from "@/lib/blocks";
 import { notifyMentions } from "@/lib/mentions";
 import { createNotification } from "@/lib/notify";
 
@@ -15,17 +16,17 @@ const schema = z.object({
   imageUrl: z.string().url().optional().nullable(),
 });
 
-async function isMutedBy(muterId: string, mutedId: string) {
-  const mute = await prisma.mute.findUnique({
-    where: {
-      muterId_mutedId: {
-        muterId,
-        mutedId,
-      },
+async function commentBlockResponse(actorId: string, targetUserId: string) {
+  const relation = await relationWith(actorId, targetUserId);
+  if (!relation.hidden) return null;
+  return NextResponse.json(
+    {
+      error: relation.youBlocked
+        ? "You blocked this user."
+        : "You can't reply to this user.",
     },
-    select: { id: true },
-  });
-  return !!mute;
+    { status: 403 }
+  );
 }
 
 async function countRecentMediaComments(userId: string) {
@@ -102,6 +103,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
+    const postBlock = await commentBlockResponse(userId, post.authorId);
+    if (postBlock) return postBlock;
+
     let parentComment = null;
     if (parentId) {
       parentComment = await prisma.comment.findUnique({
@@ -114,6 +118,8 @@ export async function POST(req: Request) {
           { status: 404 }
         );
       }
+      const replyBlock = await commentBlockResponse(userId, parentComment.authorId);
+      if (replyBlock) return replyBlock;
     }
 
     if (commentBody) {
@@ -165,25 +171,27 @@ export async function POST(req: Request) {
     const actorUsername = dbUser?.username || "Someone";
 
     if (post.authorId !== userId) {
-      const muted = await isMutedBy(post.authorId, userId);
-      if (!muted) {
+      const blocked = await relationWith(userId, post.authorId);
+      if (!blocked.hidden) {
         await createNotification({
           type: "comment_on_post",
           message: `${actorUsername} commented on your post “${post.title}”`,
           link,
           userId: post.authorId,
+          actorId: userId,
         });
       }
     }
 
     if (parentComment && parentComment.authorId !== userId) {
-      const muted = await isMutedBy(parentComment.authorId, userId);
-      if (!muted) {
+      const blocked = await relationWith(userId, parentComment.authorId);
+      if (!blocked.hidden) {
         await createNotification({
           type: "reply_to_comment",
           message: `${actorUsername} replied to your comment`,
           link,
           userId: parentComment.authorId,
+          actorId: userId,
         });
       }
     }

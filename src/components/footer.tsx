@@ -25,6 +25,18 @@ export function Footer() {
               Privacy
             </Link>
             <Link
+              href="/terms"
+              className="hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              Terms
+            </Link>
+            <Link
+              href="/support"
+              className="hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              Support
+            </Link>
+            <Link
               href="/communities/new"
               className="hover:text-zinc-900 dark:hover:text-zinc-100"
             >

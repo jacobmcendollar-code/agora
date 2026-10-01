@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { PromotionalEmailsToggle } from "@/components/promotional-emails-toggle";
 import { NsfwToggle } from "@/components/nsfw-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BlockedUsers } from "@/components/blocked-users";
 import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,7 @@ export default async function SettingsPage() {
   }
 
   await ensurePromotionalEmailsColumn();
+  await ensureComplianceSchema();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -28,12 +31,30 @@ export default async function SettingsPage() {
       email: true,
       promotionalEmails: true,
       username: true,
+      deletedAt: true,
     },
   });
 
-  if (!user) {
+  if (!user || user.deletedAt) {
     redirect("/login");
   }
+
+  const blocks = await prisma.mute.findMany({
+    where: { muterId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      muted: {
+        select: { id: true, username: true, image: true, deletedAt: true },
+      },
+    },
+  });
+  const blockedUsers = blocks
+    .filter((row) => !row.muted.deletedAt)
+    .map((row) => ({
+      id: row.muted.id,
+      username: row.muted.username,
+      image: row.muted.image,
+    }));
 
   return (
     <div className="mx-auto max-w-md space-y-6 pt-8">
@@ -65,8 +86,22 @@ export default async function SettingsPage() {
           className="font-medium text-emerald-600 hover:underline dark:text-emerald-400"
         >
           privacy policy
-        </Link>{" "}
-        for how email is used.
+        </Link>
+        ,{" "}
+        <Link
+          href="/terms"
+          className="font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+        >
+          terms
+        </Link>
+        , and{" "}
+        <Link
+          href="/support"
+          className="font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+        >
+          support
+        </Link>
+        .
       </p>
 
       <div className="space-y-4 rounded-xl border border-stone-200/90 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#161618]">
@@ -78,6 +113,22 @@ export default async function SettingsPage() {
         <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
           <NsfwToggle />
         </div>
+      </div>
+
+      <BlockedUsers initial={blockedUsers} />
+
+      <div className="rounded-xl border border-rose-200 bg-white p-6 shadow-sm dark:border-rose-900/60 dark:bg-[#161618]">
+        <p className="text-sm font-medium">Delete account</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Permanently remove your profile and personal data. Posts and comments
+          remain as [deleted] so threads stay intact.
+        </p>
+        <Link
+          href="/settings/delete"
+          className="mt-4 inline-block rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700"
+        >
+          Delete account
+        </Link>
       </div>
     </div>
   );

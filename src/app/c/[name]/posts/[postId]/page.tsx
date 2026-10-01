@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
+import { blockListsFor, commentsVisibleToViewer, relationWith } from "@/lib/blocks";
 import { timeAgo } from "@/lib/utils";
 import { CommentForm } from "@/components/comment-form";
 import { VoteButtons } from "@/components/vote-buttons";
@@ -25,6 +26,8 @@ import { TikTokEmbed } from "@/components/tiktok-embed";
 import { RedditEmbed } from "@/components/reddit-embed";
 import { InstagramEmbed } from "@/components/instagram-embed";
 import { MarkdownBody } from "@/components/markdown-body";
+import { BlockButton } from "@/components/block-button";
+import { ContentActions } from "@/components/content-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -149,6 +152,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Post not found · Agora" };
   }
 
+  const session = await auth();
+  if (session?.user?.id) {
+    const relation = await relationWith(session.user.id, post.authorId);
+    if (relation.hidden) {
+      return {
+        title: relation.youBlocked ? "You blocked this user · Agora" : "Post not found · Agora",
+      };
+    }
+  }
+
   const title = `${post.title} · ${post.community.title}`;
   const rawDescription =
     post.body && !isGenericBody(post.body) ? post.body : null;
@@ -198,21 +211,33 @@ export default async function PostPage({ params, searchParams }: Props) {
   if (post.moderationStatus === "removed") notFound();
 
   const isSoftDeleted = post.moderationStatus === "author_deleted";
+  const lists = await blockListsFor(session?.user?.id);
+  const blockedAuthorIds = lists.blockedByViewer;
 
-  let mutedIds: string[] = [];
-  if (session?.user?.id) {
-    const mutes = await prisma.mute.findMany({
-      where: { muterId: session.user.id },
-      select: { mutedId: true },
-    });
-    mutedIds = mutes.map((m) => m.mutedId);
+  if (lists.hiddenAuthorIds.includes(post.authorId)) {
+    if (!lists.blockedByViewer.includes(post.authorId)) notFound();
+    return (
+      <div className="mx-auto max-w-xl space-y-4 rounded-lg border bg-white p-6 dark:bg-zinc-900">
+        <h1 className="text-xl font-bold">You blocked this user</h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          You won&apos;t see posts or comments from {post.author.username}. Unblock
+          them if you want this post back.
+        </p>
+        {session?.user && (
+          <BlockButton
+            userId={post.authorId}
+            username={post.author.username}
+            initialBlocked
+          />
+        )}
+      </div>
+    );
   }
 
   const allComments = await prisma.comment.findMany({
     where: {
       postId: post.id,
       moderationStatus: { in: ["approved", "author_deleted"] },
-      ...(mutedIds.length ? { authorId: { notIn: mutedIds } } : {}),
     },
     orderBy: { createdAt: "asc" },
     include: {
@@ -220,7 +245,10 @@ export default async function PostPage({ params, searchParams }: Props) {
     },
   });
 
-  const commentTree = buildCommentTree(allComments, sort);
+  const commentTree = buildCommentTree(
+    commentsVisibleToViewer(allComments, lists.hiddenAuthorIds),
+    sort
+  );
   const showAdmin = isAdmin(session?.user?.username);
   const youtubeId = getYouTubeId(post.url);
   const isX = isXLink(post.url);
@@ -338,6 +366,15 @@ export default async function PostPage({ params, searchParams }: Props) {
                       />
                     </>
                   )}
+                  {!isAuthor && !isSoftDeleted && (
+                    <ContentActions
+                      targetType="post"
+                      targetId={post.id}
+                      authorId={post.authorId}
+                      authorUsername={post.author.username}
+                      initialBlocked={blockedAuthorIds.includes(post.authorId)}
+                    />
+                  )}
                 </div>
                 {showAdmin && !isSoftDeleted && (
                   <div className="ml-auto">
@@ -376,6 +413,7 @@ export default async function PostPage({ params, searchParams }: Props) {
                 postId={post.id}
                 communityName={post.community.name}
                 isAdminUser={showAdmin}
+                blockedAuthorIds={blockedAuthorIds}
               />
             ))}
           </div>

@@ -1,3 +1,4 @@
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { ensureExpoPushTokenColumn } from "@/lib/ensure-expo-push-token-column";
 import { prisma } from "@/lib/prisma";
 
@@ -6,6 +7,7 @@ export type NotificationInput = {
   message: string;
   link: string;
   userId: string;
+  actorId?: string | null;
 };
 
 function commentIdFromLink(link: string): string | null {
@@ -60,7 +62,16 @@ async function pushExpoNotification(row: {
 
 /** Persist an in-app notification, then Expo-push if the user has a token. Push failures never throw. */
 export async function createNotification(data: NotificationInput) {
-  const row = await prisma.notification.create({ data });
+  await ensureComplianceSchema();
+  const row = await prisma.notification.create({
+    data: {
+      type: data.type,
+      message: data.message,
+      link: data.link,
+      userId: data.userId,
+      ...(data.actorId ? { actorId: data.actorId } : {}),
+    },
+  });
   await pushExpoNotification(row);
   return row;
 }

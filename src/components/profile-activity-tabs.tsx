@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { formatScore, timeAgo } from "@/lib/utils";
 import { SaveButton } from "@/components/save-button";
-import { useToast } from "@/components/toast-provider";
 
 type SavedPost = {
   id: string;
@@ -37,22 +35,14 @@ type CommentItem = {
   };
 };
 
-type MutedUser = {
-  id: string;
-  username: string;
-  image: string | null;
-  createdAt: string;
-};
-
 type Props = {
   isOwnProfile: boolean;
   savedPosts: SavedPost[];
   posts: PostItem[];
   comments: CommentItem[];
-  mutedUsers?: MutedUser[];
 };
 
-type TabKey = "saved" | "posts" | "comments" | "muted";
+type TabKey = "saved" | "posts" | "comments";
 
 type Tab = {
   key: TabKey;
@@ -65,14 +55,10 @@ export function ProfileActivityTabs({
   savedPosts,
   posts,
   comments,
-  mutedUsers = [],
 }: Props) {
-  const router = useRouter();
-  const { toast } = useToast();
   const initialTab: TabKey = isOwnProfile ? "saved" : "posts";
   const [tab, setTab] = useState<TabKey>(initialTab);
   const [expanded, setExpanded] = useState(false);
-  const [mutingId, setMutingId] = useState<string | null>(null);
 
   const tabs: Tab[] = [];
   if (isOwnProfile) {
@@ -92,50 +78,14 @@ export function ProfileActivityTabs({
     label: "Recent Comments",
     count: comments.length,
   });
-  if (isOwnProfile) {
-    tabs.push({
-      key: "muted",
-      label: "Muted",
-      count: mutedUsers.length,
-    });
-  }
-
   const previewCount = 10;
   const currentItems =
-    tab === "saved"
-      ? savedPosts
-      : tab === "posts"
-        ? posts
-        : tab === "comments"
-          ? comments
-          : mutedUsers;
+    tab === "saved" ? savedPosts : tab === "posts" ? posts : comments;
 
   const visibleCount = expanded
     ? currentItems.length
     : Math.min(previewCount, currentItems.length);
   const hasMore = currentItems.length > previewCount;
-
-  async function unmuteUser(userId: string, username: string) {
-    setMutingId(userId);
-    try {
-      const res = await fetch("/api/mute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, action: "unmute" }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast(data.error || "Failed to unmute", "error");
-        return;
-      }
-      toast(`Unmuted ${username}`);
-      router.refresh();
-    } catch {
-      toast("Failed to unmute", "error");
-    } finally {
-      setMutingId(null);
-    }
-  }
 
   return (
     <div className="space-y-4">
@@ -274,57 +224,7 @@ export function ProfileActivityTabs({
         </div>
       )}
 
-      {tab === "muted" && (
-        <div className="space-y-3">
-          {mutedUsers.length === 0 ? (
-            <p className="text-sm text-zinc-500">
-              You haven’t muted anyone yet.
-            </p>
-          ) : (
-            mutedUsers.slice(0, visibleCount).map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center justify-between gap-3 rounded-lg border bg-white p-4 dark:bg-zinc-900"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.username}
-                      className="h-9 w-9 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-200 text-sm font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                      {user.username.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <Link
-                      href={`/u/${user.username}`}
-                      className="font-medium hover:underline"
-                    >
-                      {user.username}
-                    </Link>
-                    <div className="text-xs text-zinc-500">
-                      Muted {timeAgo(new Date(user.createdAt))}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={mutingId === user.id}
-                  onClick={() => unmuteUser(user.id, user.username)}
-                  className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
-                >
-                  {mutingId === user.id ? "…" : "Unmute"}
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {hasMore && tab !== "muted" && (
+      {hasMore && (
         <div className="pt-1">
           <button
             type="button"

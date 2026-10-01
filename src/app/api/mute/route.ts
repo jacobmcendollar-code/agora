@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { clearBlockNotifications } from "@/lib/blocks";
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
 
 const postSchema = z.object({
   userId: z.string().min(1),
-  action: z.enum(["mute", "unmute"]),
+  action: z.enum(["block", "unblock", "mute", "unmute"]),
 });
+
+function blockedFlag(action: string) {
+  return action === "block" || action === "mute";
+}
 
 export async function GET(req: Request) {
   const muterId = await userIdFromRequest(req);
@@ -18,6 +24,8 @@ export async function GET(req: Request) {
     );
   }
 
+  await ensureComplianceSchema();
+
   const mutes = await prisma.mute.findMany({
     where: { muterId },
     orderBy: { createdAt: "desc" },
@@ -27,21 +35,24 @@ export async function GET(req: Request) {
           id: true,
           username: true,
           image: true,
+          deletedAt: true,
         },
       },
     },
   });
 
+  const blocks = mutes
+    .filter((row) => !row.muted.deletedAt)
+    .map((row) => ({
+      id: row.id,
+      userId: row.muted.id,
+      username: row.muted.username,
+      image: row.muted.image,
+      createdAt: row.createdAt.toISOString(),
+    }));
+
   return NextResponse.json(
-    {
-      mutes: mutes.map((m) => ({
-        id: m.id,
-        userId: m.muted.id,
-        username: m.muted.username,
-        image: m.muted.image,
-        createdAt: m.createdAt.toISOString(),
-      })),
-    },
+    { blocks, mutes: blocks },
     { headers: PRIVATE_NO_STORE_HEADERS }
   );
 }
@@ -53,6 +64,7 @@ export async function POST(req: Request) {
   }
 
   try {
+    await ensureComplianceSchema();
     const body = await req.json();
     const parsed = postSchema.safeParse(body);
     if (!parsed.success) {
@@ -63,20 +75,20 @@ export async function POST(req: Request) {
 
     if (userId === muterId) {
       return NextResponse.json(
-        { error: "You cannot mute yourself" },
+        { error: "You cannot block yourself" },
         { status: 400 }
       );
     }
 
     const target = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
-    if (!target) {
+    if (!target || target.deletedAt) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (action === "mute") {
+    if (blockedFlag(action)) {
       await prisma.mute.upsert({
         where: {
           muterId_mutedId: {
@@ -90,7 +102,8 @@ export async function POST(req: Request) {
           mutedId: userId,
         },
       });
-      return NextResponse.json({ muted: true });
+      await clearBlockNotifications(muterId, userId);
+      return NextResponse.json({ blocked: true, muted: true });
     }
 
     await prisma.mute.deleteMany({
@@ -99,7 +112,7 @@ export async function POST(req: Request) {
         mutedId: userId,
       },
     });
-    return NextResponse.json({ muted: false });
+    return NextResponse.json({ blocked: false, muted: false });
   } catch (err) {
     console.error("[mute POST]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

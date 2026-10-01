@@ -19,6 +19,7 @@ model User {
   showNsfw            Boolean          @default(false)
   promotionalEmails   Boolean          @default(false)
   expoPushToken       String?
+  deletedAt           DateTime?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   accounts            Account[]
@@ -30,9 +31,11 @@ model User {
   communities         Community[]
   subscriptions       Subscription[]
   notifications       Notification[]
+  notificationsSent   Notification[]   @relation("NotificationActor")
   savedPosts          SavedPost[]
   mutes               Mute[]           @relation("UserMutes")
   mutedBy             Mute[]           @relation("UserMutedBy")
+  reports             Report[]
 
   @@index([username])
   @@map("users")
@@ -197,10 +200,13 @@ model Notification {
   link      String
   read      Boolean  @default(false)
   userId    String
+  actorId   String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actor     User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([userId, read])
+  @@index([actorId])
   @@map("notifications")
 }
 
@@ -230,4 +236,20 @@ model Mute {
   @@index([muterId])
   @@index([mutedId])
   @@map("mutes")
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetType String
+  targetId   String
+  reason     String
+  note       String?
+  createdAt  DateTime @default(now())
+  reporter   User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("reports")
 }

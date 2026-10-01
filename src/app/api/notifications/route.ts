@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
@@ -11,6 +12,8 @@ export async function GET(req: Request) {
       { status: 401, headers: PRIVATE_NO_STORE_HEADERS }
     );
   }
+
+  await ensureComplianceSchema();
 
   const notifications = await prisma.notification.findMany({
     where: { userId },

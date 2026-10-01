@@ -188,13 +188,15 @@ export default function PrivacyPage() {
               (logged in), or via a signed opt-in / opt-out link
             </li>
             <li>Delete or soft-delete your own posts/comments under site rules</li>
-            <li>Contact us to request account help or deletion</li>
+            <li>
+              Delete your account in{" "}
+              <Link href="/settings" className="text-emerald-500 hover:underline">
+                Settings
+              </Link>
+              , or email us for account help
+            </li>
             <li>Stop using the service and stop submitting content at any time</li>
           </ul>
-          <p>
-            Full self-serve account export/delete may be expanded over time. Until
-            then, email support for account deletion requests.
-          </p>
         </section>
 
         <section className="space-y-3">
