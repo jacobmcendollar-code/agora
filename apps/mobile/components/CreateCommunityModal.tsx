@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
@@ -11,7 +11,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardDoneBar } from "@/components/KeyboardDoneBar";
 import { createCommunity } from "@/lib/api";
+import { useKeyboardInset } from "@/lib/keyboard";
 import { useThemeColors } from "@/lib/preferences";
 import type { Palette } from "@/lib/theme";
 import type { PostFormat } from "@/lib/types";
@@ -49,6 +52,10 @@ export function CreateCommunityModal({
   const [postFormat, setPostFormat] = useState<PostFormat>("any");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const descriptionRef = useRef<TextInput>(null);
+  const keyboardHeight = useKeyboardInset();
+  const insets = useSafeAreaInsets();
+  const descriptionAccessoryId = `community-description-${useId().replace(/:/g, "")}`;
   const slug = useMemo(() => slugify(title), [title]);
 
   function reset() {
@@ -67,6 +74,7 @@ export function CreateCommunityModal({
   }
 
   async function onSubmit() {
+    Keyboard.dismiss();
     setError(null);
     if (slug.length < 2) {
       setError("Name must include letters or numbers.");
@@ -94,10 +102,7 @@ export function CreateCommunityModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
-      <KeyboardAvoidingView
-        style={[styles.wrap, { backgroundColor: colors.bg }]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={[styles.wrap, { backgroundColor: colors.bg, paddingBottom: keyboardHeight }]}>
         <View style={styles.top}>
           <Pressable onPress={close} hitSlop={8} disabled={busy} style={styles.sideAction}>
             <Text style={styles.cancel} numberOfLines={1}>
@@ -109,7 +114,12 @@ export function CreateCommunityModal({
           </Text>
           <View style={styles.sideAction} />
         </View>
-        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
           {error ? (
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{error}</Text>
@@ -124,12 +134,16 @@ export function CreateCommunityModal({
             style={styles.input}
             maxLength={100}
             autoCapitalize="words"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => descriptionRef.current?.focus()}
           />
           <Text style={styles.hint}>
             {slug ? `URL will be /c/${slug}` : "URL appears as you type"}
           </Text>
           <Text style={styles.label}>Description</Text>
           <TextInput
+            ref={descriptionRef}
             value={description}
             onChangeText={setDescription}
             placeholder="What this community is about"
@@ -137,6 +151,7 @@ export function CreateCommunityModal({
             style={[styles.input, styles.textarea]}
             maxLength={500}
             multiline
+            inputAccessoryViewID={Platform.OS === "ios" ? descriptionAccessoryId : undefined}
           />
           <Text style={styles.label}>Posts</Text>
           <View style={styles.formats}>
@@ -165,6 +180,8 @@ export function CreateCommunityModal({
               thumbColor={colors.white}
             />
           </View>
+        </ScrollView>
+        <View style={[styles.footer, { paddingBottom: keyboardHeight > 0 ? 12 : Math.max(insets.bottom, 12) }]}>
           <Pressable
             onPress={onSubmit}
             disabled={busy || !slug}
@@ -172,8 +189,9 @@ export function CreateCommunityModal({
           >
             <Text style={styles.submitText}>{busy ? "Creating…" : "Create community"}</Text>
           </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+        {visible ? <KeyboardDoneBar nativeID={descriptionAccessoryId} /> : null}
+      </View>
     </Modal>
   );
 }
@@ -181,6 +199,8 @@ export function CreateCommunityModal({
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
     wrap: { flex: 1 },
+    scroll: { flex: 1 },
+    footer: { paddingHorizontal: 16, paddingTop: 8 },
     top: {
       flexDirection: "row",
       alignItems: "center",

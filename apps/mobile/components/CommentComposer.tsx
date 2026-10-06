@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type Ref } from "react";
+import { useEffect, useId, useRef, useState, type Ref } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { KeyboardDoneBar } from "@/components/KeyboardDoneBar";
 import { TextInputWrapper, type PasteEventPayload } from "expo-paste-input";
 import * as ImagePicker from "expo-image-picker";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
@@ -68,6 +70,7 @@ export function CommentComposer({
   const styles = makeStyles(colors);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const accessoryId = `comment-${useId().replace(/:/g, "")}`;
   const [body, setBody] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -218,6 +221,7 @@ export function CommentComposer({
             autoFocus={autoFocus}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            inputAccessoryViewID={Platform.OS === "ios" ? accessoryId : undefined}
           />
         </TextInputWrapper>
         {focused || gifOpen ? (
@@ -266,7 +270,9 @@ export function CommentComposer({
             placeholder="Search GIFs..."
             placeholderTextColor={colors.faint}
             autoFocus
+            returnKeyType="search"
             style={styles.gifSearch}
+            inputAccessoryViewID={Platform.OS === "ios" ? accessoryId : undefined}
           />
           <ScrollView style={styles.gifScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {gifLoading ? <Text style={styles.gifHint}>Searching…</Text> : null}
@@ -295,6 +301,7 @@ export function CommentComposer({
       <Pressable style={[styles.primary, !canPost && { opacity: 0.5 }]} onPress={handleSubmit} disabled={!canPost}>
         <Text style={styles.primaryText}>{posting ? "Posting…" : submitLabel}</Text>
       </Pressable>
+      <KeyboardDoneBar nativeID={accessoryId} />
     </View>
   );
 }
