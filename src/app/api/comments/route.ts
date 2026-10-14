@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
+import { consumeRateLimit, LIMITS, tooManyRequests } from "@/lib/rate-limit";
 import { moderateContent } from "@/lib/moderation";
 import { relationWith } from "@/lib/blocks";
 import { notifyMentions } from "@/lib/mentions";
@@ -54,6 +55,18 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "Your account is restricted from commenting." },
       { status: 403 }
+    );
+  }
+
+  const commentLimit = await consumeRateLimit(
+    `comment:user:${userId}`,
+    LIMITS.commentsPerUser.limit,
+    LIMITS.commentsPerUser.windowMs
+  );
+  if (!commentLimit.ok) {
+    return tooManyRequests(
+      commentLimit.retryAfter,
+      "You are commenting too fast. Try again later."
     );
   }
 

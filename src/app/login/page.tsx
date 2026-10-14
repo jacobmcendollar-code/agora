@@ -32,7 +32,11 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      setError("Invalid username or password");
+      setError(
+        result.code === "rate_limited"
+          ? "Too many attempts. Try again later."
+          : "Invalid username or password"
+      );
       setLoading(false);
       return;
     }

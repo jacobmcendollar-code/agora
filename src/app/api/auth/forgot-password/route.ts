@@ -3,6 +3,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
+import { clientIp, consumeRateLimit, LIMITS, tooManyRequests } from "@/lib/rate-limit";
 
 const schema = z.object({
   email: z.string().email(),
@@ -18,6 +19,24 @@ export async function POST(req: Request) {
     }
 
     const email = parsed.data.email.trim().toLowerCase();
+    const [byIp, byEmail] = await Promise.all([
+      consumeRateLimit(
+        `forgot:ip:${clientIp(req.headers)}`,
+        LIMITS.forgotPerIp.limit,
+        LIMITS.forgotPerIp.windowMs
+      ),
+      consumeRateLimit(
+        `forgot:email:${email}`,
+        LIMITS.forgotPerEmail.limit,
+        LIMITS.forgotPerEmail.windowMs
+      ),
+    ]);
+    if (!byIp.ok || !byEmail.ok) {
+      return tooManyRequests(
+        Math.max(byIp.retryAfter, byEmail.retryAfter),
+        "Too many attempts. Try again later."
+      );
+    }
 
     // Always return success to avoid account enumeration
     const successResponse = NextResponse.json({

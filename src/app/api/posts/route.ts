@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
+import { consumeRateLimit, LIMITS, tooManyRequests } from "@/lib/rate-limit";
 import { moderateContent } from "@/lib/moderation";
 import { fetchThumbnail } from "@/lib/thumbnail";
 
@@ -112,6 +113,15 @@ export async function POST(req: Request) {
       { error: "Your account is restricted from posting." },
       { status: 403 }
     );
+  }
+
+  const postLimit = await consumeRateLimit(
+    `post:user:${userId}`,
+    LIMITS.postsPerUser.limit,
+    LIMITS.postsPerUser.windowMs
+  );
+  if (!postLimit.ok) {
+    return tooManyRequests(postLimit.retryAfter, "You are posting too fast. Try again later.");
   }
 
   try {

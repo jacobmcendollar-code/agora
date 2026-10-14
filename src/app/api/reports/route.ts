@@ -5,6 +5,7 @@ import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { prisma } from "@/lib/prisma";
 import { isReportReason, isReportTargetType } from "@/lib/reports";
 import { userIdFromRequest } from "@/lib/request-user";
+import { clientIp, consumeRateLimit, LIMITS, tooManyRequests } from "@/lib/rate-limit";
 import { EMAIL_INBOX, sendEmail } from "@/lib/send-email";
 
 const schema = z.object({
@@ -66,6 +67,25 @@ export async function POST(req: Request) {
   const reporterId = await userIdFromRequest(req);
   if (!reporterId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const [byUser, byIp] = await Promise.all([
+    consumeRateLimit(
+      `report:user:${reporterId}`,
+      LIMITS.reportsPerUser.limit,
+      LIMITS.reportsPerUser.windowMs
+    ),
+    consumeRateLimit(
+      `report:ip:${clientIp(req.headers)}`,
+      LIMITS.reportsPerIp.limit,
+      LIMITS.reportsPerIp.windowMs
+    ),
+  ]);
+  if (!byUser.ok || !byIp.ok) {
+    return tooManyRequests(
+      Math.max(byUser.retryAfter, byIp.retryAfter),
+      "Too many reports. Try again later."
+    );
   }
 
   try {

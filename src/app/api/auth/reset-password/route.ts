@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { clientIp, consumeRateLimit, LIMITS, tooManyRequests } from "@/lib/rate-limit";
 
 const schema = z.object({
   email: z.string().email(),
@@ -23,6 +24,14 @@ export async function POST(req: Request) {
 
     const email = parsed.data.email.trim().toLowerCase();
     const { token, password } = parsed.data;
+    const reset = await consumeRateLimit(
+      `reset:ip:${clientIp(req.headers)}`,
+      LIMITS.resetPerIp.limit,
+      LIMITS.resetPerIp.windowMs
+    );
+    if (!reset.ok) {
+      return tooManyRequests(reset.retryAfter, "Too many attempts. Try again later.");
+    }
 
     const record = await prisma.verificationToken.findUnique({
       where: {
