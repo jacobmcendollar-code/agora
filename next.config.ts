@@ -4,14 +4,6 @@ const nextConfig: NextConfig = {
   experimental: {
     // serverActions is stable in 15, but keep flexible
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
-  },
   async headers() {
     return [
       {
