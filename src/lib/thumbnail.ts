@@ -1,3 +1,5 @@
+import { fetchPublicText } from "@/lib/public-fetch";
+
 /**
  * Tries to extract a thumbnail from a URL.
  * Special handling for YouTube and TikTok.
@@ -15,17 +17,15 @@ export async function fetchThumbnail(url: string): Promise<string | null> {
     // TikTok via oEmbed
     if (url.includes("tiktok.com")) {
       try {
-        const oembedRes = await fetch(
+        const oembedRes = await fetchPublicText(
           `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
           {
-            headers: {
-              "User-Agent":
-                "Mozilla/5.0 (compatible; AgoraBot/1.0)",
-            },
+            accept: "application/json",
+            userAgent: "Mozilla/5.0 (compatible; AgoraBot/1.0)",
           }
         );
-        if (oembedRes.ok) {
-          const data = await oembedRes.json();
+        if (oembedRes?.ok) {
+          const data = JSON.parse(oembedRes.text);
           if (data.thumbnail_url) {
             return data.thumbnail_url as string;
           }
@@ -35,24 +35,15 @@ export async function fetchThumbnail(url: string): Promise<string | null> {
       }
     }
 
-    // General Open Graph
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html",
-      },
+    const res = await fetchPublicText(url, {
+      accept: "text/html",
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     });
 
-    clearTimeout(timeout);
+    if (!res?.ok) return null;
 
-    if (!res.ok) return null;
-
-    const html = await res.text();
+    const html = res.text;
 
     const patterns = [
       /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,

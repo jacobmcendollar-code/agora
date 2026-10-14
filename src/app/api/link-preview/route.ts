@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchPublicText } from "@/lib/public-fetch";
 
 function getYouTubeId(url: string): string | null {
   try {
@@ -31,8 +32,8 @@ export async function GET(req: Request) {
   if (url.includes("x.com") || url.includes("twitter.com")) {
     try {
       const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`;
-      const res = await fetch(oembedUrl);
-      const data = await res.json();
+      const res = await fetchPublicText(oembedUrl, { accept: "application/json" });
+      const data = res?.ok ? JSON.parse(res.text) : {};
       return NextResponse.json({
         title: "",
         thumbnail: null,
@@ -53,14 +54,13 @@ export async function GET(req: Request) {
   if (youtubeId) {
     try {
       const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-      const res = await fetch(oembedUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; AgoraBot/1.0)",
-        },
+      const res = await fetchPublicText(oembedUrl, {
+        accept: "application/json",
+        userAgent: "Mozilla/5.0 (compatible; AgoraBot/1.0)",
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      if (res?.ok) {
+        const data = JSON.parse(res.text);
         return NextResponse.json({
           title: (data.title || "").trim(),
           thumbnail:
@@ -83,14 +83,15 @@ export async function GET(req: Request) {
 
   // General fallback for other sites
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html",
-      },
+    const response = await fetchPublicText(url, {
+      accept: "text/html",
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     });
-    const html = await response.text();
+    if (!response?.ok) {
+      return NextResponse.json({ title: "", thumbnail: null, description: "" });
+    }
+    const html = response.text;
 
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const ogTitleMatch =

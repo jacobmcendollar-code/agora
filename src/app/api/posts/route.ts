@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { userIdFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
+import { fetchPublicText } from "@/lib/public-fetch";
 import { fetchThumbnail } from "@/lib/thumbnail";
 
 const schema = z.object({
@@ -60,19 +61,12 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
     return null;
   }
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; AgoraBot/1.0; +https://agor4.com)",
-        Accept: "text/html",
-      },
+    const res = await fetchPublicText(url, {
+      accept: "text/html",
+      userAgent: "Mozilla/5.0 (compatible; AgoraBot/1.0; +https://agor4.com)",
     });
-    clearTimeout(timeout);
-    if (!res.ok) return null;
-    const html = await res.text();
+    if (!res?.ok) return null;
+    const html = res.text;
     const patterns = [
       /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
       /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i,
