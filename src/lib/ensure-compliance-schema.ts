@@ -168,6 +168,22 @@ EXCEPTION
 END $$`,
   },
   {
+    flag: "user_session_version",
+    sql: `DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'users'
+      AND column_name = 'sessionVersion'
+  ) THEN
+    ALTER TABLE "users" ADD COLUMN "sessionVersion" INTEGER NOT NULL DEFAULT 0;
+  END IF;
+EXCEPTION
+  WHEN duplicate_column OR unique_violation THEN NULL;
+END $$`,
+  },
+  {
     flag: "reports_target_idx",
     sql: `DO $$
 BEGIN
@@ -231,7 +247,11 @@ const FLAG_SQL = `SELECT
     SELECT 1 FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'public' AND c.relname = 'reports_targetType_targetId_idx' AND c.relkind = 'i'
-  ))::int AS reports_target_idx`;
+  ))::int AS reports_target_idx,
+  (EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'sessionVersion'
+  ))::int AS user_session_version`;
 
 function isPresent(value: unknown): boolean {
   return value === true || value === 1 || value === BigInt(1);

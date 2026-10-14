@@ -91,6 +91,7 @@ export async function deleteUserAccount(userId: string) {
           showNsfw: false,
           promotionalEmails: false,
           deletedAt: new Date(),
+          sessionVersion: { increment: 1 },
         },
       });
     },

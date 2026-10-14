@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { prisma } from "@/lib/prisma";
 import { isReportReason, isReportTargetType } from "@/lib/reports";
-import { userIdFromRequest } from "@/lib/request-user";
+import { accountFromRequest } from "@/lib/request-user";
 import { EMAIL_INBOX, sendEmail } from "@/lib/send-email";
 
 const schema = z.object({
@@ -63,10 +63,17 @@ async function targetSummary(targetType: string, targetId: string) {
 }
 
 export async function POST(req: Request) {
-  const reporterId = await userIdFromRequest(req);
-  if (!reporterId) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (account.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted." },
+      { status: 403 }
+    );
+  }
+  const reporterId = account.id;
 
   try {
     await ensureComplianceSchema();
@@ -94,10 +101,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const reporter = await prisma.user.findUnique({
-      where: { id: reporterId },
-      select: { username: true },
-    });
+    const reporter = { username: account.username };
 
     try {
       await prisma.report.create({

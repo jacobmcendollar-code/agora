@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { userIdFromRequest } from "@/lib/request-user";
+import { accountFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
 import { relationWith } from "@/lib/blocks";
 import { notifyMentions } from "@/lib/mentions";
@@ -41,21 +41,17 @@ async function countRecentMediaComments(userId: string) {
 }
 
 export async function POST(req: Request) {
-  const userId = await userIdFromRequest(req);
-  if (!userId) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { banned: true, username: true },
-  });
-  if (dbUser?.banned) {
+  if (account.banned) {
     return NextResponse.json(
       { error: "Your account is restricted from commenting." },
       { status: 403 }
     );
   }
+  const userId = account.id;
 
   try {
     const body = await req.json();
@@ -168,7 +164,7 @@ export async function POST(req: Request) {
     });
 
     const link = `/c/${post.community.name}/posts/${post.id}#comment-${comment.id}`;
-    const actorUsername = dbUser?.username || "Someone";
+    const actorUsername = account.username || "Someone";
 
     if (post.authorId !== userId) {
       const blocked = await relationWith(userId, post.authorId);

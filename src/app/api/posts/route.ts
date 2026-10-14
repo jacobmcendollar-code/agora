@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { userIdFromRequest } from "@/lib/request-user";
+import { accountFromRequest } from "@/lib/request-user";
 import { moderateContent } from "@/lib/moderation";
 import { fetchThumbnail } from "@/lib/thumbnail";
 
@@ -98,21 +98,17 @@ async function fetchLinkDescription(url: string): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
-  const userId = await userIdFromRequest(req);
-  if (!userId) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { banned: true },
-  });
-  if (dbUser?.banned) {
+  if (account.banned) {
     return NextResponse.json(
       { error: "Your account is restricted from posting." },
       { status: 403 }
     );
   }
+  const userId = account.id;
 
   try {
     const body = await req.json();

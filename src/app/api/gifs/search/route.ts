@@ -6,6 +6,12 @@ export async function GET(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted." },
+      { status: 403 }
+    );
+  }
 
   const key = process.env.GIPHY_API_KEY;
   if (!key) {

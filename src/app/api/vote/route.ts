@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { userIdFromRequest } from "@/lib/request-user";
+import { accountFromRequest } from "@/lib/request-user";
 
 const schema = z.object({
   targetType: z.enum(["post", "comment"]),
@@ -10,10 +10,17 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
-  const userId = await userIdFromRequest(req);
-  if (!userId) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (account.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted." },
+      { status: 403 }
+    );
+  }
+  const userId = account.id;
 
   try {
     const body = await req.json();

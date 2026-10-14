@@ -48,7 +48,7 @@ export function readSessionTokenFromRequest(req: Request): string | null {
 
 export async function decodeMobileSessionToken(
   token: string
-): Promise<{ userId: string } | null> {
+): Promise<{ userId: string; sessionVersion: number } | null> {
   const secret = getAuthSecret();
   if (!secret) return null;
   try {
@@ -61,13 +61,18 @@ export async function decodeMobileSessionToken(
       (typeof payload?.id === "string" && payload.id) ||
       (typeof payload?.sub === "string" && payload.sub) ||
       "";
-    return userId ? { userId } : null;
+    if (!userId) return null;
+    const sessionVersion =
+      typeof payload?.sessionVersion === "number" ? payload.sessionVersion : 0;
+    return { userId, sessionVersion };
   } catch {
     return null;
   }
 }
 
-export async function readMobileSession(req: Request): Promise<{ userId: string } | null> {
+export async function readMobileSession(
+  req: Request
+): Promise<{ userId: string; sessionVersion: number } | null> {
   const token = readSessionTokenFromRequest(req);
   if (!token) return null;
   return decodeMobileSessionToken(token);

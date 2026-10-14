@@ -12,6 +12,9 @@ export const ourFileRouter = {
       if (!session?.user?.id) {
         throw new Error("You must be logged in to upload images");
       }
+      if (session.user.banned) {
+        throw new Error("Your account is restricted.");
+      }
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ file }) => {
