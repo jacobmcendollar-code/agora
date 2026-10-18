@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
+import { loadAccountForSession } from "@/lib/active-user";
 import { PRIVATE_NO_STORE_HEADERS, readMobileSession } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 
@@ -9,7 +9,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ user: null }, { headers: PRIVATE_NO_STORE_HEADERS });
   }
 
-  await ensureComplianceSchema();
+  const account = await loadAccountForSession(session.userId, session.sessionVersion);
+  if (!account) {
+    return NextResponse.json(
+      { user: null },
+      { status: 401, headers: PRIVATE_NO_STORE_HEADERS }
+    );
+  }
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {

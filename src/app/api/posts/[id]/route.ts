@@ -3,7 +3,7 @@ import { z } from "zod";
 import { blockListsFor, commentsVisibleToViewer } from "@/lib/blocks";
 import { PRIVATE_NO_STORE_HEADERS } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
-import { userIdFromRequest } from "@/lib/request-user";
+import { accountFromRequest, userIdFromRequest } from "@/lib/request-user";
 
 const schema = z.object({
   title: z.string().min(1).max(300).optional(),
@@ -98,10 +98,17 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await userIdFromRequest(req);
-  if (!userId) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (account.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted from posting." },
+      { status: 403 }
+    );
+  }
+  const userId = account.id;
 
   const { id } = await params;
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { userIdFromRequest } from "@/lib/request-user";
+import { accountFromRequest } from "@/lib/request-user";
 import { UTApi } from "uploadthing/server";
 
 const utapi = new UTApi();
@@ -18,10 +18,17 @@ async function countRecentMediaComments(userId: string) {
 }
 
 export async function POST(req: Request) {
-  const userId = await userIdFromRequest(req);
-  if (!userId) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (account.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted." },
+      { status: 403 }
+    );
+  }
+  const userId = account.id;
 
   try {
     const mediaCount = await countRecentMediaComments(userId);

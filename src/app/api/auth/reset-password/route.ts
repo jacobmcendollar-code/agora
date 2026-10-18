@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
 
     const email = parsed.data.email.trim().toLowerCase();
     const { token, password } = parsed.data;
+
+    await ensureComplianceSchema();
 
     const record = await prisma.verificationToken.findUnique({
       where: {
@@ -57,7 +60,7 @@ export async function POST(req: Request) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash },
+        data: { passwordHash, sessionVersion: { increment: 1 } },
       }),
       prisma.verificationToken.delete({
         where: {

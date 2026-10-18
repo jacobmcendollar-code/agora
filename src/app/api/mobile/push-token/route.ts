@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { loadAccountForSession } from "@/lib/active-user";
 import { PRIVATE_NO_STORE_HEADERS, readMobileSession } from "@/lib/mobile-session";
 import { ensureExpoPushTokenColumn } from "@/lib/ensure-expo-push-token-column";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,10 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   const session = await readMobileSession(req);
-  if (!session) {
+  const account = session
+    ? await loadAccountForSession(session.userId, session.sessionVersion)
+    : null;
+  if (!account) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401, headers: PRIVATE_NO_STORE_HEADERS }
@@ -31,7 +35,7 @@ export async function POST(req: Request) {
 
   await ensureExpoPushTokenColumn();
   await prisma.user.update({
-    where: { id: session.userId },
+    where: { id: account.id },
     data: { expoPushToken: parsed.data.token },
   });
 

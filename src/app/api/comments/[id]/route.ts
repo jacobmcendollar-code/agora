@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { accountFromRequest } from "@/lib/request-user";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -13,9 +13,15 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const account = await accountFromRequest(req);
+  if (!account) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (account.banned) {
+    return NextResponse.json(
+      { error: "Your account is restricted from commenting." },
+      { status: 403 }
+    );
   }
 
   const { id } = await params;
@@ -26,7 +32,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    if (comment.authorId !== session.user.id) {
+    if (comment.authorId !== account.id) {
       return NextResponse.json({ error: "Not allowed" }, { status: 403 });
     }
 

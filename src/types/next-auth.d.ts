@@ -6,12 +6,16 @@ declare module "next-auth" {
       id: string;
       username: string;
       showNsfw: boolean;
+      banned?: boolean;
+      sessionVersion?: number;
     } & DefaultSession["user"];
   }
 
   interface User {
     username?: string;
     showNsfw?: boolean;
+    banned?: boolean;
+    sessionVersion?: number;
   }
 }
 
@@ -20,5 +24,6 @@ declare module "next-auth/jwt" {
     id: string;
     username: string;
     showNsfw: boolean;
+    sessionVersion?: number;
   }
 }

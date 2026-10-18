@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { encode } from "@auth/core/jwt";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { ensureComplianceSchema } from "@/lib/ensure-compliance-schema";
 import { getAuthSecret, MOBILE_SESSION_COOKIE } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
     }
 
     const { username, password } = parsed.data;
+    await ensureComplianceSchema();
     const user = await prisma.user.findUnique({
       where: { username: username.toLowerCase() },
       select: {
@@ -44,6 +46,8 @@ export async function POST(req: Request) {
         bio: true,
         createdAt: true,
         showNsfw: true,
+        banned: true,
+        sessionVersion: true,
       },
     });
 
@@ -54,6 +58,9 @@ export async function POST(req: Request) {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+    }
+    if (user.banned) {
+      return NextResponse.json({ error: "This account is restricted." }, { status: 403 });
     }
 
     const cookieName = MOBILE_SESSION_COOKIE;
@@ -66,6 +73,7 @@ export async function POST(req: Request) {
         email: user.email,
         picture: user.image,
         showNsfw: user.showNsfw,
+        sessionVersion: user.sessionVersion,
       },
       secret,
       salt: cookieName,

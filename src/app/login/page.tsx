@@ -32,7 +32,11 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      setError("Invalid username or password");
+      setError(
+        result.code === "restricted"
+          ? "This account is restricted."
+          : "Invalid username or password"
+      );
       setLoading(false);
       return;
     }
