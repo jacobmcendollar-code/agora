@@ -1,9 +1,15 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { z } from "zod";
+import { clientIp, consumeRateLimit, isRateLimited, LIMITS } from "./rate-limit";
 import { prisma } from "./prisma";
+
+class RateLimited extends CredentialsSignin {
+  code = "rate_limited";
+}
 
 // Canonical host is www. AUTH_URL in Vercel is still the apex, which makes
 // next-auth advertise https://agor4.com callbacks. Apex 308s to www and
@@ -36,8 +42,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { username, password } = parsed.data;
+        const normalizedUsername = username.toLowerCase();
+        const ip = clientIp(await headers());
+        const ipLimit = await consumeRateLimit(
+          `login:ip:${ip}`,
+          LIMITS.loginPerIp.limit,
+          LIMITS.loginPerIp.windowMs
+        );
+        if (!ipLimit.ok) throw new RateLimited();
+
+        const userLock = await isRateLimited(
+          `login:fail:${normalizedUsername}`,
+          LIMITS.loginFailuresPerUsername.limit
+        );
+        if (userLock.limited) throw new RateLimited();
+
         const user = await prisma.user.findUnique({
-          where: { username: username.toLowerCase() },
+          where: { username: normalizedUsername },
           select: {
             id: true,
             username: true,
@@ -48,10 +69,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user || !user.passwordHash) return null;
+        if (!user || !user.passwordHash) {
+          await consumeRateLimit(
+            `login:fail:${normalizedUsername}`,
+            LIMITS.loginFailuresPerUsername.limit,
+            LIMITS.loginFailuresPerUsername.windowMs
+          );
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          await consumeRateLimit(
+            `login:fail:${normalizedUsername}`,
+            LIMITS.loginFailuresPerUsername.limit,
+            LIMITS.loginFailuresPerUsername.windowMs
+          );
+          return null;
+        }
 
         return {
           id: user.id,

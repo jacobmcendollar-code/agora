@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ensurePromotionalEmailsColumn } from "@/lib/ensure-promotional-emails-column";
+import { clientIp, consumeRateLimit, LIMITS, tooManyRequests } from "@/lib/rate-limit";
 
 const schema = z.object({
   username: z
@@ -17,6 +18,15 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const signup = await consumeRateLimit(
+      `signup:ip:${clientIp(req.headers)}`,
+      LIMITS.signupPerIp.limit,
+      LIMITS.signupPerIp.windowMs
+    );
+    if (!signup.ok) {
+      return tooManyRequests(signup.retryAfter, "Too many attempts. Try again later.");
+    }
+
     const body = await req.json();
     await ensurePromotionalEmailsColumn();
     const parsed = schema.safeParse(body);

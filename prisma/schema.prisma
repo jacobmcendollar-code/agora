@@ -253,3 +253,11 @@ model Report {
   @@index([targetType, targetId])
   @@map("reports")
 }
+
+model RateLimitBucket {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@map("rate_limit_buckets")
+}

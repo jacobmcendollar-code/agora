@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getAuthSecret, MOBILE_SESSION_COOKIE } from "@/lib/mobile-session";
 import { prisma } from "@/lib/prisma";
+import { clientIp, consumeRateLimit, isRateLimited, LIMITS } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   username: z.string().min(3).max(32),
@@ -33,8 +34,32 @@ export async function POST(req: Request) {
     }
 
     const { username, password } = parsed.data;
+    const normalizedUsername = username.toLowerCase();
+    const ip = clientIp(req.headers);
+    const ipLimit = await consumeRateLimit(
+      `login:ip:${ip}`,
+      LIMITS.loginPerIp.limit,
+      LIMITS.loginPerIp.windowMs
+    );
+    if (!ipLimit.ok) {
+      return NextResponse.json(
+        { error: "Too many attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(ipLimit.retryAfter) } }
+      );
+    }
+    const userLock = await isRateLimited(
+      `login:fail:${normalizedUsername}`,
+      LIMITS.loginFailuresPerUsername.limit
+    );
+    if (userLock.limited) {
+      return NextResponse.json(
+        { error: "Too many attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(userLock.retryAfter) } }
+      );
+    }
+
     const user = await prisma.user.findUnique({
-      where: { username: username.toLowerCase() },
+      where: { username: normalizedUsername },
       select: {
         id: true,
         username: true,
@@ -48,11 +73,21 @@ export async function POST(req: Request) {
     });
 
     if (!user || !user.passwordHash) {
+      await consumeRateLimit(
+        `login:fail:${normalizedUsername}`,
+        LIMITS.loginFailuresPerUsername.limit,
+        LIMITS.loginFailuresPerUsername.windowMs
+      );
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      await consumeRateLimit(
+        `login:fail:${normalizedUsername}`,
+        LIMITS.loginFailuresPerUsername.limit,
+        LIMITS.loginFailuresPerUsername.windowMs
+      );
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
 
